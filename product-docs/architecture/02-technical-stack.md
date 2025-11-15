@@ -29,11 +29,11 @@ This document defines the technology choices for the AHS Field Service Execution
 ├─────────────────────────────────────────────────────────────────┤
 │                       DATA & STORAGE                            │
 ├─────────────────────────────────────────────────────────────────┤
-│ Primary DB:        PostgreSQL 15+ (AWS RDS / Azure DB)         │
-│ Search:            OpenSearch 2.x (AWS / self-hosted)          │
-│ Cache:             Redis 7+ / Valkey (ElastiCache / Azure)     │
-│ Object Storage:    AWS S3 / Azure Blob Storage                 │
-│ Message Bus:       Apache Kafka (Confluent Cloud / AWS MSK)    │
+│ Primary DB:        PostgreSQL 15+ (self-hosted / managed)      │
+│ Search:            PostgreSQL FTS (defer OpenSearch)           │
+│ Cache:             Redis 7+ / Valkey (self-hosted)             │
+│ Object Storage:    S3 / Azure Blob / GCS                       │
+│ Message Bus:       Apache Kafka (REQUIRED - Confluent Cloud)   │
 │ Schema Registry:   Confluent Schema Registry (Avro)            │
 ├─────────────────────────────────────────────────────────────────┤
 │                    INFRASTRUCTURE                               │
@@ -47,21 +47,27 @@ This document defines the technology choices for the AHS Field Service Execution
 ├─────────────────────────────────────────────────────────────────┤
 │                    OBSERVABILITY                                │
 ├─────────────────────────────────────────────────────────────────┤
-│ Tracing:           OpenTelemetry + Grafana Tempo               │
-│ Metrics:           Prometheus + Grafana                        │
-│ Logging:           Winston (app) + Grafana Loki                │
-│ APM:               Grafana stack (unified)                     │
-│ Alerting:          Grafana Alerting + PagerDuty                │
-│ Uptime:            Better Uptime / Pingdom                     │
+│ APM:               Datadog APM (REQUIRED)                      │
+│ Tracing:           Datadog Distributed Tracing                 │
+│ Metrics:           Datadog Metrics                             │
+│ Logging:           Datadog Log Management                      │
+│ RUM:               Datadog Real User Monitoring                │
+│ Alerting:          Datadog Alerting + PagerDuty                │
 ├─────────────────────────────────────────────────────────────────┤
 │                    SECURITY & AUTH                              │
 ├─────────────────────────────────────────────────────────────────┤
-│ SSO:               PingID (SAML 2.0 / OIDC)                    │
+│ SSO:               PingID (SAML 2.0 / OIDC) (REQUIRED)         │
 │ JWT:               jsonwebtoken (RS256)                        │
-│ Secrets:           AWS Secrets Manager / Azure Key Vault       │
+│ Secrets:           HashiCorp Vault (REQUIRED)                  │
 │ Encryption:        TLS 1.3, at-rest encryption (AES-256)       │
 │ SAST:              SonarQube / Snyk                            │
 │ DAST:              OWASP ZAP (CI integration)                  │
+├─────────────────────────────────────────────────────────────────┤
+│              THIRD-PARTY INTEGRATIONS                          │
+├─────────────────────────────────────────────────────────────────┤
+│ Workflow Engine:   Camunda Platform 8 (Zeebe)                 │
+│ E-Signature:       Adobe Sign (eIDAS-compliant)               │
+│ Notifications:     Enterprise Messaging Service (SMS/Email)   │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -452,16 +458,26 @@ ahs-field-service-{env}/
 - Media: STANDARD → STANDARD_IA after 90 days → GLACIER after 1 year → DELETE after 5 years
 - Temp uploads: DELETE after 7 days if not confirmed
 
-## Messaging: Apache Kafka
+## Messaging: Apache Kafka (REQUIRED)
 
-**Choice**: Apache Kafka (Confluent Cloud or AWS MSK)
+**Choice**: Apache Kafka (Confluent Cloud or self-hosted on Kubernetes)
+
+**Status**: **MANDATORY** - Required by enterprise client
 
 **Rationale**:
+- **Enterprise requirement**: Non-negotiable, part of standard stack
 - **Durability**: Persistent, replicated logs
 - **Throughput**: Handle high message volume
 - **Replay**: Reprocess events from any point
 - **Schema evolution**: With Confluent Schema Registry
 - **Ecosystem**: Kafka Connect, ksqlDB (if needed)
+- **Cloud-agnostic**: Confluent Cloud works across AWS/Azure/GCP
+
+**Deployment Options**:
+1. **Confluent Cloud** (Preferred) - Fully managed, multi-cloud
+2. **Self-hosted on Kubernetes** - Using Confluent Operator or Strimzi
+
+**Do NOT use**: AWS MSK, Azure Event Hubs, GCP Pub/Sub (avoid cloud vendor lock-in)
 
 **Topic naming**:
 ```
@@ -687,37 +703,111 @@ jobs:
 
 ## Observability Stack
 
-### OpenTelemetry + Grafana Stack
+### Datadog (REQUIRED)
 
-**Choice**: OpenTelemetry instrumentation + Grafana LGTM stack
+**Choice**: Datadog APM + Logs + Metrics + RUM
+
+**Status**: **MANDATORY** - Required by enterprise client
 
 **Rationale**:
-- **Unified**: Single telemetry SDK (traces, metrics, logs)
-- **Vendor-neutral**: Avoid lock-in
-- **Correlation**: Trace IDs link logs, metrics, traces
-- **Cost-effective**: Grafana Cloud or self-hosted
+- **Enterprise requirement**: Non-negotiable, part of standard stack
+- **Unified platform**: APM, logs, metrics, RUM, security in one tool
+- **Automatic instrumentation**: Auto-detect frameworks (NestJS, Express, Prisma)
+- **Distributed tracing**: End-to-end request flow across services
+- **Real User Monitoring**: Frontend performance (React, React Native)
+- **Log correlation**: Link logs to traces via trace IDs
+- **Infrastructure monitoring**: Kubernetes, PostgreSQL, Kafka, Redis
+- **Alerting**: PagerDuty integration for on-call
 
 **Components**:
-- **Loki**: Logs aggregation
-- **Tempo**: Distributed tracing
-- **Prometheus**: Metrics collection
-- **Grafana**: Unified dashboards
+- **Datadog APM**: Application Performance Monitoring
+- **Datadog Logs**: Centralized log aggregation and analysis
+- **Datadog Metrics**: Custom metrics and infrastructure metrics
+- **Datadog RUM**: Real User Monitoring for web and mobile
+- **Datadog Synthetics**: Uptime and API monitoring
+- **Datadog Security**: Application Security Monitoring (ASM)
 
 **Instrumentation**:
 ```typescript
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import tracer from 'dd-trace';
 
-const sdk = new NodeSDK({
-  traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
+// Initialize Datadog tracer (before other imports)
+tracer.init({
+  logInjection: true, // Inject trace IDs into logs
+  runtimeMetrics: true, // Node.js runtime metrics
+  profiling: true, // Continuous profiling
+  env: process.env.DD_ENV, // 'dev', 'staging', 'prod'
+  service: 'ahs-fsm-backend',
+  version: process.env.DD_VERSION,
+  tags: {
+    'country': process.env.COUNTRY_CODE,
+    'service_type': 'backend',
+  },
 });
 
-sdk.start();
+// Winston logging integration (inject trace IDs)
+import winston from 'winston';
+
+const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'ahs-fsm-backend' },
+  transports: [
+    new winston.transports.Console(),
+  ],
+});
+
+// Custom metrics
+const { StatsD } = require('node-dogstatsd');
+const dogstatsd = new StatsD('localhost', 8125);
+
+dogstatsd.increment('assignment.offer.sent', 1, ['country:ES', 'provider_type:individual']);
+dogstatsd.histogram('scheduling.calculation.duration', 245, ['country:FR']);
 ```
+
+**Frontend Integration (React)**:
+```typescript
+import { datadogRum } from '@datadog/browser-rum';
+
+datadogRum.init({
+  applicationId: process.env.DD_APPLICATION_ID,
+  clientToken: process.env.DD_CLIENT_TOKEN,
+  site: 'datadoghq.eu', // EU data center
+  service: 'ahs-fsm-web',
+  env: process.env.DD_ENV,
+  version: process.env.DD_VERSION,
+  sessionSampleRate: 100,
+  sessionReplaySampleRate: 20,
+  trackUserInteractions: true,
+  trackResources: true,
+  trackLongTasks: true,
+  defaultPrivacyLevel: 'mask-user-input', // GDPR compliance
+});
+```
+
+**Mobile Integration (React Native)**:
+```typescript
+import { DdSdkReactNative } from '@datadog/mobile-react-native';
+
+DdSdkReactNative.initialize({
+  clientToken: process.env.DD_CLIENT_TOKEN,
+  env: process.env.DD_ENV,
+  applicationId: process.env.DD_APPLICATION_ID,
+  trackInteractions: true,
+  trackResources: true,
+  trackErrors: true,
+  site: 'EU1', // EU data center for GDPR
+});
+```
+
+**Dashboards**:
+- Service Order funnel (created → scheduled → assigned → completed)
+- Assignment transparency (candidate filtering stages)
+- API latency (p50, p95, p99)
+- Error rates by service
+- Infrastructure health (Kubernetes, PostgreSQL, Kafka)
 
 ## Security Stack
 
@@ -754,32 +844,383 @@ passport.use(new SamlStrategy(
 ));
 ```
 
-### Secrets Management
+### Secrets Management: HashiCorp Vault (REQUIRED)
 
-**Choice**: AWS Secrets Manager / Azure Key Vault
+**Choice**: HashiCorp Vault
+
+**Status**: **MANDATORY** - Required by enterprise client
 
 **Rationale**:
-- **Rotation**: Automatic secret rotation
-- **Audit**: Access logs
-- **Integration**: Native SDK support
-- **Encryption**: KMS-encrypted
+- **Enterprise requirement**: Non-negotiable, part of standard stack
+- **Cloud-agnostic**: Works across AWS, Azure, GCP, on-premises
+- **Dynamic secrets**: Generate database credentials on-demand with automatic rotation
+- **Encryption as a Service**: Encrypt sensitive data (PII, payment info)
+- **PKI**: Certificate management for TLS
+- **Audit**: Detailed audit logs of all secret access
+- **RBAC**: Fine-grained access control policies
+- **Multi-tenancy**: Namespaces for different environments/countries
+
+**Deployment Options**:
+1. **HashiCorp Cloud Platform (HCP) Vault** (Preferred) - Fully managed
+2. **Self-hosted on Kubernetes** - Using Vault Helm chart
+
+**Secret Engines**:
+- **KV v2**: Static secrets (API keys, tokens)
+- **Database**: Dynamic PostgreSQL credentials
+- **PKI**: TLS certificates
+- **Transit**: Encryption as a service (encrypt PII fields)
+- **AWS/Azure Secrets Engine**: Dynamic cloud credentials
+
+**Integration with PingID**:
+- Use Vault OIDC auth method with PingID
+- User authentication flows through PingID → Vault policies apply
 
 **Usage**:
 ```typescript
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import vault from 'node-vault';
 
-const client = new SecretsManagerClient({ region: 'eu-west-1' });
+// Initialize Vault client
+const vaultClient = vault({
+  apiVersion: 'v1',
+  endpoint: process.env.VAULT_ADDR,
+  token: process.env.VAULT_TOKEN, // From Kubernetes service account in prod
+});
 
-async function getSecret(secretName: string): Promise<string> {
-  const response = await client.send(
-    new GetSecretValueCommand({ SecretId: secretName })
-  );
-  return response.SecretString;
+// Read static secret (API key)
+async function getApiKey(keyName: string): Promise<string> {
+  const result = await vaultClient.read(`secret/data/fsm/${keyName}`);
+  return result.data.data.api_key;
 }
 
-// In app initialization
-const dbPassword = await getSecret('fsm/db/password');
+// Get dynamic database credentials
+async function getDatabaseCredentials(): Promise<{username: string, password: string}> {
+  const result = await vaultClient.read('database/creds/fsm-backend');
+  return {
+    username: result.data.username,
+    password: result.data.password,
+  };
+  // Vault auto-rotates these credentials after TTL expires
+}
+
+// Encrypt PII data (Transit engine)
+async function encryptPII(plaintext: string): Promise<string> {
+  const result = await vaultClient.write('transit/encrypt/customer-pii', {
+    plaintext: Buffer.from(plaintext).toString('base64'),
+  });
+  return result.data.ciphertext;
+}
+
+// Decrypt PII data
+async function decryptPII(ciphertext: string): Promise<string> {
+  const result = await vaultClient.write('transit/decrypt/customer-pii', {
+    ciphertext,
+  });
+  return Buffer.from(result.data.plaintext, 'base64').toString('utf-8');
+}
+
+// Kubernetes integration (service account auth)
+// Vault agent sidecar injects secrets as files
+// No code changes needed, secrets mounted at /vault/secrets/
 ```
+
+**Vault Policies Example**:
+```hcl
+# Policy for backend service
+path "secret/data/fsm/backend/*" {
+  capabilities = ["read"]
+}
+
+path "database/creds/fsm-backend" {
+  capabilities = ["read"]
+}
+
+path "transit/encrypt/customer-pii" {
+  capabilities = ["update"]
+}
+
+path "transit/decrypt/customer-pii" {
+  capabilities = ["update"]
+}
+```
+
+**Secret Rotation**:
+- Database credentials: Auto-rotated every 24 hours
+- API keys: Manual rotation via CI/CD
+- TLS certificates: Auto-renewed via Vault PKI engine
+
+## Third-Party Integrations
+
+### Workflow Orchestration: Camunda Platform 8
+
+**Choice**: Camunda Platform 8 (Zeebe engine)
+
+**Rationale**:
+- **BPMN 2.0 standard**: Visual workflow design for complex FSM processes
+- **Long-running workflows**: Perfect for multi-day/week processes (TV flow, contracts, claims)
+- **Human tasks**: Operator approvals, customer signatures, timeout handling
+- **Audit trail**: Full workflow history for compliance (GDPR, warranty tracking)
+- **TypeScript support**: Zeebe Node.js client matches our stack
+- **Event-driven**: Integrate with Kafka for seamless event flow
+
+**Use Cases in AHS FSM**:
+1. **Technical Visit (TV) Flow**: Multi-outcome decision tree (YES/YES-BUT/NO), blocking logic
+2. **Assignment & Dispatch**: Multi-stage funnel, provider offers, auto-accept rules
+3. **Contract Lifecycle**: Multi-party signatures (customer, technician, provider), approval chains
+4. **WCF Approval**: Customer acceptance/rejection, re-work loops, escalation
+5. **Claim & Warranty**: Investigation workflows, approval chains, refund/repair orchestration
+6. **Provider Onboarding**: Multi-step verification, document approval, background checks
+
+**Architecture**:
+```
+NestJS Services
+   ↓ (Start workflow via Zeebe client)
+Camunda Zeebe (Workflow Engine)
+   ↓ (Service tasks call back via REST/Kafka)
+NestJS Services
+   ↓ (Update domain state)
+PostgreSQL
+```
+
+**Integration Example**:
+```typescript
+import { ZBClient } from 'zeebe-node';
+
+const zbc = new ZBClient({
+  camundaCloud: {
+    clusterId: process.env.ZEEBE_CLUSTER_ID,
+    clientId: process.env.ZEEBE_CLIENT_ID,
+    clientSecret: process.env.ZEEBE_CLIENT_SECRET,
+  },
+});
+
+// Start Technical Visit workflow
+async function startTechnicalVisitWorkflow(serviceOrderId: string) {
+  const result = await zbc.createProcessInstance({
+    bpmnProcessId: 'technical-visit-flow',
+    variables: {
+      serviceOrderId,
+      customerId: order.customerId,
+      providerId: order.providerId,
+    },
+  });
+  return result.processInstanceKey;
+}
+
+// Service task: Check customer eligibility
+zbc.createWorker({
+  taskType: 'check-customer-eligibility',
+  taskHandler: async (job) => {
+    const { serviceOrderId } = job.variables;
+    const eligible = await customerService.checkEligibility(serviceOrderId);
+
+    return job.complete({
+      eligible,
+      reason: eligible ? null : 'Customer has outstanding payments',
+    });
+  },
+});
+
+// Human task: Approve TV result
+// Handled via Camunda Tasklist UI or custom Control Tower integration
+```
+
+**Deployment**:
+- Camunda Platform 8 SaaS (cloud-hosted) OR self-hosted on Kubernetes
+- Components: Zeebe (engine), Operate (monitoring), Tasklist (human tasks), Optimize (analytics)
+
+---
+
+### E-Signature: Adobe Sign
+
+**Choice**: Adobe Sign (Adobe Acrobat Sign)
+
+**Rationale**:
+- **eIDAS-qualified**: Compliant with EU e-signature regulations (critical for ES, FR, IT, PL)
+- **Pre-existing license**: Already licensed by enterprise client (no procurement delay)
+- **Multi-party workflows**: Sequential/parallel signing (customer → technician → provider)
+- **Mobile-optimized**: Field technicians can sign on mobile devices
+- **Audit trail**: Tamper-evident, legally binding records (10-year retention)
+- **API-first**: REST API + webhooks for seamless integration
+
+**Use Cases in AHS FSM**:
+1. **Pre-Service Contracts**: Customer accepts terms, pricing, scope before work begins
+2. **Work Closing Forms (WCF)**: Customer validates work completion, triggers warranty
+3. **Provider Agreements**: Subcontractor contracts, SLA agreements, insurance verification
+
+**Integration Example**:
+```typescript
+import axios from 'axios';
+
+class AdobeSignService {
+  private apiClient = axios.create({
+    baseURL: process.env.ADOBE_SIGN_API_URL,
+    headers: {
+      'Authorization': `Bearer ${await vault.read('secret/data/adobe-sign-token')}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  async sendContractForSignature(contractId: string, recipientEmail: string) {
+    // 1. Upload contract PDF to Adobe Sign
+    const transientDocument = await this.apiClient.post('/transientDocuments', {
+      File: contractPdfBuffer,
+      FileName: `contract-${contractId}.pdf`,
+    });
+
+    // 2. Create signature agreement
+    const agreement = await this.apiClient.post('/agreements', {
+      fileInfos: [{ transientDocumentId: transientDocument.data.transientDocumentId }],
+      name: `Service Contract - ${contractId}`,
+      participantSetsInfo: [
+        {
+          memberInfos: [{ email: recipientEmail }],
+          order: 1,
+          role: 'SIGNER',
+        },
+      ],
+      signatureType: 'ESIGN',
+      state: 'IN_PROCESS',
+      emailOption: {
+        sendOptions: {
+          completionEmails: 'ALL',
+          inFlightEmails: 'ALL',
+        },
+      },
+    });
+
+    return agreement.data.id;
+  }
+
+  // Webhook handler for Adobe Sign events
+  async handleWebhook(event: AdobeSignWebhookEvent) {
+    switch (event.event) {
+      case 'AGREEMENT_WORKFLOW_COMPLETED':
+        // Download signed PDF, store in S3, update contract status
+        await this.downloadSignedDocument(event.agreementId);
+        await contractService.markAsSigned(event.agreementId);
+        break;
+
+      case 'AGREEMENT_USER_DECLINED':
+        // Handle customer rejection
+        await contractService.markAsRejected(event.agreementId, event.reason);
+        break;
+    }
+  }
+}
+```
+
+**Deployment**:
+- Adobe Sign SaaS (cloud-hosted)
+- EU data center for GDPR compliance
+- API credentials stored in HashiCorp Vault
+
+---
+
+### Messaging Service (SMS/Email Notifications)
+
+**Choice**: Enterprise-grade messaging service (e.g., Twilio, SendGrid, or client-specified provider)
+
+**Rationale**:
+- **Pre-existing contract**: Leverage enterprise client's existing messaging service license
+- **Multi-channel**: SMS (immediate), email (detailed), WhatsApp (optional)
+- **High deliverability**: Carrier relationships, global coverage (ES, FR, IT, PL)
+- **Compliance**: GDPR-compliant, opt-out management, consent tracking
+- **Localization**: Multi-language templates, country-specific sender IDs
+
+**Use Cases in AHS FSM**:
+1. **Assignment Notifications**: SMS to providers when new work is available
+2. **Appointment Reminders**: SMS to customers 24h before technician visit
+3. **En-Route Alerts**: "Technician is 15 minutes away"
+4. **Completion Confirmations**: "Work completed, please review WCF"
+5. **Contract Delivery**: Email with Adobe Sign link
+6. **CSAT Surveys**: Post-service satisfaction survey links
+
+**Integration Example**:
+```typescript
+// Adapter pattern for messaging provider abstraction
+interface IMessagingService {
+  sendSMS(to: string, message: string, options?: SMSOptions): Promise<void>;
+  sendEmail(to: string, subject: string, body: string, options?: EmailOptions): Promise<void>;
+}
+
+class TwilioMessagingService implements IMessagingService {
+  private client = twilio(
+    await vault.read('secret/data/twilio-account-sid'),
+    await vault.read('secret/data/twilio-auth-token')
+  );
+
+  async sendSMS(to: string, message: string, options?: SMSOptions) {
+    await this.client.messages.create({
+      body: message,
+      to: to,
+      from: process.env.TWILIO_PHONE_NUMBER,
+    });
+
+    // Publish event for tracking
+    await kafka.publish('notifications.sms.sent', {
+      recipient: to,
+      messageId: response.sid,
+      timestamp: new Date(),
+    });
+  }
+
+  async sendEmail(to: string, subject: string, body: string) {
+    // Use SendGrid for email
+    await sendgrid.send({
+      to,
+      from: 'noreply@ahs-fsm.com',
+      subject,
+      html: body,
+    });
+  }
+}
+
+// Notification orchestrator (consumes Kafka events)
+class NotificationService {
+  async onAssignmentCreated(event: AssignmentCreatedEvent) {
+    const provider = await providerService.getProvider(event.providerId);
+    const template = await this.getTemplate('assignment-offer', provider.language);
+
+    await messagingService.sendSMS(
+      provider.phone,
+      template.render({
+        providerName: provider.name,
+        serviceType: event.serviceType,
+        appointmentDate: event.appointmentDate,
+        acceptLink: `${process.env.APP_URL}/accept/${event.assignmentId}`,
+      })
+    );
+  }
+}
+```
+
+**Architecture**:
+```
+Kafka Event: assignment.offer.created
+   ↓
+Notification Service (NestJS)
+   ↓ (Render template, apply user preferences)
+Messaging Adapter
+   ↓ (Call provider API: Twilio, SendGrid, etc.)
+SMS/Email Provider
+   ↓ (Deliver to recipient)
+Webhook
+   ↓ (Delivery status: delivered/failed/bounced)
+Notification Service
+   ↓ (Update status in PostgreSQL, retry if failed)
+PostgreSQL
+```
+
+**Cost Optimization**:
+- Use email for non-urgent notifications (cheaper than SMS)
+- Batch notifications (daily digest vs. real-time)
+- Use push notifications for mobile app users (free)
+- Monitor per-message costs via Datadog metrics
+
+**Deployment**:
+- SaaS (Twilio, SendGrid, etc.)
+- API credentials stored in HashiCorp Vault
+- Multi-region support for EU compliance
 
 ## Development Tools
 
@@ -813,13 +1254,20 @@ const dbPassword = await getSecret('fsm/db/password');
 | Backend Language | Go, Java | **TypeScript** | Developer productivity, ecosystem |
 | Backend Framework | Express, Fastify | **NestJS** | Modularity, DI, structure |
 | ORM | TypeORM, Drizzle | **Prisma** | Type safety, DX, migrations |
-| Primary DB | MySQL, MongoDB | **PostgreSQL** | Features, JSON support, RLS |
+| Primary DB | MySQL, MongoDB | **PostgreSQL** ⚠️ REQUIRED | Features, JSON support, RLS |
 | Frontend | Vue, Angular | **React** | Ecosystem, talent pool |
 | Mobile | Native, Flutter | **React Native** | Code sharing, OTA updates |
-| Message Bus | RabbitMQ, AWS SQS | **Kafka** | Durability, replay, throughput |
-| Search | Elasticsearch | **OpenSearch** | Open source, no licensing |
-| Cache | Memcached | **Redis** | Data structures, features |
-| Observability | DataDog, New Relic | **Grafana Stack** | Cost, flexibility, open source |
+| Message Bus | RabbitMQ, AWS SQS, Outbox | **Kafka** ⚠️ REQUIRED | Enterprise requirement, durability, replay |
+| Search | Elasticsearch, OpenSearch | **PostgreSQL FTS** (defer OpenSearch) | Simplicity, avoid premature optimization |
+| Cache | Memcached | **Redis / Valkey** | Data structures, features |
+| Observability | Grafana, Prometheus, ELK | **Datadog** ⚠️ REQUIRED | Enterprise requirement, unified platform |
+| Secrets | AWS Secrets, Azure Key Vault | **HashiCorp Vault** ⚠️ REQUIRED | Enterprise requirement, cloud-agnostic |
+| SSO | Okta, Auth0 | **PingID** ⚠️ REQUIRED | Enterprise requirement, existing integration |
+| Workflow Engine | Temporal, AWS Step Functions | **Camunda Platform 8** | BPMN support, human tasks, audit trail |
+| E-Signature | DocuSign, Yousign | **Adobe Sign** | eIDAS-compliant, enterprise license |
+| Notifications | Twilio, SendGrid, AWS SES | **Enterprise Messaging Service** | Pre-existing contract, multi-channel |
+
+**Legend**: ⚠️ REQUIRED = Mandatory by enterprise client (non-negotiable)
 
 ## Migration Strategy
 
