@@ -503,6 +503,232 @@ topics:
       min_compaction_lag_ms: 3600000
       delete_retention_ms: 86400000
       min_cleanable_dirty_ratio: 0.5
+
+  # =====================================================================
+  # SALES INTEGRATION TOPICS (Multi-Sales-System Architecture)
+  # =====================================================================
+
+  # Pyxis Sales System Integration
+  - name: sales.pyxis.order.created
+    description: Incoming service orders from Pyxis sales system
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+    configs:
+      max_message_bytes: 2097152  # 2 MB (product configurations can be large)
+
+  - name: sales.pyxis.order.updated
+    description: Order updates from Pyxis (modifications, cancellations)
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: sales.pyxis.order.cancelled
+    description: Order cancellation events from Pyxis
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  # Tempo Sales System Integration
+  - name: sales.tempo.service.requested
+    description: Incoming service requests from Tempo sales system
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+    configs:
+      max_message_bytes: 2097152  # 2 MB
+
+  - name: sales.tempo.service.updated
+    description: Service request updates from Tempo
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: sales.tempo.service.cancelled
+    description: Service cancellation events from Tempo
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  # SAP Sales System Integration (Future)
+  - name: sales.sap.order.created
+    description: Incoming enterprise orders from SAP sales system
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+    configs:
+      max_message_bytes: 5242880  # 5 MB (SAP orders can be very large)
+
+  # Generic Sales Channel Events (Multi-Channel Support)
+  - name: sales.channel.store.order
+    description: Orders from physical store channel (all sales systems)
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: sales.channel.web.order
+    description: Orders from web channel (all sales systems)
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: sales.channel.callcenter.order
+    description: Orders from call center channel (all sales systems)
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  # FSM → Sales System Output Topics
+  - name: fsm.order.status_updated
+    description: Service order status updates sent back to sales systems
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: fsm.order.assigned
+    description: Assignment confirmations sent to sales systems
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: fsm.order.scheduled
+    description: Scheduling confirmations with date/time sent to sales systems
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: fsm.order.completed
+    description: Service completion confirmations sent to sales systems
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: fsm.tv.outcome_recorded
+    description: Technical Visit outcomes sent to sales systems
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: fsm.tv.modifications_required
+    description: Scope modification requests from TV sent to sales systems
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  # Sales Integration Internal Events
+  - name: integration.sales.order.received
+    description: Internal event when sales order is received (any system)
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 604800000  # 7 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: integration.sales.order.normalized
+    description: Internal event when sales order is successfully normalized to FSM model
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 604800000  # 7 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: integration.sales.order.failed
+    description: Internal event when sales order normalization/processing fails
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days (keep failures longer for analysis)
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: integration.sales.status.sent
+    description: Internal event when status update is sent to sales system
+    partitions: 24
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 604800000  # 7 days
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
+
+  - name: integration.sales.status.failed
+    description: Internal event when status update send fails
+    partitions: 12
+    replication_factor: 3
+    min_insync_replicas: 2
+    retention_ms: 2592000000  # 30 days (keep failures longer)
+    segment_ms: 86400000
+    compression_type: lz4
+    cleanup_policy: delete
 ```
 
 ### Topic Creation Script
@@ -606,6 +832,79 @@ create_topic "user.profile.snapshots" 12 3 -1 "lz4" "compact" \
 
 create_topic "task.state.snapshots" 48 3 -1 "lz4" "compact" \
     "--config min.insync.replicas=2 --config segment.ms=86400000 --config min.compaction.lag.ms=3600000 --config delete.retention.ms=86400000"
+
+# =====================================================================
+# SALES INTEGRATION TOPICS (Multi-Sales-System Architecture)
+# =====================================================================
+
+# Pyxis Sales System Integration
+create_topic "sales.pyxis.order.created" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000 --config max.message.bytes=2097152"
+
+create_topic "sales.pyxis.order.updated" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "sales.pyxis.order.cancelled" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+# Tempo Sales System Integration
+create_topic "sales.tempo.service.requested" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000 --config max.message.bytes=2097152"
+
+create_topic "sales.tempo.service.updated" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "sales.tempo.service.cancelled" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+# SAP Sales System Integration (Future)
+create_topic "sales.sap.order.created" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000 --config max.message.bytes=5242880"
+
+# Generic Sales Channel Events
+create_topic "sales.channel.store.order" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "sales.channel.web.order" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "sales.channel.callcenter.order" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+# FSM → Sales System Output Topics
+create_topic "fsm.order.status_updated" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "fsm.order.assigned" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "fsm.order.scheduled" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "fsm.order.completed" 24 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "fsm.tv.outcome_recorded" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "fsm.tv.modifications_required" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+# Sales Integration Internal Events
+create_topic "integration.sales.order.received" 24 3 604800000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "integration.sales.order.normalized" 24 3 604800000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "integration.sales.order.failed" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "integration.sales.status.sent" 24 3 604800000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
+
+create_topic "integration.sales.status.failed" 12 3 2592000000 "lz4" "delete" \
+    "--config min.insync.replicas=2 --config segment.ms=86400000"
 
 echo "All topics created successfully!"
 ```

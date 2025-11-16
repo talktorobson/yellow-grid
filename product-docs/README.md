@@ -16,6 +16,10 @@ High-level system design, technical decisions, and architectural patterns.
 - [Event-Driven Architecture](./architecture/05-event-driven-architecture.md)
 - [Multi-Tenancy Strategy](./architecture/06-multi-tenancy-strategy.md)
 - [Scalability & Resilience](./architecture/07-scalability-resilience.md)
+- [Architecture Simplification Options](./architecture/08-architecture-simplification-options.md)
+- [Enterprise Stack Requirements](./architecture/09-enterprise-stack-requirements.md) ⚠️ **Authoritative**
+- [Architecture Updates Summary](./architecture/10-architecture-updates-summary.md)
+- [Simplification Quick Reference](./architecture/11-simplification-quick-reference.md)
 
 ### 🏗️ Domain
 Business domain models, entities, and business logic specifications.
@@ -146,6 +150,13 @@ Documentation is living and should be updated as the system evolves:
 5. **Review together**: Documentation changes go through same PR process as code
 
 ## Version History
+
+- **v1.1.0** (2025-01-15): Documentation consolidation and enterprise stack alignment
+  - Added enterprise stack requirements (mandatory technologies)
+  - Consolidated all documentation into product-docs/
+  - Added architecture update history and decision matrices
+  - Updated database design with multi-sales-system support
+  - Completed PRD v2 gap analysis
 
 - **v1.0.0** (2025-01-14): Initial engineering documentation kit
   - Complete architecture specifications

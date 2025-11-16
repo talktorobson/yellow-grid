@@ -1,0 +1,2572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPC AI Assistant - Service Execution Cockpit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: #f3f4f6;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 64px;
+            background: linear-gradient(to bottom, #1e3a8a, #1e293b);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            gap: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-icon {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            position: relative;
+        }
+
+        .sidebar-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
+        }
+
+        .sidebar-icon.active {
+            background: #1e40af;
+        }
+
+        .sidebar-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .sidebar-badge.blue {
+            background: #3b82f6;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bell-icon {
+            font-size: 1.25rem;
+            color: #6b7280;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .bell-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.875rem;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow: hidden;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Metrics Grid - Compact */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        .metric-card {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.green-1 { background: #16a34a; }
+        .metric-card.green-2 { background: #15803d; }
+        .metric-card.green-3 { background: #166534; }
+        .metric-card.green-4 { background: #14532d; }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-icon {
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        /* Two Column Layout - No overflow */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .card-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .card-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-content::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .alert-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .alert-item:hover {
+            background: #f3f4f6;
+        }
+
+        .alert-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+            width: 32px;
+            flex-shrink: 0;
+        }
+
+        .alert-icon.red { color: #ef4444; }
+        .alert-icon.orange { color: #f97316; }
+        .alert-icon.yellow { color: #eab308; }
+
+        .alert-text {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.8rem;
+        }
+
+        .alert-subtitle {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .alert-count {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #374151;
+            flex-shrink: 0;
+        }
+
+        /* Priority Tasks - Compact */
+        .priority-task {
+            padding: 0.75rem;
+            background: linear-gradient(to right, #fef2f2, #fed7aa);
+            border-left: 3px solid #ef4444;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-left {
+            flex: 1;
+        }
+
+        .task-id {
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .task-badge {
+            padding: 0.15rem 0.4rem;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-left: 0.25rem;
+        }
+
+        .task-client {
+            font-size: 0.75rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .task-right {
+            text-align: right;
+        }
+
+        .task-value {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #16a34a;
+        }
+
+        .task-date {
+            font-size: 0.65rem;
+            color: #6b7280;
+            margin-top: 0.15rem;
+        }
+
+        .task-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.4rem;
+        }
+
+        .task-button {
+            padding: 0.4rem 0.6rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .task-button:hover {
+            background: #1d4ed8;
+        }
+
+        .task-button.green {
+            background: #16a34a;
+        }
+
+        .task-button.green:hover {
+            background: #15803d;
+        }
+
+        /* Chat Widget - Enlarged */
+        .chat-widget {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+        }
+
+        .chat-button {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #9333ea, #4f46e5);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .chat-button:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .chat-window {
+            width: 520px;
+            height: 720px;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(to right, #9333ea, #4f46e5);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .chat-header-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header-title {
+            font-weight: bold;
+        }
+
+        .chat-header-subtitle {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .chat-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .message {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+        }
+
+        .message.user .message-content {
+            background: #2563eb;
+            color: white;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+
+        .bot-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .bot-label i {
+            color: #9333ea;
+        }
+
+        .message-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .daily-summary {
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .summary-header {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 0.5rem;
+            border-radius: 0.4rem;
+            margin-bottom: 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .summary-project {
+            font-weight: 600;
+            color: #2563eb;
+            cursor: pointer;
+        }
+
+        .summary-project:hover {
+            text-decoration: underline;
+        }
+
+        .summary-action {
+            color: #4b5563;
+            margin-top: 0.15rem;
+        }
+
+        .chat-quick-actions {
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .quick-action-btn {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .quick-action-btn.purple {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        .quick-action-btn.purple:hover {
+            background: #e9d5ff;
+        }
+
+        .quick-action-btn.red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .quick-action-btn.red:hover {
+            background: #fecaca;
+        }
+
+        .quick-action-btn.blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .quick-action-btn.blue:hover {
+            background: #bfdbfe;
+        }
+
+        .quick-action-btn.green {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .quick-action-btn.green:hover {
+            background: #bbf7d0;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #9333ea;
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+        }
+
+        .chat-send {
+            padding: 0.6rem 1rem;
+            background: linear-gradient(to right, #9333ea, #4f46e5);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-send:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Customer Chat Panel - Conversations List */
+        .customer-chat-panel {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 480px;
+            height: 720px;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 999;
+        }
+
+        .customer-chat-header {
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .customer-chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .customer-avatar {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .customer-chat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .customer-chat-name {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .customer-chat-status {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .customer-chat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .customer-chat-action-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 1rem;
+        }
+
+        .customer-chat-action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Conversation List View */
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            background: #f9fafb;
+        }
+
+        .conversations-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .conversations-list::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .conversation-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .conversation-item:hover {
+            background: #f9fafb;
+        }
+
+        .conversation-item.unread {
+            background: #eff6ff;
+        }
+
+        .conversation-item.unread:hover {
+            background: #dbeafe;
+        }
+
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        .conversation-time {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .conversation-preview {
+            color: #6b7280;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .conversation-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .conversation-project {
+            font-size: 0.75rem;
+            color: #2563eb;
+            font-weight: 500;
+        }
+
+        .unread-badge {
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Conversation Detail View */
+        .conversation-detail {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .customer-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .customer-chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .customer-chat-messages::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        .customer-message {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+
+        .customer-message.customer-sent {
+            justify-content: flex-start;
+        }
+
+        .customer-message.cpc-sent {
+            justify-content: flex-end;
+        }
+
+        .customer-message-content {
+            max-width: 75%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .customer-message.customer-sent .customer-message-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .customer-message.cpc-sent .customer-message-content {
+            background: #10b981;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .customer-message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 0.25rem;
+        }
+
+        .customer-chat-input-area {
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .customer-chat-input-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .customer-chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 1.5rem;
+            font-size: 0.875rem;
+            outline: none;
+            resize: none;
+            max-height: 80px;
+        }
+
+        .customer-chat-input:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .customer-chat-send {
+            padding: 0.75rem 1rem;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .customer-chat-send:hover {
+            background: #059669;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .customer-chat-send:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .conversation-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .conversation-action-btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .conversation-action-btn.resolve {
+            background: #10b981;
+            color: white;
+        }
+
+        .conversation-action-btn.resolve:hover {
+            background: #059669;
+        }
+
+        .conversation-action-btn.pending {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .conversation-action-btn.pending:hover {
+            background: #e5e7eb;
+        }
+
+        /* Table Styles */
+        .table-container {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-blue {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-green {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-green:hover {
+            background: #15803d;
+        }
+
+        .table-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f9fafb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-badge.scheduled { background: #fef3c7; color: #92400e; }
+        .status-badge.distributed { background: #dbeafe; color: #1e40af; }
+        .status-badge.confirmed { background: #d1fae5; color: #065f46; }
+        .status-badge.in-progress { background: #e0e7ff; color: #3730a3; }
+
+        .action-icons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-icon {
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 1rem;
+        }
+
+        .action-icon.blue { color: #2563eb; }
+        .action-icon.blue:hover { color: #1d4ed8; }
+        .action-icon.green { color: #16a34a; }
+        .action-icon.green:hover { color: #15803d; }
+        .action-icon.purple { color: #9333ea; }
+        .action-icon.purple:hover { color: #7e22ce; }
+        .action-icon.orange { color: #f97316; }
+        .action-icon.orange:hover { color: #ea580c; }
+
+        .table-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .pagination button:hover {
+            background: #f3f4f6;
+        }
+
+        /* Timeline/Calendar Styles */
+        .timeline-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 0.25rem;
+        }
+
+        .calendar-wrapper {
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-scroll {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .calendar-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .calendar-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 200px repeat(14, 1fr);
+            border: 1px solid #e5e7eb;
+            min-height: 500px;
+            min-width: 1200px;
+        }
+
+        .calendar-header-cell {
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 2px solid #d1d5db;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .calendar-header-cell.project-col {
+            text-align: left;
+            padding: 0.75rem;
+            background: #1e40af;
+            color: white;
+            font-size: 0.85rem;
+            align-items: flex-start;
+            position: sticky;
+            left: 0;
+            z-index: 20;
+        }
+
+        .calendar-header-cell.today {
+            background: #dbeafe;
+            color: #1e40af;
+            font-weight: 700;
+            border-bottom: 3px solid #2563eb;
+        }
+
+        .calendar-header-cell .day-num {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .calendar-header-cell .day-name {
+            font-size: 0.65rem;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .calendar-row {
+            display: contents;
+        }
+
+        .calendar-project-cell {
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+
+        .project-name {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .project-meta {
+            font-size: 0.7rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .calendar-day-cell {
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+            background: white;
+            min-height: 60px;
+        }
+
+        .calendar-day-cell.today {
+            background: #eff6ff;
+        }
+
+        .calendar-day-cell.weekend {
+            background: #f9fafb;
+        }
+
+        .project-bar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            padding: 0 0.75rem;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 1;
+        }
+
+        .project-bar:hover {
+            z-index: 2;
+            transform: translateY(-50%) scale(1.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .project-bar.critical {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: pulse-glow 2s infinite;
+        }
+
+        .project-bar.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .project-bar.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .project-bar.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+            }
+            50% {
+                box-shadow: 0 4px 16px rgba(239, 68, 68, 0.6);
+            }
+        }
+
+        .project-bar-icon {
+            margin-right: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .project-bar-label {
+            flex: 1;
+        }
+
+        .project-bar-days {
+            margin-left: 0.5rem;
+            opacity: 0.8;
+            font-size: 0.65rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .chat-window, .customer-chat-panel {
+                width: 420px;
+                height: 650px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div style="font-size: 1.5rem; margin-bottom: 1rem;">
+                <i class="fas fa-home"></i>
+            </div>
+            <div class="sidebar-icon active" onclick="showTab('dashboard')" id="btn-dashboard" title="Dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+            </div>
+            <div class="sidebar-icon" onclick="showTab('tasks')" id="btn-tasks" title="Tasks">
+                <i class="fas fa-tasks"></i>
+                <span class="sidebar-badge">12</span>
+            </div>
+            <div class="sidebar-icon" onclick="showTab('timeline')" id="btn-timeline" title="Timeline">
+                <i class="fas fa-chart-gantt"></i>
+            </div>
+            <div class="sidebar-icon" onclick="toggleCustomerChat()" id="btn-messages" title="Customer Messages">
+                <i class="fas fa-comments"></i>
+                <span class="sidebar-badge blue">3</span>
+            </div>
+            <div class="sidebar-icon" title="Settings">
+                <i class="fas fa-cog"></i>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h1 class="header-title">Welcome, ROBSON</h1>
+                    <span class="badge">AI Assistant Active</span>
+                </div>
+                <div class="header-right">
+                    <div class="bell-icon">
+                        <i class="fas fa-bell"></i>
+                        <span class="bell-badge">12</span>
+                    </div>
+                    <div class="avatar">R</div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content">
+                    <!-- Metrics -->
+                    <div class="metrics-grid">
+                        <div class="metric-card green-1">
+                            <div class="metric-header">
+                                <i class="fas fa-file-signature metric-icon"></i>
+                            </div>
+                            <div class="metric-value">156</div>
+                            <div class="metric-label">Pre-Scheduled</div>
+                        </div>
+                        <div class="metric-card green-2">
+                            <div class="metric-header">
+                                <i class="fas fa-calendar-check metric-icon"></i>
+                            </div>
+                            <div class="metric-value">89</div>
+                            <div class="metric-label">Scheduled</div>
+                        </div>
+                        <div class="metric-card green-3">
+                            <div class="metric-header">
+                                <i class="fas fa-tools metric-icon"></i>
+                            </div>
+                            <div class="metric-value">34</div>
+                            <div class="metric-label">In Progress</div>
+                        </div>
+                        <div class="metric-card green-4">
+                            <div class="metric-header">
+                                <i class="fas fa-file-contract metric-icon"></i>
+                            </div>
+                            <div class="metric-value">23</div>
+                            <div class="metric-label">Awaiting WCF</div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts and Priority Tasks -->
+                    <div class="two-column">
+                        <!-- Alerts -->
+                        <div class="card">
+                            <h2 class="card-title">
+                                <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                                Critical Actions
+                            </h2>
+                            <div class="card-content">
+                                <div class="alert-item" onclick="quickAction('contact-customer', 'PX-377903', 'Ines Broncano')">
+                                    <div class="alert-left">
+                                        <i class="fas fa-file-signature alert-icon red"></i>
+                                        <div class="alert-text">
+                                            <div class="alert-title">Contract Not Signed (>72h)</div>
+                                            <div class="alert-subtitle">Customer signature needed</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-count">12</div>
+                                </div>
+                                <div class="alert-item" onclick="quickAction('assign-pro', 'SX-375742', 'Fernando Checa')">
+                                    <div class="alert-left">
+                                        <i class="fas fa-user-slash alert-icon orange"></i>
+                                        <div class="alert-text">
+                                            <div class="alert-title">Pro Allocation Failed</div>
+                                            <div class="alert-subtitle">Manual assignment required</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-count">8</div>
+                                </div>
+                                <div class="alert-item" onclick="quickAction('pro-no-show', 'SX-379364', 'Jose Leon')">
+                                    <div class="alert-left">
+                                        <i class="fas fa-calendar-times alert-icon red"></i>
+                                        <div class="alert-text">
+                                            <div class="alert-title">Pro No-Show / Late</div>
+                                            <div class="alert-subtitle">Pro didn't check-in on time</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-count">3</div>
+                                </div>
+                                <div class="alert-item">
+                                    <div class="alert-left">
+                                        <i class="fas fa-signature alert-icon yellow"></i>
+                                        <div class="alert-text">
+                                            <div class="alert-title">WCF Not Signed (>48h)</div>
+                                            <div class="alert-subtitle">Customer signature needed</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-count">7</div>
+                                </div>
+                                <div class="alert-item">
+                                    <div class="alert-left">
+                                        <i class="fas fa-exclamation-triangle alert-icon orange"></i>
+                                        <div class="alert-text">
+                                            <div class="alert-title">WCF Signed with Reserves</div>
+                                            <div class="alert-subtitle">Issues reported - action needed</div>
+                                        </div>
+                                    </div>
+                                    <div class="alert-count">5</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Priority Tasks -->
+                        <div class="card">
+                            <h2 class="card-title">
+                                <i class="fas fa-star" style="color: #f59e0b;"></i>
+                                High Priority (Next 24h)
+                            </h2>
+                            <div class="card-content">
+                                <div class="priority-task">
+                                    <div class="task-header">
+                                        <div class="task-left">
+                                            <div class="task-id">
+                                                #PX-377903
+                                                <span class="task-badge">CONTRACT</span>
+                                            </div>
+                                            <div class="task-client">Ines Broncano • Bathroom Reno</div>
+                                        </div>
+                                        <div class="task-right">
+                                            <div class="task-value">€3,850</div>
+                                            <div class="task-date">Tomorrow 9 AM</div>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions">
+                                        <button class="task-button" onclick="quickAction('contact-customer', 'PX-377903', 'Ines Broncano')">
+                                            <i class="fas fa-phone"></i> Call
+                                        </button>
+                                        <button class="task-button green">
+                                            <i class="fab fa-whatsapp"></i> Message
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="priority-task">
+                                    <div class="task-header">
+                                        <div class="task-left">
+                                            <div class="task-id">
+                                                #SX-375742
+                                                <span class="task-badge">NO PRO</span>
+                                            </div>
+                                            <div class="task-client">Fernando Checa • Kitchen Cabinets</div>
+                                        </div>
+                                        <div class="task-right">
+                                            <div class="task-value">€1,950</div>
+                                            <div class="task-date">Today 2 PM</div>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions">
+                                        <button class="task-button" onclick="quickAction('assign-pro', 'SX-375742', 'Fernando Checa')">
+                                            <i class="fas fa-user-plus"></i> Assign
+                                        </button>
+                                        <button class="task-button green">
+                                            <i class="fab fa-whatsapp"></i> Message
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="priority-task">
+                                    <div class="task-header">
+                                        <div class="task-left">
+                                            <div class="task-id">
+                                                #SX-379364
+                                                <span class="task-badge">NO-SHOW</span>
+                                            </div>
+                                            <div class="task-client">Jose Leon • Wardrobe Install</div>
+                                        </div>
+                                        <div class="task-right">
+                                            <div class="task-value">€685</div>
+                                            <div class="task-date">Today 10 AM</div>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions">
+                                        <button class="task-button" onclick="quickAction('pro-no-show', 'SX-379364', 'Jose Leon')">
+                                            <i class="fas fa-phone-slash"></i> Handle
+                                        </button>
+                                        <button class="task-button green">
+                                            <i class="fab fa-whatsapp"></i> Message
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="priority-task">
+                                    <div class="task-header">
+                                        <div class="task-left">
+                                            <div class="task-id">
+                                                #SX-379342
+                                                <span class="task-badge">EXTRA COST</span>
+                                            </div>
+                                            <div class="task-client">Antonio Diaz • Plumbing</div>
+                                        </div>
+                                        <div class="task-right">
+                                            <div class="task-value">€820</div>
+                                            <div class="task-date">Today (now)</div>
+                                        </div>
+                                    </div>
+                                    <div class="task-actions">
+                                        <button class="task-button">
+                                            <i class="fas fa-euro-sign"></i> Review
+                                        </button>
+                                        <button class="task-button green">
+                                            <i class="fab fa-whatsapp"></i> Confirm
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Tab -->
+                <div id="tab-tasks" class="tab-content hidden">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Service Execution Management</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-blue">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                                <button class="btn btn-green">
+                                    <i class="fas fa-sort"></i> Sort
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>PROJECT</th>
+                                        <th>STATUS</th>
+                                        <th>CLIENT</th>
+                                        <th>SERVICE</th>
+                                        <th>VALUE</th>
+                                        <th>DATE/PRO</th>
+                                        <th>ACTION NEEDED</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="font-weight: 600;">#PX-377903</td>
+                                        <td><span class="status-badge scheduled">Scheduled</span></td>
+                                        <td>Ines Broncano<br><span style="font-size: 0.75rem; color: #6b7280;">+34 696 124 147</span></td>
+                                        <td style="font-size: 0.85rem;">Bathroom Renovation<br><span style="color: #6b7280; font-size: 0.75rem;">Tile + Plumbing + Fixtures</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€3,850</td>
+                                        <td style="font-size: 0.8rem;">Tomorrow 9 AM<br>🔍 Not assigned</td>
+                                        <td><span style="color: #dc2626; font-weight: 600; font-size: 0.8rem;">Contract not signed (72h)</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-phone action-icon blue" title="Call" onclick="quickAction('contact-customer', 'PX-377903', 'Ines Broncano')"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp" onclick="quickAction('send-sms', 'PX-377903', 'Ines Broncano')"></i>
+                                                <i class="fas fa-envelope action-icon purple" title="Email"></i>
+                                                <i class="fas fa-file-contract action-icon orange" title="Resend Contract"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600;">#SX-375742</td>
+                                        <td><span class="status-badge scheduled">Scheduled</span></td>
+                                        <td>Fernando Checa<br><span style="font-size: 0.75rem; color: #6b7280;">+34 661 975 131</span></td>
+                                        <td style="font-size: 0.85rem;">Kitchen Cabinets<br><span style="color: #6b7280; font-size: 0.75rem;">Installation + Electrical</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€1,950</td>
+                                        <td style="font-size: 0.8rem;">Today 2 PM<br>🔍 Assignment needed</td>
+                                        <td><span style="color: #dc2626; font-weight: 600; font-size: 0.8rem;">Auto-assignment failed</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-user-plus action-icon blue" title="Assign Pro" onclick="quickAction('assign-pro', 'SX-375742', 'Fernando Checa')"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp"></i>
+                                                <i class="fas fa-calendar action-icon purple" title="Reschedule"></i>
+                                                <i class="fas fa-phone action-icon orange" title="Call"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600;">#SX-379364</td>
+                                        <td><span class="status-badge confirmed">Confirmed</span></td>
+                                        <td>Jose Leon Gañan<br><span style="font-size: 0.75rem; color: #6b7280;">+34 657 569 490</span></td>
+                                        <td style="font-size: 0.85rem;">Wardrobe Install<br><span style="color: #6b7280; font-size: 0.75rem;">Large 3-door custom</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€685</td>
+                                        <td style="font-size: 0.8rem;">Today 10 AM<br>👷 Manuel Silva</td>
+                                        <td><span style="color: #dc2626; font-weight: 600; font-size: 0.8rem;">Pro no check-in</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-phone action-icon blue" title="Call Pro"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp"></i>
+                                                <i class="fas fa-user-times action-icon orange" title="Reassign"></i>
+                                                <i class="fas fa-envelope action-icon purple" title="Email"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600;">#SX-379342</td>
+                                        <td><span class="status-badge in-progress">In Progress</span></td>
+                                        <td>Antonio Diaz<br><span style="font-size: 0.75rem; color: #6b7280;">+34 676 746 765</span></td>
+                                        <td style="font-size: 0.85rem;">Plumbing Repair<br><span style="color: #6b7280; font-size: 0.75rem;">Water heater install</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€820<br><span style="font-size: 0.7rem; color: #dc2626;">+€280</span></td>
+                                        <td style="font-size: 0.8rem;">Today (now)<br>👷 Carlos Mendes</td>
+                                        <td><span style="color: #dc2626; font-weight: 600; font-size: 0.8rem;">Extra cost request</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-euro-sign action-icon purple" title="Review Cost"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp"></i>
+                                                <i class="fas fa-phone action-icon blue" title="Call Pro"></i>
+                                                <i class="fas fa-check action-icon orange" title="Approve"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600;">#SX-379363</td>
+                                        <td><span class="status-badge distributed">Distributed</span></td>
+                                        <td>Sonia Alonso<br><span style="font-size: 0.75rem; color: #6b7280;">+34 619 148 443</span></td>
+                                        <td style="font-size: 0.85rem;">Central Heating<br><span style="color: #6b7280; font-size: 0.75rem;">Incident resolution</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€420</td>
+                                        <td style="font-size: 0.8rem;">Oct 9, 10 AM<br>⏳ Awaiting acceptance</td>
+                                        <td><span style="color: #f59e0b; font-weight: 600; font-size: 0.8rem;">Awaiting Pro confirm</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-clock action-icon blue" title="Monitor"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp"></i>
+                                                <i class="fas fa-user-plus action-icon purple" title="Reassign"></i>
+                                                <i class="fas fa-phone action-icon orange" title="Call"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="font-weight: 600;">#SX-380125</td>
+                                        <td><span class="status-badge scheduled">Scheduled</span></td>
+                                        <td>Maria Santos<br><span style="font-size: 0.75rem; color: #6b7280;">+34 689 234 567</span></td>
+                                        <td style="font-size: 0.85rem;">Hardwood Flooring<br><span style="color: #6b7280; font-size: 0.75rem;">Complete installation</span></td>
+                                        <td style="font-weight: bold; color: #16a34a;">€2,340</td>
+                                        <td style="font-size: 0.8rem;">Oct 3, 9 AM<br>👷 João Silva</td>
+                                        <td><span style="color: #10b981; font-weight: 600; font-size: 0.8rem;">On track</span></td>
+                                        <td>
+                                            <div class="action-icons">
+                                                <i class="fas fa-eye action-icon blue" title="View"></i>
+                                                <i class="fab fa-whatsapp action-icon green" title="WhatsApp"></i>
+                                                <i class="fas fa-phone action-icon purple" title="Call"></i>
+                                                <i class="fas fa-calendar action-icon orange" title="Schedule"></i>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="table-footer">
+                            <div style="font-size: 0.875rem; color: #374151;">Showing 6 of 302 total tasks</div>
+                            <div class="pagination">
+                                <button><i class="fas fa-chevron-left"></i></button>
+                                <span style="padding: 0 1rem;">Page 1 of 51</span>
+                                <button><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Tab -->
+                <div id="tab-timeline" class="tab-content hidden">
+                    <div class="timeline-container">
+                        <div class="timeline-header">
+                            <h2 class="table-title">Project Calendar - Next 2 Weeks</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-blue">
+                                    <i class="fas fa-calendar-week"></i> This Week
+                                </button>
+                                <button class="btn" style="background: #e5e7eb; color: #374151;">
+                                    <i class="fas fa-calendar-month"></i> This Month
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-box" style="background: linear-gradient(135deg, #ef4444, #dc2626);"></div>
+                                <span>Critical (needs action)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-box" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+                                <span>Attention needed</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-box" style="background: linear-gradient(135deg, #3b82f6, #2563eb);"></div>
+                                <span>In progress</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-box" style="background: linear-gradient(135deg, #10b981, #059669);"></div>
+                                <span>On track</span>
+                            </div>
+                        </div>
+
+                        <div class="calendar-wrapper">
+                            <div class="calendar-scroll">
+                                <div class="calendar-grid">
+                                    <!-- Header Row -->
+                                    <div class="calendar-header-cell project-col">Project / Service</div>
+                                    <div class="calendar-header-cell today">
+                                        <div class="day-num">30</div>
+                                        <div class="day-name">MON</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">1</div>
+                                        <div class="day-name">TUE</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">2</div>
+                                        <div class="day-name">WED</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">3</div>
+                                        <div class="day-name">THU</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">4</div>
+                                        <div class="day-name">FRI</div>
+                                    </div>
+                                    <div class="calendar-header-cell weekend">
+                                        <div class="day-num">5</div>
+                                        <div class="day-name">SAT</div>
+                                    </div>
+                                    <div class="calendar-header-cell weekend">
+                                        <div class="day-num">6</div>
+                                        <div class="day-name">SUN</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">7</div>
+                                        <div class="day-name">MON</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">8</div>
+                                        <div class="day-name">TUE</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">9</div>
+                                        <div class="day-name">WED</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">10</div>
+                                        <div class="day-name">THU</div>
+                                    </div>
+                                    <div class="calendar-header-cell">
+                                        <div class="day-num">11</div>
+                                        <div class="day-name">FRI</div>
+                                    </div>
+                                    <div class="calendar-header-cell weekend">
+                                        <div class="day-num">12</div>
+                                        <div class="day-name">SAT</div>
+                                    </div>
+                                    <div class="calendar-header-cell weekend">
+                                        <div class="day-num">13</div>
+                                        <div class="day-name">SUN</div>
+                                    </div>
+
+                                    <!-- Project Row 1: Bathroom Renovation -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#PX-377903</div>
+                                            <div class="project-meta">Bathroom Reno<br>Ines Broncano • €3,850</div>
+                                        </div>
+                                        <div class="calendar-day-cell today">
+                                            <div class="project-bar critical" style="left: 5%; width: calc(100% + 90%);">
+                                                <i class="fas fa-exclamation-triangle project-bar-icon"></i>
+                                                <span class="project-bar-label">Contract Pending</span>
+                                                <span class="project-bar-days">12d</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+
+                                    <!-- Project Row 2: Kitchen Cabinets -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#SX-375742</div>
+                                            <div class="project-meta">Kitchen Cabinets<br>Fernando Checa • €1,950</div>
+                                        </div>
+                                        <div class="calendar-day-cell today">
+                                            <div class="project-bar warning" style="left: 5%; width: calc(100% + 290%);">
+                                                <i class="fas fa-user-slash project-bar-icon"></i>
+                                                <span class="project-bar-label">No Pro Assigned</span>
+                                                <span class="project-bar-days">6d</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+
+                                    <!-- Project Row 3: Wardrobe -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#SX-379364</div>
+                                            <div class="project-meta">Wardrobe Install<br>Jose Leon • €685</div>
+                                        </div>
+                                        <div class="calendar-day-cell today">
+                                            <div class="project-bar active" style="left: 5%; width: calc(100% + 90%);">
+                                                <i class="fas fa-tools project-bar-icon"></i>
+                                                <span class="project-bar-label">In Progress</span>
+                                                <span class="project-bar-days">3d</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+
+                                    <!-- Project Row 4: Plumbing -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#SX-379342</div>
+                                            <div class="project-meta">Plumbing + Heater<br>Antonio Diaz • €820</div>
+                                        </div>
+                                        <div class="calendar-day-cell today">
+                                            <div class="project-bar active" style="left: 5%; width: 90%;">
+                                                <i class="fas fa-wrench project-bar-icon"></i>
+                                                <span class="project-bar-label">Today</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+
+                                    <!-- Project Row 5: Central Heating -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#SX-379363</div>
+                                            <div class="project-meta">Central Heating<br>Sonia Alonso • €420</div>
+                                        </div>
+                                        <div class="calendar-day-cell today"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell">
+                                            <div class="project-bar success" style="left: 5%; width: calc(100% + 90%);">
+                                                <i class="fas fa-calendar-check project-bar-icon"></i>
+                                                <span class="project-bar-label">Oct 9-11</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+
+                                    <!-- Project Row 6: Floor Installation -->
+                                    <div class="calendar-row">
+                                        <div class="calendar-project-cell">
+                                            <div class="project-name">#SX-380125</div>
+                                            <div class="project-meta">Hardwood Flooring<br>Maria Santos • €2,340</div>
+                                        </div>
+                                        <div class="calendar-day-cell today"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell">
+                                            <div class="project-bar success" style="left: 5%; width: calc(100% + 390%);">
+                                                <i class="fas fa-hammer project-bar-icon"></i>
+                                                <span class="project-bar-label">Flooring Install</span>
+                                                <span class="project-bar-days">7d</span>
+                                            </div>
+                                        </div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                        <div class="calendar-day-cell weekend"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Chat Widget -->
+    <div class="chat-widget">
+        <button class="chat-button" id="chat-button" onclick="toggleChat()">
+            <i class="fas fa-robot"></i>
+        </button>
+
+        <div class="chat-window hidden" id="chat-window">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <div class="chat-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="chat-header-info">
+                        <div class="chat-header-title">CPC AI Assistant</div>
+                        <div class="chat-header-subtitle">AI + Human Support</div>
+                    </div>
+                </div>
+                <button class="chat-close" onclick="toggleChat()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot">
+                    <div class="message-content">
+                        <div class="bot-label">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Assistant</span>
+                        </div>
+                        <div class="message-text">Hello Robson! I can help you with contract issues, Pro assignments, scheduling, and customer communication. What would you like to work on?</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-quick-actions">
+                <button class="quick-action-btn red" onclick="sendQuickMessage('contracts')">
+                    📝 Contracts
+                </button>
+                <button class="quick-action-btn purple" onclick="sendQuickMessage('assign pros')">
+                    👷 Assign Pros
+                </button>
+                <button class="quick-action-btn blue" onclick="sendQuickMessage('daily summary')">
+                    📊 Daily Summary
+                </button>
+                <button class="quick-action-btn green" onclick="sendQuickMessage('wcf status')">
+                    ✏️ WCF Status
+                </button>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chat-input" placeholder="Ask anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button class="chat-send" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Chat Panel -->
+    <div class="customer-chat-panel hidden" id="customer-chat-panel">
+        <!-- Conversations List View -->
+        <div id="conversations-list-view">
+            <div class="customer-chat-header">
+                <div class="customer-chat-header-left">
+                    <div class="customer-avatar">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="customer-chat-info">
+                        <div class="customer-chat-name">Customer Messages</div>
+                        <div class="customer-chat-status">3 unread conversations</div>
+                    </div>
+                </div>
+                <div class="customer-chat-actions">
+                    <button class="customer-chat-action-btn" onclick="toggleCustomerChat()" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="conversations-list">
+                <div class="conversation-item unread" onclick="openConversation('Maria Santos', '#SX-380125')">
+                    <div class="conversation-header">
+                        <div class="conversation-name">Maria Santos</div>
+                        <div class="conversation-time">10:27 AM</div>
+                    </div>
+                    <div class="conversation-preview">Perfect! That's exactly what I needed to know. Thank you!</div>
+                    <div class="conversation-meta">
+                        <div class="conversation-project">#SX-380125 - Flooring</div>
+                        <div class="unread-badge">2</div>
+                    </div>
+                </div>
+
+                <div class="conversation-item unread" onclick="openConversation('Fernando Checa', '#SX-375742')">
+                    <div class="conversation-header">
+                        <div class="conversation-name">Fernando Checa</div>
+                        <div class="conversation-time">9:45 AM</div>
+                    </div>
+                    <div class="conversation-preview">Hi, I haven't received confirmation about the Pro assignment yet. Is everything ok for today at 2 PM?</div>
+                    <div class="conversation-meta">
+                        <div class="conversation-project">#SX-375742 - Kitchen</div>
+                        <div class="unread-badge">1</div>
+                    </div>
+                </div>
+
+                <div class="conversation-item unread" onclick="openConversation('Ines Broncano', '#PX-377903')">
+                    <div class="conversation-header">
+                        <div class="conversation-name">Ines Broncano Marin</div>
+                        <div class="conversation-time">Yesterday</div>
+                    </div>
+                    <div class="conversation-preview">I received the contract but I have some questions about the payment terms before signing...</div>
+                    <div class="conversation-meta">
+                        <div class="conversation-project">#PX-377903 - Bathroom</div>
+                        <div class="unread-badge">3</div>
+                    </div>
+                </div>
+
+                <div class="conversation-item" onclick="openConversation('Jose Leon', '#SX-379364')">
+                    <div class="conversation-header">
+                        <div class="conversation-name">Jose Leon Gañan</div>
+                        <div class="conversation-time">Yesterday</div>
+                    </div>
+                    <div class="conversation-preview">Thank you for the quick response! Looking forward to the installation.</div>
+                    <div class="conversation-meta">
+                        <div class="conversation-project">#SX-379364 - Wardrobe</div>
+                    </div>
+                </div>
+
+                <div class="conversation-item" onclick="openConversation('Antonio Diaz', '#SX-379342')">
+                    <div class="conversation-header">
+                        <div class="conversation-name">Antonio Diaz Bueno</div>
+                        <div class="conversation-time">2 days ago</div>
+                    </div>
+                    <div class="conversation-preview">The Pro mentioned extra costs. Can you explain what these are for?</div>
+                    <div class="conversation-meta">
+                        <div class="conversation-project">#SX-379342 - Plumbing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversation Detail View -->
+        <div id="conversation-detail-view" class="hidden">
+            <div class="customer-chat-header">
+                <div class="customer-chat-header-left">
+                    <div class="customer-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="customer-chat-info">
+                        <div class="customer-chat-name" id="conversation-customer-name">Maria Santos</div>
+                        <div class="customer-chat-status" id="conversation-project-id">#SX-380125 - Flooring</div>
+                    </div>
+                </div>
+                <div class="customer-chat-actions">
+                    <button class="customer-chat-action-btn" onclick="alert('View profile...')" title="Profile">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <button class="customer-chat-action-btn" onclick="alert('Call customer...')" title="Call">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                    <button class="customer-chat-action-btn" onclick="closeConversation()" title="Back">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="customer-chat-messages" id="conversation-messages">
+                <div class="customer-message customer-sent">
+                    <div class="customer-message-content">
+                        Hi! I have a question about my hardwood flooring installation scheduled for October 3rd.
+                        <div class="customer-message-time">10:23 AM</div>
+                    </div>
+                </div>
+
+                <div class="customer-message cpc-sent">
+                    <div class="customer-message-content">
+                        Hello Maria! I'd be happy to help. What would you like to know about your installation?
+                        <div class="customer-message-time">10:24 AM</div>
+                    </div>
+                </div>
+
+                <div class="customer-message customer-sent">
+                    <div class="customer-message-content">
+                        Will the Pro bring all the necessary tools and materials, or do I need to prepare anything?
+                        <div class="customer-message-time">10:25 AM</div>
+                    </div>
+                </div>
+
+                <div class="customer-message cpc-sent">
+                    <div class="customer-message-content">
+                        The Pro will bring all professional tools needed. Please ensure the area is cleared of furniture and the subfloor is clean.
+                        <div class="customer-message-time">10:26 AM</div>
+                    </div>
+                </div>
+
+                <div class="customer-message customer-sent">
+                    <div class="customer-message-content">
+                        Perfect! That's exactly what I needed to know. Thank you!
+                        <div class="customer-message-time">10:27 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="customer-chat-input-area">
+                <div class="customer-chat-input-container">
+                    <textarea class="customer-chat-input" id="customer-chat-input" placeholder="Type a message..." rows="1"></textarea>
+                    <button class="customer-chat-send" onclick="sendCustomerMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                <div class="conversation-actions">
+                    <button class="conversation-action-btn resolve" onclick="resolveConversation()">
+                        <i class="fas fa-check-circle"></i> Mark as Resolved
+                    </button>
+                    <button class="conversation-action-btn pending" onclick="leavePending()">
+                        <i class="fas fa-clock"></i> Leave Pending
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            const targetTab = document.getElementById('tab-' + tabName);
+            if (targetTab) targetTab.classList.remove('hidden');
+            
+            document.querySelectorAll('.sidebar-icon').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const targetBtn = document.getElementById('btn-' + tabName);
+            if (targetBtn) targetBtn.classList.add('active');
+        }
+
+        // Chat Management
+        function toggleChat() {
+            const button = document.getElementById('chat-button');
+            const window = document.getElementById('chat-window');
+            
+            if (window.classList.contains('hidden')) {
+                button.classList.add('hidden');
+                window.classList.remove('hidden');
+            } else {
+                button.classList.remove('hidden');
+                window.classList.add('hidden');
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addChatMessage('user', message);
+            input.value = '';
+
+            setTimeout(() => {
+                const botResponse = generateBotResponse(message);
+                addBotMessage(botResponse);
+            }, 800);
+        }
+
+        function sendQuickMessage(message) {
+            addChatMessage('user', message);
+            setTimeout(() => {
+                const botResponse = generateBotResponse(message);
+                addBotMessage(botResponse);
+            }, 800);
+        }
+
+        function addChatMessage(type, text) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + type;
+            
+            if (type === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-text">${text}</div>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="bot-label">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Assistant</span>
+                        </div>
+                        <div class="message-text">${text}</div>
+                    </div>
+                `;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addBotMessage(text) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="bot-label">
+                        <i class="fas fa-robot"></i>
+                        <span>AI Assistant</span>
+                    </div>
+                    <div class="message-text">${text}</div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function generateBotResponse(message) {
+            const lower = message.toLowerCase();
+            
+            if (lower.includes('daily summary') || lower.includes('summary')) {
+                return `<strong>📊 Daily Summary - ${new Date().toLocaleDateString()}</strong><br><br>
+                    <div class="daily-summary">
+                        <div class="summary-header">
+                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                            <span>Actions Completed Today</span>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-project" onclick="alert('Opening #PX-377903...')">#PX-377903 - Ines Broncano</div>
+                            <div class="summary-action">✓ Called customer (10:15 AM) - Contract signed via SMS</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-project" onclick="alert('Opening #SX-375742...')">#SX-375742 - Fernando Checa</div>
+                            <div class="summary-action">✓ Assigned Pro: Silva Instalações (11:30 AM)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-project" onclick="alert('Opening #SX-379364...')">#SX-379364 - Jose Leon</div>
+                            <div class="summary-action">✓ Handled Pro no-show - Reassigned to backup Pro (12:45 PM)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-project" onclick="alert('Opening #SX-379342...')">#SX-379342 - Antonio Diaz</div>
+                            <div class="summary-action">✓ Approved extra cost €280 - Customer confirmed via WhatsApp (2:20 PM)</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-project" onclick="alert('Opening #SX-378912...')">#SX-378912 - Customer Name</div>
+                            <div class="summary-action">✓ Received WCF signature - Project closed (3:15 PM)</div>
+                        </div>
+                    </div>
+                    <br><strong>📈 Today's Performance</strong><br>
+                    • 5 projects resolved<br>
+                    • €7,585 total value processed<br>
+                    • 12 customer contacts made<br>
+                    • 95% resolution rate`;
+            } else if (lower.includes('contract')) {
+                return 'You have 12 contracts awaiting signature (>72h). Most urgent: <strong>#PX-377903</strong> - Ines Broncano (€3,850, scheduled tomorrow 9 AM). Would you like me to help contact this customer?';
+            } else if (lower.includes('pro') || lower.includes('assign')) {
+                return 'Found 8 projects needing Pro assignment. Most urgent: <strong>#SX-375742</strong> - Fernando Checa (€1,950, today 2 PM). I found 3 matching Pros: Silva Instalações (95% rating, 2.5km). Assign now?';
+            } else if (lower.includes('wcf')) {
+                return 'You have 7 WCF pending signatures (>48h) and 5 signed with reserves. Most urgent: <strong>#SX-378912</strong> needs follow-up. Customer hasn\'t signed after 3 days.';
+            } else {
+                return 'I analyzed your workload. You have:<br>🔴 <strong>12 urgent actions</strong> (next 4h)<br>🟡 <strong>23 attention needed</strong> (today)<br>🟢 <strong>34 on track</strong><br><br>Top priority: Contact 3 customers for contracts before 5 PM. Type "daily summary" to see what you\'ve accomplished today!';
+            }
+        }
+
+        // Customer Chat Management
+        function toggleCustomerChat() {
+            const chatPanel = document.getElementById('customer-chat-panel');
+            if (chatPanel) {
+                chatPanel.classList.toggle('hidden');
+                if (!chatPanel.classList.contains('hidden')) {
+                    // Reset to list view
+                    document.getElementById('conversations-list-view').classList.remove('hidden');
+                    document.getElementById('conversation-detail-view').classList.add('hidden');
+                }
+            }
+        }
+
+        function openConversation(customerName, projectId) {
+            document.getElementById('conversations-list-view').classList.add('hidden');
+            document.getElementById('conversation-detail-view').classList.remove('hidden');
+            document.getElementById('conversation-customer-name').textContent = customerName;
+            document.getElementById('conversation-project-id').textContent = projectId;
+        }
+
+        function closeConversation() {
+            document.getElementById('conversation-detail-view').classList.add('hidden');
+            document.getElementById('conversations-list-view').classList.remove('hidden');
+        }
+
+        function sendCustomerMessage() {
+            const input = document.getElementById('customer-chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const messagesDiv = document.getElementById('conversation-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'customer-message cpc-sent';
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="customer-message-content">
+                    ${message}
+                    <div class="customer-message-time">${timeStr}</div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            input.value = '';
+        }
+
+        function resolveConversation() {
+            const customerName = document.getElementById('conversation-customer-name').textContent;
+            alert(`Conversation with ${customerName} marked as resolved!`);
+            closeConversation();
+        }
+
+        function leavePending() {
+            const customerName = document.getElementById('conversation-customer-name').textContent;
+            alert(`Conversation with ${customerName} left as pending for follow-up.`);
+            closeConversation();
+        }
+
+        // Action handlers
+        function quickAction(action, id, clientName) {
+            toggleChat();
+            setTimeout(() => {
+                addChatMessage('user', `Help with ${action} for ${clientName} (${id})`);
+                setTimeout(() => {
+                    addBotMessage(`I'm opening the ${action} interface for ${clientName}. You can call them at their registered number or send a WhatsApp message. Would you like me to draft a message?`);
+                }, 1000);
+            }, 100);
+        }
+    </script>
+</body>
+</html>

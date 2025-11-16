@@ -1,0 +1,251 @@
+{
+  "namespace": "com.ahs.fsm.events.v2",
+  "doc": "v2.0 Domain Events for FSM Platform - External references, project ownership, sales potential, risk assessment",
+  "schemas": [
+    {
+      "type": "record",
+      "name": "SalesPotentialAssessed",
+      "namespace": "com.ahs.fsm.events.v2.sales",
+      "doc": "Event emitted when AI assesses sales potential for a TV/Quotation service order",
+      "fields": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "doc": "Unique event identifier (UUID)"
+        },
+        {
+          "name": "eventType",
+          "type": "string",
+          "default": "SalesPotentialAssessed"
+        },
+        {
+          "name": "timestamp",
+          "type": "long",
+          "logicalType": "timestamp-millis",
+          "doc": "Event timestamp in milliseconds since epoch"
+        },
+        {
+          "name": "serviceOrderId",
+          "type": "string",
+          "doc": "Service Order ID (UUID)"
+        },
+        {
+          "name": "potential",
+          "type": {
+            "type": "enum",
+            "name": "SalesPotential",
+            "symbols": ["LOW", "MEDIUM", "HIGH"]
+          },
+          "doc": "Assessed sales potential level"
+        },
+        {
+          "name": "score",
+          "type": "float",
+          "doc": "Sales potential score (0-100)"
+        },
+        {
+          "name": "confidence",
+          "type": "float",
+          "doc": "Model confidence score (0-100)"
+        },
+        {
+          "name": "reasoning",
+          "type": {
+            "type": "array",
+            "items": "string"
+          },
+          "doc": "Human-readable reasoning for the assessment"
+        },
+        {
+          "name": "modelVersion",
+          "type": ["null", "string"],
+          "default": null,
+          "doc": "ML model version used for assessment"
+        },
+        {
+          "name": "metadata",
+          "type": {
+            "type": "record",
+            "name": "EventMetadata",
+            "fields": [
+              {"name": "correlationId", "type": "string"},
+              {"name": "causationId", "type": "string"},
+              {"name": "userId", "type": ["null", "string"], "default": null},
+              {"name": "countryCode", "type": "string"},
+              {"name": "businessUnit", "type": "string"}
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "record",
+      "name": "PreEstimationLinked",
+      "namespace": "com.ahs.fsm.events.v2.sales",
+      "doc": "Event emitted when a pre-estimation from sales system is linked to a service order",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "PreEstimationLinked"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {"name": "preEstimationId", "type": "string"},
+        {
+          "name": "estimatedValue",
+          "type": {
+            "type": "record",
+            "name": "Money",
+            "fields": [
+              {"name": "amount", "type": "double"},
+              {"name": "currency", "type": "string", "default": "EUR"}
+            ]
+          }
+        },
+        {"name": "salesSystemSource", "type": {"type": "enum", "name": "SalesSystem", "symbols": ["PYXIS", "TEMPO", "SAP"]}},
+        {"name": "metadata", "type": "com.ahs.fsm.events.v2.sales.EventMetadata"}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "SalesmanNotesUpdated",
+      "namespace": "com.ahs.fsm.events.v2.sales",
+      "doc": "Event emitted when salesman notes are updated (triggers sales potential reassessment)",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "SalesmanNotesUpdated"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {"name": "notes", "type": "string"},
+        {"name": "updatedBy", "type": "string"},
+        {"name": "metadata", "type": "com.ahs.fsm.events.v2.sales.EventMetadata"}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "RiskAssessed",
+      "namespace": "com.ahs.fsm.events.v2.risk",
+      "doc": "Event emitted when AI assesses risk for a service order",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "RiskAssessed"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {
+          "name": "riskLevel",
+          "type": {
+            "type": "enum",
+            "name": "RiskLevel",
+            "symbols": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+          }
+        },
+        {"name": "riskScore", "type": "float"},
+        {"name": "confidence", "type": "float"},
+        {
+          "name": "riskFactors",
+          "type": {
+            "type": "array",
+            "items": {
+              "type": "record",
+              "name": "RiskFactor",
+              "fields": [
+                {"name": "factor", "type": "string"},
+                {"name": "description", "type": "string"},
+                {"name": "weight", "type": "float"},
+                {"name": "severity", "type": {"type": "enum", "name": "Severity", "symbols": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]}}
+              ]
+            }
+          }
+        },
+        {"name": "triggeredBy", "type": "string"},
+        {"name": "modelVersion", "type": ["null", "string"], "default": null},
+        {"name": "metadata", "type": {"type": "record", "name": "RiskEventMetadata", "fields": [
+          {"name": "correlationId", "type": "string"},
+          {"name": "causationId", "type": "string"},
+          {"name": "userId", "type": ["null", "string"], "default": null},
+          {"name": "countryCode", "type": "string"},
+          {"name": "businessUnit", "type": "string"}
+        ]}}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "HighRiskDetected",
+      "namespace": "com.ahs.fsm.events.v2.risk",
+      "doc": "Event emitted when HIGH or CRITICAL risk is detected (triggers task creation)",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "HighRiskDetected"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {"name": "riskLevel", "type": "com.ahs.fsm.events.v2.risk.RiskLevel"},
+        {"name": "riskFactors", "type": {"type": "array", "items": "com.ahs.fsm.events.v2.risk.RiskFactor"}},
+        {"name": "projectId", "type": "string"},
+        {"name": "responsibleOperatorId", "type": ["null", "string"], "default": null},
+        {"name": "metadata", "type": "com.ahs.fsm.events.v2.risk.RiskEventMetadata"}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "RiskAcknowledged",
+      "namespace": "com.ahs.fsm.events.v2.risk",
+      "doc": "Event emitted when operator acknowledges HIGH/CRITICAL risk",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "RiskAcknowledged"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {"name": "acknowledgedBy", "type": "string"},
+        {"name": "acknowledgedAt", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "notes", "type": ["null", "string"], "default": null},
+        {"name": "metadata", "type": "com.ahs.fsm.events.v2.risk.RiskEventMetadata"}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "ProjectOwnershipChanged",
+      "namespace": "com.ahs.fsm.events.v2.ownership",
+      "doc": "Event emitted when project ownership (Pilote du Chantier) is assigned or changed",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "ProjectOwnershipChanged"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "projectId", "type": "string"},
+        {"name": "previousOperatorId", "type": ["null", "string"], "default": null},
+        {"name": "newOperatorId", "type": "string"},
+        {"name": "changedBy", "type": "string", "doc": "User ID or 'SYSTEM'"},
+        {"name": "assignmentMode", "type": {"type": "enum", "name": "AssignmentMode", "symbols": ["AUTO", "MANUAL"]}},
+        {"name": "reason", "type": ["null", "string"], "default": null},
+        {"name": "metadata", "type": {"type": "record", "name": "OwnershipEventMetadata", "fields": [
+          {"name": "correlationId", "type": "string"},
+          {"name": "causationId", "type": "string"},
+          {"name": "userId", "type": ["null", "string"], "default": null},
+          {"name": "countryCode", "type": "string"},
+          {"name": "businessUnit", "type": "string"}
+        ]}}
+      ]
+    },
+    {
+      "type": "record",
+      "name": "ExternalReferencesUpdated",
+      "namespace": "com.ahs.fsm.events.v2.integration",
+      "doc": "Event emitted when external sales system references are updated",
+      "fields": [
+        {"name": "eventId", "type": "string"},
+        {"name": "eventType", "type": "string", "default": "ExternalReferencesUpdated"},
+        {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+        {"name": "serviceOrderId", "type": "string"},
+        {"name": "externalSalesOrderId", "type": ["null", "string"], "default": null},
+        {"name": "externalProjectId", "type": ["null", "string"], "default": null},
+        {"name": "externalLeadId", "type": ["null", "string"], "default": null},
+        {"name": "externalSystemSource", "type": {"type": "enum", "name": "ExtSalesSystem", "symbols": ["PYXIS", "TEMPO", "SAP"]}},
+        {"name": "updatedBy", "type": "string"},
+        {"name": "metadata", "type": {"type": "record", "name": "IntegrationEventMetadata", "fields": [
+          {"name": "correlationId", "type": "string"},
+          {"name": "causationId", "type": "string"},
+          {"name": "userId", "type": ["null", "string"], "default": null},
+          {"name": "countryCode", "type": "string"},
+          {"name": "businessUnit", "type": "string"}
+        ]}}
+      ]
+    }
+  ]
+}

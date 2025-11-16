@@ -672,6 +672,237 @@ const registry = new SchemaRegistry({
 
 ---
 
+### Domain: Sales Integration (Multi-Sales-System)
+
+#### `sales.pyxis.order.created`
+
+**Purpose**: Service order received from Pyxis sales system
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "PyxisOrderCreated",
+  "namespace": "com.ahs.fsm.events.sales",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "pyxis_order_id", "type": "string", "doc": "External Pyxis order ID" },
+    { "name": "sales_channel", "type": { "type": "enum", "name": "SalesChannel", "symbols": ["STORE", "WEB", "CALL_CENTER", "MOBILE", "PARTNER"] }},
+    { "name": "country_code", "type": "string" },
+    { "name": "bu_code", "type": "string" },
+    { "name": "store_id", "type": ["null", "string"] },
+    { "name": "customer", "type": {
+      "type": "record",
+      "name": "CustomerInfo",
+      "fields": [
+        { "name": "customer_id", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "email", "type": "string" },
+        { "name": "phone", "type": "string" }
+      ]
+    }},
+    { "name": "products", "type": { "type": "array", "items": {
+      "type": "record",
+      "name": "Product",
+      "fields": [
+        { "name": "product_id", "type": "string" },
+        { "name": "quantity", "type": "int" },
+        { "name": "service_type", "type": "string" }
+      ]
+    }}},
+    { "name": "address", "type": {
+      "type": "record",
+      "name": "DeliveryAddress",
+      "fields": [
+        { "name": "street", "type": "string" },
+        { "name": "city", "type": "string" },
+        { "name": "postal_code", "type": "string" },
+        { "name": "country", "type": "string" }
+      ]
+    }},
+    { "name": "raw_payload", "type": "string", "doc": "Original Pyxis payload as JSON string" }
+  ]
+}
+```
+
+**Partition key**: `{country_code}_{pyxis_order_id}`
+
+**Consumers**:
+- Integration Adapters Service (normalize to FSM domain model)
+
+---
+
+#### `sales.tempo.service.requested`
+
+**Purpose**: Service request received from Tempo sales system
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "TempoServiceRequested",
+  "namespace": "com.ahs.fsm.events.sales",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "tempo_request_id", "type": "string", "doc": "External Tempo request ID" },
+    { "name": "sales_channel", "type": "SalesChannel" },
+    { "name": "country_code", "type": "string" },
+    { "name": "bu_code", "type": "string" },
+    { "name": "customer", "type": "CustomerInfo" },
+    { "name": "service_type", "type": "string" },
+    { "name": "address", "type": "DeliveryAddress" },
+    { "name": "raw_payload", "type": "string", "doc": "Original Tempo payload as JSON string" }
+  ]
+}
+```
+
+**Partition key**: `{country_code}_{tempo_request_id}`
+
+**Consumers**:
+- Integration Adapters Service (normalize to FSM domain model)
+
+---
+
+#### `integration.sales.order.normalized`
+
+**Purpose**: Sales order successfully normalized to FSM domain model
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "SalesOrderNormalized",
+  "namespace": "com.ahs.fsm.events.integration",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "source_system", "type": { "type": "enum", "name": "SourceSystem", "symbols": ["PYXIS", "TEMPO", "SAP", "CUSTOM"] }},
+    { "name": "external_order_id", "type": "string" },
+    { "name": "fsm_service_order_id", "type": "string", "doc": "Created FSM service order ID" },
+    { "name": "sales_channel", "type": "SalesChannel" },
+    { "name": "country_code", "type": "string" },
+    { "name": "transformation_version", "type": "string", "doc": "Adapter version used for transformation" }
+  ]
+}
+```
+
+**Partition key**: `{source_system}_{external_order_id}`
+
+**Consumers**:
+- Analytics Service (track integration metrics)
+- Monitoring Service (adapter health)
+
+---
+
+#### `integration.sales.order.failed`
+
+**Purpose**: Sales order normalization/processing failed
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "SalesOrderFailed",
+  "namespace": "com.ahs.fsm.events.integration",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "source_system", "type": "SourceSystem" },
+    { "name": "external_order_id", "type": "string" },
+    { "name": "error_code", "type": "string" },
+    { "name": "error_message", "type": "string" },
+    { "name": "raw_payload", "type": "string", "doc": "Original payload for debugging" },
+    { "name": "retry_count", "type": "int", "default": 0 }
+  ]
+}
+```
+
+**Partition key**: `{source_system}_{external_order_id}`
+
+**Consumers**:
+- Integration Adapters Service (retry mechanism)
+- Monitoring Service (alert on failures)
+- Analytics Service (failure analysis)
+
+---
+
+#### `fsm.order.status_updated`
+
+**Purpose**: Send service order status update back to sales system
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "FsmOrderStatusUpdated",
+  "namespace": "com.ahs.fsm.events.integration",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "source_system", "type": "SourceSystem" },
+    { "name": "external_order_id", "type": "string" },
+    { "name": "fsm_service_order_id", "type": "string" },
+    { "name": "status", "type": { "type": "enum", "name": "OrderStatus", "symbols": ["CREATED", "SCHEDULED", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] }},
+    { "name": "scheduled_date", "type": ["null", "string"], "logicalType": "date", "default": null },
+    { "name": "provider_name", "type": ["null", "string"], "default": null }
+  ]
+}
+```
+
+**Partition key**: `{source_system}_{external_order_id}`
+
+**Consumers**:
+- Integration Adapters Service (send to Pyxis/Tempo/SAP)
+
+---
+
+#### `fsm.tv.outcome_recorded`
+
+**Purpose**: Send Technical Visit outcome back to sales system
+
+**Schema**:
+
+```json
+{
+  "type": "record",
+  "name": "FsmTvOutcomeRecorded",
+  "namespace": "com.ahs.fsm.events.integration",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis" },
+    { "name": "source_system", "type": "SourceSystem" },
+    { "name": "external_order_id", "type": "string" },
+    { "name": "tv_outcome", "type": { "type": "enum", "name": "TvOutcome", "symbols": ["YES", "YES_BUT", "NO"] }},
+    { "name": "modifications", "type": ["null", {
+      "type": "array",
+      "items": {
+        "type": "record",
+        "name": "ScopeModification",
+        "fields": [
+          { "name": "description", "type": "string" },
+          { "name": "requires_repricing", "type": "boolean" }
+        ]
+      }
+    }], "default": null },
+    { "name": "cancellation_reason", "type": ["null", "string"], "default": null }
+  ]
+}
+```
+
+**Partition key**: `{source_system}_{external_order_id}`
+
+**Consumers**:
+- Integration Adapters Service (send to Pyxis/Tempo for repricing or cancellation)
+
+---
+
 ## Consumer Groups
 
 ### Pattern
@@ -736,6 +967,16 @@ await consumer.run({
 | `analytics-service-all-events-v1` | `*.*.*` | Index for search and dashboards |
 | `erp-adapter-projects-closed-v1` | `projects.service_order.closed` | Send payment-ready signal |
 | `sales-adapter-tv-outcomes-v1` | `projects.tv_outcome.recorded` | Handle modifications or cancellations |
+| **Sales Integration Consumer Groups** | | |
+| `integration-adapters-sales-pyxis-orders-v1` | `sales.pyxis.order.created`, `sales.pyxis.order.updated`, `sales.pyxis.order.cancelled` | Process incoming Pyxis orders |
+| `integration-adapters-sales-tempo-services-v1` | `sales.tempo.service.requested`, `sales.tempo.service.updated`, `sales.tempo.service.cancelled` | Process incoming Tempo service requests |
+| `integration-adapters-sales-sap-orders-v1` | `sales.sap.order.created` | Process incoming SAP orders (future) |
+| `integration-adapters-sales-channels-v1` | `sales.channel.store.order`, `sales.channel.web.order`, `sales.channel.callcenter.order` | Process multi-channel orders |
+| `integration-adapters-fsm-status-updates-v1` | `fsm.order.status_updated`, `fsm.order.assigned`, `fsm.order.scheduled`, `fsm.order.completed` | Send status updates to sales systems |
+| `integration-adapters-fsm-tv-outcomes-v1` | `fsm.tv.outcome_recorded`, `fsm.tv.modifications_required` | Send TV outcomes to sales systems |
+| `integration-adapters-sales-failures-v1` | `integration.sales.order.failed`, `integration.sales.status.failed` | Retry failed integrations |
+| `monitoring-service-sales-integration-v1` | `integration.sales.*` | Monitor sales integration health |
+| `analytics-service-sales-integration-v1` | `sales.*.*`, `fsm.*`, `integration.sales.*` | Track integration metrics and performance |
 
 ---
 

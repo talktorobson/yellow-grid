@@ -29,7 +29,7 @@ This document defines the technology choices for the AHS Field Service Execution
 ├─────────────────────────────────────────────────────────────────┤
 │                       DATA & STORAGE                            │
 ├─────────────────────────────────────────────────────────────────┤
-│ Primary DB:        PostgreSQL 15+ (self-hosted / managed)      │
+│ Primary DB:        PostgreSQL 15+ (self-hosted on K8s) ⚠️ REQUIRED │
 │ Search:            PostgreSQL FTS (defer OpenSearch)           │
 │ Cache:             Redis 7+ / Valkey (self-hosted)             │
 │ Object Storage:    S3 / Azure Blob / GCS                       │
@@ -1221,6 +1221,491 @@ PostgreSQL
 - SaaS (Twilio, SendGrid, etc.)
 - API credentials stored in HashiCorp Vault
 - Multi-region support for EU compliance
+
+---
+
+## Multi-Sales-System Integration
+
+### Requirement: Support Multiple Sales Systems & Channels
+
+**Status**: **MANDATORY** - Platform must integrate with multiple sales systems
+
+**Sales Systems** (order sources):
+- **Pyxis** (current primary system - France, Spain, Italy)
+- **Tempo** (future/regional system - Poland, new markets)
+- **SAP** (potential future integration)
+- Additional systems as clients expand
+
+**Sales Channels**:
+- **Store** (in-person sales at Leroy Merlin/Brico Depot locations)
+- **Web** (e-commerce orders)
+- **Call center** (phone orders)
+- **Mobile app** (customer mobile ordering)
+- **Partner portals** (B2B integrations)
+
+### Architecture Principle
+
+**Core Principle**: Sales-system-agnostic domain model
+
+The FSM platform maintains a normalized, system-independent representation of service orders. External sales systems are integrated via **adapter pattern** that transforms external formats into the FSM canonical model.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SALES SYSTEMS                             │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                     │
+│  │  Pyxis  │  │  Tempo  │  │   SAP   │                     │
+│  └────┬────┘  └────┬────┘  └────┬────┘                     │
+│       │            │            │                            │
+└───────┼────────────┼────────────┼────────────────────────────┘
+        │            │            │
+        │ (Kafka/REST/Webhook)   │
+        │            │            │
+┌───────▼────────────▼────────────▼────────────────────────────┐
+│              SALES ADAPTERS (FSM Platform)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │Pyxis Adapter │  │Tempo Adapter │  │ SAP Adapter  │      │
+│  │- Transform   │  │- Transform   │  │- Transform   │      │
+│  │- Normalize   │  │- Normalize   │  │- Normalize   │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+│         │                 │                 │                │
+│         └─────────────────┴─────────────────┘                │
+│                          │                                    │
+│                          ▼                                    │
+│         ┌────────────────────────────────┐                   │
+│         │   NORMALIZED SERVICE ORDER     │                   │
+│         │   (Sales-system agnostic)      │                   │
+│         └────────────────┬───────────────┘                   │
+│                          │                                    │
+└──────────────────────────┼────────────────────────────────────┘
+                           │
+┌──────────────────────────▼────────────────────────────────────┐
+│                 CORE FSM SERVICES                             │
+│  Orchestration → Scheduling → Assignment → Execution          │
+└───────────────────────────────────────────────────────────────┘
+```
+
+### Data Model Design
+
+**Core domain model** - normalized, system-agnostic:
+
+```typescript
+// Core FSM service order model
+interface ServiceOrder {
+  id: UUID;  // Internal FSM platform ID
+
+  // Multi-system tracking
+  sourceSystem: 'pyxis' | 'tempo' | 'sap' | 'custom';
+  externalOrderId: string;  // Order ID in source system
+  salesChannel: 'store' | 'web' | 'call_center' | 'mobile' | 'partner';
+
+  // Normalized fields (extracted and standardized from source system)
+  customer: CustomerInfo;
+  products: Product[];
+  serviceType: ServiceType;
+  address: Address;
+  countryCode: string;
+  buCode: string;
+
+  // Audit and debugging
+  rawPayload: JSON;  // Original payload from sales system
+  systemMetadata: Record<string, any>;  // System-specific fields
+
+  createdAt: DateTime;
+  updatedAt: DateTime;
+}
+```
+
+### Database Schema
+
+See `infrastructure/02-database-design.md` for full schema. Key tables:
+
+```sql
+-- Sales systems configuration
+CREATE TABLE sales_systems (
+  id UUID PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,  -- 'Pyxis', 'Tempo', 'SAP Commerce'
+  code VARCHAR(50) UNIQUE NOT NULL,  -- 'PYXIS', 'TEMPO', 'SAP_COMMERCE'
+  api_base_url VARCHAR(500),
+  api_version VARCHAR(20),
+  is_active BOOLEAN DEFAULT true,
+  supported_countries VARCHAR(2)[],  -- ['ES', 'FR', 'IT']
+  configuration JSONB,  -- System-specific config
+  data_mapping JSONB  -- Field mappings
+);
+
+-- Service orders with sales context
+CREATE TABLE service_orders (
+  id UUID PRIMARY KEY,
+
+  -- Multi-tenancy
+  country_code VARCHAR(2) NOT NULL,
+  business_unit_id UUID NOT NULL,
+  store_id UUID NOT NULL,
+
+  -- Sales system context (CRITICAL FIELDS)
+  sales_system_id UUID NOT NULL REFERENCES sales_systems(id),
+  sales_channel VARCHAR(50) NOT NULL,  -- 'IN_STORE', 'ONLINE', etc.
+  sales_order_id VARCHAR(255) NOT NULL,  -- External order ID
+  sales_order_metadata JSONB,  -- System-specific data
+
+  -- Normalized FSM data
+  customer_id UUID NOT NULL,
+  service_type VARCHAR(50) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+
+  -- Unique constraint per sales system
+  UNIQUE(sales_system_id, sales_order_id)
+);
+```
+
+### Sales System Adapter Pattern
+
+**Module Structure**:
+
+```
+src/
+└── modules/
+    └── integration/
+        ├── sales-adapters/
+        │   ├── sales-adapter.interface.ts  # Common contract
+        │   ├── pyxis/
+        │   │   ├── pyxis-event-consumer.ts
+        │   │   ├── pyxis-transformer.ts
+        │   │   ├── pyxis-api-client.ts
+        │   │   └── pyxis.adapter.ts
+        │   ├── tempo/
+        │   │   ├── tempo-event-consumer.ts
+        │   │   ├── tempo-transformer.ts
+        │   │   ├── tempo-api-client.ts
+        │   │   └── tempo.adapter.ts
+        │   └── sap/  # Future
+        │       └── ...
+        └── erp-adapter/
+```
+
+**Common Interface**:
+
+```typescript
+// sales-adapter.interface.ts
+export interface ISalesAdapter {
+  // Normalize incoming order from sales system to FSM domain model
+  transformOrder(externalOrder: any): ServiceOrder;
+
+  // Send status updates back to sales system
+  sendOrderStatusUpdate(orderId: string, status: OrderStatus): Promise<void>;
+
+  // Request order cancellation in sales system
+  requestCancellation(orderId: string, reason: string): Promise<void>;
+
+  // Send Technical Visit outcome (YES_BUT) back for repricing
+  sendTVModifications(orderId: string, modifications: Modification[]): Promise<void>;
+}
+```
+
+**Pyxis Adapter Implementation**:
+
+```typescript
+// pyxis.adapter.ts
+@Injectable()
+export class PyxisAdapter implements ISalesAdapter {
+  constructor(
+    private readonly pyxisApiClient: PyxisApiClient,
+    private readonly logger: Logger,
+  ) {}
+
+  async transformOrder(pyxisOrder: PyxisOrderPayload): Promise<ServiceOrder> {
+    return {
+      id: uuid(),
+      sourceSystem: 'pyxis',
+      externalOrderId: pyxisOrder.order_id,
+      salesChannel: this.mapChannel(pyxisOrder.channel),
+
+      customer: {
+        id: pyxisOrder.customer.id,
+        name: pyxisOrder.customer.name,
+        email: pyxisOrder.customer.email,
+        phone: pyxisOrder.customer.phone,
+      },
+
+      products: pyxisOrder.line_items.map(item => ({
+        sku: item.product_code,
+        name: item.product_name,
+        quantity: item.quantity,
+      })),
+
+      serviceType: this.mapServiceType(pyxisOrder.service_code),
+
+      address: {
+        street: pyxisOrder.delivery_address.street,
+        city: pyxisOrder.delivery_address.city,
+        postalCode: pyxisOrder.delivery_address.postal_code,
+        country: pyxisOrder.delivery_address.country,
+      },
+
+      countryCode: pyxisOrder.country,
+      buCode: pyxisOrder.business_unit,
+
+      // Store original for audit
+      rawPayload: pyxisOrder,
+      systemMetadata: {
+        pyxisVersion: pyxisOrder.version,
+        pyxisStoreId: pyxisOrder.store_id,
+      },
+
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  async sendOrderStatusUpdate(orderId: string, status: OrderStatus): Promise<void> {
+    // Call Pyxis API to update order status
+    await this.pyxisApiClient.updateOrderStatus({
+      order_id: orderId,
+      status: this.mapToP yxisStatus(status),
+      updated_at: new Date().toISOString(),
+    });
+
+    this.logger.log(`Sent status update to Pyxis: ${orderId} -> ${status}`);
+  }
+
+  async sendTVModifications(
+    orderId: string,
+    modifications: Modification[],
+  ): Promise<void> {
+    // Send YES_BUT modifications back to Pyxis for repricing
+    await this.pyxisApiClient.requestRepricing({
+      order_id: orderId,
+      modifications: modifications.map(m => ({
+        description: m.description,
+        extra_duration: m.extraDurationMin,
+        impact: 'repricing_required',
+      })),
+    });
+
+    this.logger.log(`Sent TV modifications to Pyxis: ${orderId}`);
+  }
+
+  private mapChannel(pyxisChannel: string): SalesChannel {
+    const channelMap = {
+      'STORE': 'store',
+      'WEB': 'web',
+      'CALL_CENTER': 'call_center',
+      'MOBILE_APP': 'mobile',
+    };
+    return channelMap[pyxisChannel] || 'store';
+  }
+
+  private mapServiceType(pyxisCode: string): ServiceType {
+    // Map Pyxis service codes to FSM service types
+    // Implementation depends on Pyxis service catalog
+    return 'installation'; // Example
+  }
+
+  private mapToPyxisStatus(fsmStatus: OrderStatus): string {
+    const statusMap = {
+      'created': 'PENDING',
+      'scheduled': 'SCHEDULED',
+      'assigned': 'ASSIGNED',
+      'in_progress': 'IN_PROGRESS',
+      'completed': 'COMPLETED',
+      'cancelled': 'CANCELLED',
+    };
+    return statusMap[fsmStatus] || 'UNKNOWN';
+  }
+}
+```
+
+### Kafka Topics for Sales Integration
+
+**Input topics** (from sales systems):
+```
+integration.pyxis.orders.created
+integration.pyxis.orders.updated
+integration.pyxis.orders.cancelled
+
+integration.tempo.orders.created
+integration.tempo.orders.updated
+integration.tempo.orders.cancelled
+```
+
+**Output topics** (to sales systems):
+```
+integration.sales.status_updates    # FSM → Sales system status updates
+integration.sales.tv_outcomes       # TV results → Sales system
+integration.sales.completion_events # Service completed → Sales system
+```
+
+**Event Schema** (Avro):
+
+```json
+{
+  "type": "record",
+  "name": "SalesOrderReceived",
+  "namespace": "com.ahs.fsm.events.integration",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_timestamp", "type": "long", "logicalType": "timestamp-millis"},
+    {"name": "source_system", "type": {"type": "enum", "symbols": ["PYXIS", "TEMPO", "SAP"]}},
+    {"name": "external_order_id", "type": "string"},
+    {"name": "sales_channel", "type": {"type": "enum", "symbols": ["STORE", "WEB", "CALL_CENTER", "MOBILE", "PARTNER"]}},
+    {"name": "customer_id", "type": "string"},
+    {"name": "country_code", "type": "string"},
+    {"name": "raw_payload", "type": "string", "doc": "JSON string of original payload"}
+  ]
+}
+```
+
+### Adapter Registry & Orchestration
+
+```typescript
+// src/modules/integration/sales-adapters/adapter-registry.ts
+@Injectable()
+export class SalesAdapterRegistry {
+  private adapters = new Map<string, ISalesAdapter>();
+
+  constructor(
+    private readonly pyxisAdapter: PyxisAdapter,
+    private readonly tempoAdapter: TempoAdapter,
+    // Future: sapAdapter: SAPAdapter
+  ) {
+    this.adapters.set('pyxis', this.pyxisAdapter);
+    this.adapters.set('tempo', this.tempoAdapter);
+  }
+
+  getAdapter(sourceSystem: string): ISalesAdapter {
+    const adapter = this.adapters.get(sourceSystem.toLowerCase());
+    if (!adapter) {
+      throw new Error(`No adapter found for sales system: ${sourceSystem}`);
+    }
+    return adapter;
+  }
+
+  async processOrder(sourceSystem: string, externalOrder: any): Promise<ServiceOrder> {
+    const adapter = this.getAdapter(sourceSystem);
+    const normalized = await adapter.transformOrder(externalOrder);
+
+    // Save to database
+    await this.orderRepository.create(normalized);
+
+    // Publish normalized event
+    await this.kafkaProducer.send({
+      topic: 'projects.service_order.created',
+      key: normalized.id,
+      value: normalized,
+    });
+
+    return normalized;
+  }
+}
+```
+
+### Integration Flow
+
+```
+┌─────────────────┐
+│  Pyxis System   │
+└────────┬────────┘
+         │ (Webhook/Kafka)
+         ▼
+┌─────────────────────────────────┐
+│  Pyxis Event Consumer           │
+│  - Consume Kafka events         │
+│  - Validate schema              │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  Pyxis Adapter                  │
+│  - Transform to FSM model       │
+│  - Validate business rules      │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  Service Order Repository       │
+│  - Save to PostgreSQL           │
+│  - Enforce unique constraint    │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  Kafka Producer                 │
+│  - Publish normalized event     │
+│  - Topic: service_order.created │
+└────────┬────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  Core FSM Services              │
+│  - Orchestration                │
+│  - Scheduling                   │
+│  - Assignment                   │
+└─────────────────────────────────┘
+```
+
+### Benefits of Multi-Sales-System Design
+
+1. **Future-proof**: Add new sales systems without changing core FSM logic
+2. **Isolation**: Sales system changes don't break FSM platform
+3. **Auditability**: Raw payload preserved for debugging
+4. **Extensibility**: Easy to add new channels (e.g., WhatsApp, Instagram orders)
+5. **Testability**: Mock sales adapters for unit tests
+6. **Flexibility**: Different transformation rules per country/system
+
+### Configuration Management
+
+Sales system configurations stored in PostgreSQL and cached in Redis:
+
+```typescript
+// Configuration service
+@Injectable()
+export class SalesSystemConfigService {
+  async getSalesSystemConfig(systemCode: string): Promise<SalesSystemConfig> {
+    // Check Redis cache first
+    const cached = await this.redis.get(`sales_system_config:${systemCode}`);
+    if (cached) return JSON.parse(cached);
+
+    // Load from PostgreSQL
+    const config = await this.salesSystemRepository.findByCode(systemCode);
+
+    // Cache for 1 hour
+    await this.redis.setex(
+      `sales_system_config:${systemCode}`,
+      3600,
+      JSON.stringify(config),
+    );
+
+    return config;
+  }
+}
+```
+
+### Monitoring & Observability
+
+**Datadog Metrics**:
+- `sales.integration.orders_received` (by source_system, sales_channel, country)
+- `sales.integration.transformation_duration_ms`
+- `sales.integration.transformation_errors` (by source_system, error_type)
+- `sales.integration.status_updates_sent` (by source_system)
+
+**Datadog Logs**:
+```typescript
+this.logger.log({
+  event: 'order_transformation_success',
+  source_system: 'pyxis',
+  external_order_id: pyxisOrder.order_id,
+  fsm_order_id: normalized.id,
+  sales_channel: normalized.salesChannel,
+  duration_ms: transformationDuration,
+});
+```
+
+**Alerts**:
+- Transformation error rate > 1%
+- Order processing latency > 5 seconds (p95)
+- No orders received from Pyxis in last 1 hour (during business hours)
+
+---
 
 ## Development Tools
 

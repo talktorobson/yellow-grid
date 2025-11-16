@@ -1,0 +1,1084 @@
+openapi: 3.1.0
+info:
+  title: FSM Platform v2.0 Features API
+  version: 2.0.0
+  description: |
+    API endpoints for v2.0 features:
+    - External sales system references
+    - Project ownership (Pilote du Chantier)
+    - AI-powered sales potential assessment
+    - AI-powered risk assessment
+  contact:
+    name: Platform Architecture Team
+    email: platform@ahs.com
+  license:
+    name: Proprietary
+    identifier: Proprietary
+
+servers:
+  - url: https://api.fsm.ahs.com/v1
+    description: Production
+  - url: https://api-staging.fsm.ahs.com/v1
+    description: Staging
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: External References
+    description: External sales system reference management
+  - name: Project Ownership
+    description: Project ownership (Pilote du Chantier) management
+  - name: Sales Potential
+    description: AI-powered sales potential assessment
+  - name: Risk Assessment
+    description: AI-powered risk assessment
+
+security:
+  - bearerAuth: []
+
+paths:
+  # =====================================================
+  # EXTERNAL REFERENCES ENDPOINTS
+  # =====================================================
+
+  /service-orders/{serviceOrderId}/external-references:
+    get:
+      tags:
+        - External References
+      summary: Get external references for a service order
+      description: Retrieve all external system references (Pyxis, Tempo, SAP) for a service order
+      operationId: getExternalReferences
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      responses:
+        '200':
+          description: External references retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalReferencesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags:
+        - External References
+      summary: Update external references
+      description: Update or create external system references for a service order
+      operationId: updateExternalReferences
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExternalReferencesRequest'
+      responses:
+        '200':
+          description: External references updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalReferencesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /service-orders/by-external-reference:
+    get:
+      tags:
+        - External References
+      summary: Lookup service order by external reference
+      description: Find a service order using an external sales system reference
+      operationId: lookupByExternalReference
+      parameters:
+        - name: system
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [PYXIS, TEMPO, SAP]
+          description: External system source
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [SALES_ORDER, PROJECT, LEAD, CUSTOMER]
+          description: Reference type
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: External reference ID
+      responses:
+        '200':
+          description: Service order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceOrderLookupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =====================================================
+  # PROJECT OWNERSHIP ENDPOINTS
+  # =====================================================
+
+  /projects/{projectId}/ownership:
+    get:
+      tags:
+        - Project Ownership
+      summary: Get project ownership information
+      description: Retrieve the current responsible operator (Pilote du Chantier) for a project
+      operationId: getProjectOwnership
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project ownership retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOwnershipResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags:
+        - Project Ownership
+      summary: Assign responsible operator to project
+      description: Assign or reassign the responsible operator (Pilote du Chantier) for a project
+      operationId: assignProjectOwnership
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignProjectOwnershipRequest'
+      responses:
+        '200':
+          description: Project ownership assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOwnershipResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /projects/{projectId}/ownership/history:
+    get:
+      tags:
+        - Project Ownership
+      summary: Get project ownership history
+      description: Retrieve the complete audit trail of ownership changes for a project
+      operationId: getProjectOwnershipHistory
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of history records to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip
+      responses:
+        '200':
+          description: Ownership history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOwnershipHistoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /operators/{operatorId}/workload:
+    get:
+      tags:
+        - Project Ownership
+      summary: Get operator workload metrics
+      description: Retrieve current workload metrics for an operator (for auto-assignment)
+      operationId: getOperatorWorkload
+      parameters:
+        - name: operatorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Operator user ID
+      responses:
+        '200':
+          description: Operator workload retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperatorWorkloadResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /projects/batch/assign-ownership:
+    post:
+      tags:
+        - Project Ownership
+      summary: Batch assign project ownership
+      description: Assign responsible operators to multiple projects in a single operation
+      operationId: batchAssignProjectOwnership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchAssignOwnershipRequest'
+      responses:
+        '200':
+          description: Batch assignment completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchAssignOwnershipResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # =====================================================
+  # SALES POTENTIAL ENDPOINTS
+  # =====================================================
+
+  /service-orders/{serviceOrderId}/sales-potential:
+    get:
+      tags:
+        - Sales Potential
+      summary: Get sales potential assessment
+      description: Retrieve the current AI-powered sales potential assessment for a TV/Quotation order
+      operationId: getSalesPotential
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      responses:
+        '200':
+          description: Sales potential retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPotentialResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          description: Service order is not TV or Quotation type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Sales Potential
+      summary: Trigger sales potential assessment
+      description: Manually trigger AI assessment of sales potential for a TV/Quotation order
+      operationId: assessSalesPotential
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      responses:
+        '200':
+          description: Assessment triggered and completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPotentialResponse'
+        '400':
+          description: Service order is not TV or Quotation type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: ML service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /service-orders/{serviceOrderId}/sales-potential/history:
+    get:
+      tags:
+        - Sales Potential
+      summary: Get sales potential assessment history
+      description: Retrieve the complete history of sales potential assessments for a service order
+      operationId: getSalesPotentialHistory
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+          description: Maximum number of history records to return
+      responses:
+        '200':
+          description: Sales potential history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPotentialHistoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /service-orders/{serviceOrderId}/salesman-notes:
+    put:
+      tags:
+        - Sales Potential
+      summary: Update salesman notes
+      description: Update salesman notes (triggers automatic sales potential reassessment)
+      operationId: updateSalesmanNotes
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - notes
+              properties:
+                notes:
+                  type: string
+                  maxLength: 5000
+                  description: Salesman notes for NLP analysis
+      responses:
+        '200':
+          description: Salesman notes updated and reassessment triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesPotentialResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =====================================================
+  # RISK ASSESSMENT ENDPOINTS
+  # =====================================================
+
+  /service-orders/{serviceOrderId}/risk-assessment:
+    get:
+      tags:
+        - Risk Assessment
+      summary: Get risk assessment
+      description: Retrieve the current AI-powered risk assessment for a service order
+      operationId: getRiskAssessment
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      responses:
+        '200':
+          description: Risk assessment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags:
+        - Risk Assessment
+      summary: Trigger risk assessment
+      description: Manually trigger AI risk assessment for a service order
+      operationId: assessRisk
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                triggeredBy:
+                  type: string
+                  enum: [MANUAL, BATCH_JOB, EVENT_CLAIM_FILED, EVENT_MULTIPLE_RESCHEDULES, EVENT_CHECKOUT_INCOMPLETE, EVENT_PAYMENT_FAILED]
+                  default: MANUAL
+                  description: Reason for triggering assessment
+      responses:
+        '200':
+          description: Assessment triggered and completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: ML service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /service-orders/{serviceOrderId}/risk-assessment/acknowledge:
+    post:
+      tags:
+        - Risk Assessment
+      summary: Acknowledge risk
+      description: Operator acknowledges HIGH or CRITICAL risk (required before check-in)
+      operationId: acknowledgeRisk
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  maxLength: 1000
+                  description: Optional notes about risk acknowledgment
+      responses:
+        '200':
+          description: Risk acknowledged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+        '400':
+          description: Risk level is LOW or already acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /service-orders/{serviceOrderId}/risk-assessment/history:
+    get:
+      tags:
+        - Risk Assessment
+      summary: Get risk assessment history
+      description: Retrieve the complete history of risk assessments for a service order
+      operationId: getRiskAssessmentHistory
+      parameters:
+        - $ref: '#/components/parameters/ServiceOrderId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+          description: Maximum number of history records to return
+      responses:
+        '200':
+          description: Risk assessment history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessmentHistoryResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /service-orders/high-risk:
+    get:
+      tags:
+        - Risk Assessment
+      summary: List high-risk service orders
+      description: Retrieve all service orders with HIGH or CRITICAL risk level
+      operationId: getHighRiskServiceOrders
+      parameters:
+        - name: riskLevel
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [HIGH, CRITICAL]
+          description: Filter by risk level
+        - name: acknowledged
+          in: query
+          schema:
+            type: boolean
+          description: Filter by acknowledgment status
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter by service order status
+        - name: countryCode
+          in: query
+          schema:
+            type: string
+            pattern: '^[A-Z]{2}$'
+          description: Filter by country
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of records to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of records to skip
+      responses:
+        '200':
+          description: High-risk service orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HighRiskServiceOrdersResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from PingID SSO
+
+  parameters:
+    ServiceOrderId:
+      name: serviceOrderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Service Order ID
+
+    ProjectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Project ID
+
+  schemas:
+    # External References Schemas
+    ExternalReferencesResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        externalSalesOrderId:
+          type: string
+          nullable: true
+        externalProjectId:
+          type: string
+          nullable: true
+        externalLeadId:
+          type: string
+          nullable: true
+        externalSystemSource:
+          type: string
+          enum: [PYXIS, TEMPO, SAP]
+          nullable: true
+        additionalReferences:
+          type: array
+          items:
+            type: object
+            properties:
+              referenceType:
+                type: string
+              externalId:
+                type: string
+              system:
+                type: string
+
+    UpdateExternalReferencesRequest:
+      type: object
+      properties:
+        externalSalesOrderId:
+          type: string
+          maxLength: 100
+        externalProjectId:
+          type: string
+          maxLength: 100
+        externalLeadId:
+          type: string
+          maxLength: 100
+        externalSystemSource:
+          type: string
+          enum: [PYXIS, TEMPO, SAP]
+      required:
+        - externalSystemSource
+
+    ServiceOrderLookupResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+        externalReferences:
+          $ref: '#/components/schemas/ExternalReferencesResponse'
+        _links:
+          type: object
+          properties:
+            self:
+              type: string
+              format: uri
+
+    # Project Ownership Schemas
+    ProjectOwnershipResponse:
+      type: object
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        responsibleOperatorId:
+          type: string
+          format: uuid
+          nullable: true
+        responsibleOperator:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            firstName:
+              type: string
+            lastName:
+              type: string
+            email:
+              type: string
+        assignmentMode:
+          type: string
+          enum: [AUTO, MANUAL]
+        assignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        assignedBy:
+          type: string
+          description: User ID or 'SYSTEM'
+          nullable: true
+        workload:
+          type: object
+          properties:
+            totalProjects:
+              type: integer
+            totalServiceOrders:
+              type: integer
+            totalWorkloadHours:
+              type: number
+              format: float
+
+    AssignProjectOwnershipRequest:
+      type: object
+      required:
+        - operatorId
+      properties:
+        operatorId:
+          type: string
+          format: uuid
+          description: Operator user ID to assign
+        reason:
+          type: string
+          maxLength: 500
+          description: Optional reason for assignment/reassignment
+
+    ProjectOwnershipHistoryResponse:
+      type: object
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              previousOperatorId:
+                type: string
+                format: uuid
+                nullable: true
+              newOperatorId:
+                type: string
+                format: uuid
+              changedBy:
+                type: string
+              changedAt:
+                type: string
+                format: date-time
+              reason:
+                type: string
+                nullable: true
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
+
+    OperatorWorkloadResponse:
+      type: object
+      properties:
+        operatorId:
+          type: string
+          format: uuid
+        totalProjects:
+          type: integer
+        totalServiceOrders:
+          type: integer
+        totalWorkloadHours:
+          type: number
+          format: float
+        avgRiskScore:
+          type: number
+          format: float
+        highPotentialCount:
+          type: integer
+        workloadPercentile:
+          type: number
+          format: float
+          description: Operator's workload percentile (0-100) relative to peers
+
+    BatchAssignOwnershipRequest:
+      type: object
+      required:
+        - assignments
+      properties:
+        assignments:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: object
+            required:
+              - projectId
+              - operatorId
+            properties:
+              projectId:
+                type: string
+                format: uuid
+              operatorId:
+                type: string
+                format: uuid
+
+    BatchAssignOwnershipResponse:
+      type: object
+      properties:
+        totalRequested:
+          type: integer
+        successCount:
+          type: integer
+        failureCount:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum: [SUCCESS, FAILURE]
+              error:
+                type: string
+                nullable: true
+
+    # Sales Potential Schemas
+    SalesPotentialResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        potential:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        reasoning:
+          type: array
+          items:
+            type: string
+        featureImportance:
+          type: array
+          items:
+            type: object
+            properties:
+              feature:
+                type: string
+              contribution:
+                type: number
+                format: float
+        assessedAt:
+          type: string
+          format: date-time
+        modelVersion:
+          type: string
+
+    SalesPotentialHistoryResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesPotentialResponse'
+
+    # Risk Assessment Schemas
+    RiskAssessmentResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        riskScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        riskFactors:
+          type: array
+          items:
+            type: object
+            properties:
+              factor:
+                type: string
+              description:
+                type: string
+              weight:
+                type: number
+                format: float
+                minimum: 0
+                maximum: 1
+              severity:
+                type: string
+                enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        recommendedActions:
+          type: array
+          items:
+            type: string
+        assessedAt:
+          type: string
+          format: date-time
+        triggeredBy:
+          type: string
+        modelVersion:
+          type: string
+        isAcknowledged:
+          type: boolean
+        acknowledgedBy:
+          type: string
+          format: uuid
+          nullable: true
+        acknowledgedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RiskAssessmentHistoryResponse:
+      type: object
+      properties:
+        serviceOrderId:
+          type: string
+          format: uuid
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiskAssessmentResponse'
+
+    HighRiskServiceOrdersResponse:
+      type: object
+      properties:
+        serviceOrders:
+          type: array
+          items:
+            type: object
+            properties:
+              serviceOrderId:
+                type: string
+                format: uuid
+              orderNumber:
+                type: string
+              status:
+                type: string
+              riskAssessment:
+                $ref: '#/components/schemas/RiskAssessmentResponse'
+              project:
+                type: object
+                properties:
+                  projectId:
+                    type: string
+                    format: uuid
+                  responsibleOperatorId:
+                    type: string
+                    format: uuid
+              _links:
+                type: object
+                properties:
+                  self:
+                    type: string
+                    format: uri
+                  acknowledge:
+                    type: string
+                    format: uri
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
+        summary:
+          type: object
+          properties:
+            totalHighRisk:
+              type: integer
+            totalCriticalRisk:
+              type: integer
+            unacknowledgedCount:
+              type: integer
+
+    # Common Schemas
+    PaginationMetadata:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        hasMore:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              nullable: true
+            timestamp:
+              type: string
+              format: date-time
+            path:
+              type: string
+            requestId:
+              type: string
+              format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized - Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Not found - Resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

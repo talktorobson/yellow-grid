@@ -1,8 +1,17 @@
-# Sales System Integration (Pyxis/Tempo)
+# Sales System Integration (Pyxis/Tempo/SAP)
+
+**Version**: 2.0
+**Last Updated**: 2025-01-16
+**Status**: Updated with External References & Pre-Estimation
 
 ## Overview
 
-The Field Service Management system integrates with external sales systems (Pyxis and Tempo) to receive order intake, synchronize appointment slots, and report installation outcomes. This integration enables seamless handoff from sales to field service operations.
+The Field Service Management system integrates with external sales systems (Pyxis, Tempo, and SAP) to receive order intake, synchronize appointment slots, and report installation outcomes. This integration enables seamless handoff from sales to field service operations.
+
+**v2.0 Updates**:
+- **External References**: Bidirectional traceability with sales order ID, project ID, lead ID
+- **Pre-Estimation Integration**: Sales potential assessment using pre-estimation data
+- **Multi-System Support**: Enhanced support for Pyxis (FR), Tempo (ES), SAP (IT), and future systems
 
 ## Integration Architecture
 
@@ -59,9 +68,29 @@ sequenceDiagram
 ```typescript
 interface OrderIntakeRequest {
   externalOrderId: string;
-  salesSystem: 'PYXIS' | 'TEMPO';
-  orderType: 'INSTALLATION' | 'REPAIR' | 'MAINTENANCE' | 'UPGRADE';
+  salesSystem: 'PYXIS' | 'TEMPO' | 'SAP';
+  orderType: 'INSTALLATION' | 'REPAIR' | 'MAINTENANCE' | 'UPGRADE' | 'TV' | 'QUOTATION';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'EMERGENCY';
+
+  // ====== NEW v2.0: External References ======
+  externalReferences: {
+    salesOrderId: string;    // Sales order ID in source system
+    projectId?: string;      // Project/customer order grouping ID
+    leadId?: string;         // Original lead/opportunity ID
+    customerId?: string;     // Customer ID in sales system
+  };
+
+  // ====== NEW v2.0: Pre-Estimation (for TV/Quotation) ======
+  preEstimation?: {
+    estimationId: string;
+    estimatedValue: number;
+    currency: string;
+    confidenceLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+    productCategories: string[];
+    salesmanId?: string;
+    salesmanNotes?: string;
+    validUntil?: string; // ISO 8601
+  };
 
   customer: {
     customerId: string;
@@ -872,6 +901,210 @@ const testOrderIntake: OrderIntakeRequest = {
   estimatedDuration: 120
 };
 ```
+
+---
+
+## v2.0: Pre-Estimation Integration
+
+### Pre-Estimation Created Event
+
+When a sales pre-estimation/simulation is created in the sales system (Pyxis/Tempo/SAP), it is sent to FSM for linking to future Technical Visit (TV) or Quotation service orders.
+
+#### Kafka Event Schema
+
+**Topic**: `sales.pre_estimation.created`
+
+**Avro Schema**:
+```json
+{
+  "type": "record",
+  "name": "PreEstimationCreated",
+  "namespace": "com.ahs.fsm.events.sales",
+  "fields": [
+    { "name": "event_id", "type": "string" },
+    { "name": "event_timestamp", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "pre_estimation_id", "type": "string" },
+    { "name": "sales_system_source", "type": { "type": "enum", "symbols": ["PYXIS", "TEMPO", "SAP"] } },
+    { "name": "customer_id", "type": "string" },
+    { "name": "estimated_value", "type": "double" },
+    { "name": "currency", "type": "string" },
+    { "name": "product_categories", "type": { "type": "array", "items": "string" } },
+    { "name": "salesman_id", "type": ["null", "string"], "default": null },
+    { "name": "salesman_notes", "type": ["null", "string"], "default": null },
+    { "name": "confidence_level", "type": { "type": "enum", "symbols": ["LOW", "MEDIUM", "HIGH"] } },
+    { "name": "created_at", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "valid_until", "type": ["null", { "type": "long", "logicalType": "timestamp-millis" }], "default": null }
+  ]
+}
+```
+
+#### Example Event
+
+```json
+{
+  "event_id": "evt_pre_est_001",
+  "event_timestamp": 1705410000000,
+  "pre_estimation_id": "PRE_EST_PYXIS_12345",
+  "sales_system_source": "PYXIS",
+  "customer_id": "CUST_PYXIS_67890",
+  "estimated_value": 12500.00,
+  "currency": "EUR",
+  "product_categories": ["KITCHEN", "FLOORING", "BATHROOM"],
+  "salesman_id": "SALES_PYXIS_333",
+  "salesman_notes": "Customer very interested in complete kitchen renovation. Budget confirmed. Ready to proceed after technical visit.",
+  "confidence_level": "HIGH",
+  "created_at": 1705410000000,
+  "valid_until": 1707915600000
+}
+```
+
+#### FSM Event Handler
+
+```typescript
+async function handlePreEstimationCreated(event: PreEstimationCreatedEvent): Promise<void> {
+  // 1. Store pre-estimation
+  await salesPreEstimationRepository.create({
+    id: event.pre_estimation_id,
+    salesSystemId: event.sales_system_source,
+    customerId: event.customer_id,
+    estimatedValue: event.estimated_value,
+    currency: event.currency,
+    productCategories: event.product_categories,
+    salesmanId: event.salesman_id,
+    salesmanNotes: event.salesman_notes,
+    confidenceLevel: event.confidence_level,
+    createdAt: new Date(event.created_at),
+    validUntil: event.valid_until ? new Date(event.valid_until) : undefined
+  });
+
+  // 2. Find related TV/Quotation service orders for this customer
+  const relatedServiceOrders = await serviceOrderRepository.find({
+    customerId: event.customer_id,
+    serviceType: ['TV', 'QUOTATION'],
+    status: ['CREATED', 'SCHEDULED', 'ASSIGNED'],
+    createdAfter: new Date(event.created_at - 7 * 24 * 60 * 60 * 1000) // Within 7 days before
+  });
+
+  // 3. Link pre-estimation to service orders and trigger sales potential reassessment
+  for (const serviceOrder of relatedServiceOrders) {
+    await serviceOrderRepository.update(serviceOrder.id, {
+      salesPreEstimationId: event.pre_estimation_id,
+      salesPreEstimationValue: event.estimated_value,
+      salesPreEstimationCurrency: event.currency,
+      salesmanNotes: event.salesman_notes
+    });
+
+    // Trigger AI sales potential reassessment
+    await salesPotentialService.assess(serviceOrder);
+  }
+
+  logger.info(`Pre-estimation ${event.pre_estimation_id} linked to ${relatedServiceOrders.length} service orders`);
+}
+```
+
+### External Reference Lookup API
+
+Allow sales systems to lookup FSM service order status using their external IDs.
+
+#### Endpoint
+
+`GET /api/v1/service-orders/by-external-reference`
+
+#### Query Parameters
+
+- `system` (required): `PYXIS` | `TEMPO` | `SAP`
+- `type` (required): `SALES_ORDER` | `PROJECT` | `LEAD`
+- `id` (required): External reference ID
+
+#### Example Request
+
+```http
+GET /api/v1/service-orders/by-external-reference?system=PYXIS&type=SALES_ORDER&id=SO-PYXIS-2025-12345
+Authorization: Bearer {api_key}
+```
+
+#### Example Response
+
+```json
+{
+  "serviceOrderId": "so_abc123",
+  "orderNumber": "SO-2025-001",
+  "externalReferences": {
+    "salesOrderId": "SO-PYXIS-2025-12345",
+    "projectId": "PROJ-PYXIS-67890",
+    "leadId": "LEAD-PYXIS-11111",
+    "systemSource": "PYXIS"
+  },
+  "status": "SCHEDULED",
+  "scheduledDate": "2025-01-25T09:00:00Z",
+  "assignedProvider": {
+    "providerId": "prov_123",
+    "providerName": "ABC Installers"
+  },
+  "customer": {
+    "name": "Jean Dupont",
+    "email": "jean.dupont@example.com",
+    "phone": "+33612345678"
+  },
+  "_links": {
+    "self": "/api/v1/service-orders/so_abc123",
+    "externalReferences": "/api/v1/service-orders/so_abc123/external-references"
+  }
+}
+```
+
+### Status Update Webhook (FSM → Sales Systems)
+
+FSM can send status updates back to sales systems via webhook when service order status changes.
+
+#### Webhook Configuration
+
+Sales systems register webhook URLs in FSM:
+
+```http
+POST /api/v1/integrations/sales-systems/{systemId}/webhooks
+
+{
+  "webhookUrl": "https://pyxis.adeo.com/webhooks/fsm/service-order-status",
+  "events": ["SERVICE_ORDER_SCHEDULED", "SERVICE_ORDER_COMPLETED", "SERVICE_ORDER_CANCELLED"],
+  "authType": "BEARER_TOKEN",
+  "authToken": "{encrypted_token}"
+}
+```
+
+#### Webhook Payload (FSM → Sales System)
+
+```json
+{
+  "event_type": "SERVICE_ORDER_COMPLETED",
+  "event_id": "evt_xyz789",
+  "event_timestamp": 1705410000000,
+  "fsm_service_order_id": "so_abc123",
+  "external_sales_order_id": "SO-PYXIS-2025-12345",
+  "external_project_id": "PROJ-PYXIS-67890",
+  "external_lead_id": "LEAD-PYXIS-11111",
+  "previous_status": "IN_PROGRESS",
+  "new_status": "COMPLETED",
+  "completed_at": 1705410000000,
+  "provider": {
+    "provider_id": "prov_123",
+    "provider_name": "ABC Installers"
+  },
+  "customer_satisfaction": {
+    "csat_score": 5.0,
+    "nps_score": 10,
+    "feedback": "Excellent service, very professional!"
+  },
+  "completion_details": {
+    "work_duration_minutes": 120,
+    "issues_resolved": true,
+    "warranty_start_date": "2025-01-20",
+    "warranty_end_date": "2027-01-20"
+  }
+}
+```
+
+---
 
 ## Next Steps
 

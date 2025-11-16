@@ -6,7 +6,7 @@ This document defines the bounded contexts and service boundaries for the AHS Fi
 
 ## Service Architecture
 
-The platform is organized into **8 core domain services** plus **1 configuration service** and supporting integration adapters.
+The platform is organized into **8 core domain services** plus **1 configuration service** and **1 integration adapters service** (10 services total).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -719,17 +719,246 @@ POST   /api/v1/simulations/rule-impact  # Simulate rule change impact
 
 ## Integration Adapters
 
+### 10. Integration Adapters Service
+
+**Bounded Context**: Multi-sales-system integration, external system adapters, data transformation.
+
+**Responsibilities**:
+- Normalize incoming service orders from multiple sales systems (Pyxis, Tempo, SAP, custom)
+- Transform FSM domain events to sales system formats
+- Support multiple sales channels (store, web, call center, mobile, partner)
+- Provide adapter registry for dynamic adapter selection
+- Handle ERP integration (Oracle) for payment processing
+- Manage e-signature provider integration (Adobe Sign)
+- Sync master data (products, services, stores, pricing)
+- Communication gateway adapters (SMS/Email/Push)
+- PingID SSO integration adapter
+- Cache sales system configurations (Redis)
+- Monitor adapter health and performance (Datadog)
+
+**Key Entities**:
+- SalesSystem
+- SalesAdapter
+- ServiceOrderMapping
+- ExternalOrderPayload
+- SalesChannel
+- AdapterConfiguration
+- TransformationRule
+
+**Sales System Adapters**:
+
+**Pyxis Adapter**:
+- Receive installation orders via Kafka (`sales.pyxis.order.created`)
+- Normalize to FSM domain model
+- Provide slot availability API (REST)
+- Send status updates back to Pyxis via Kafka (`fsm.order.status_updated`)
+- Handle TV modification flows
+
+**Tempo Adapter**:
+- Receive service requests via Kafka (`sales.tempo.service.requested`)
+- Normalize to FSM domain model
+- Support multi-step service flows
+- Send completion confirmations via Kafka (`fsm.service.completed`)
+
+**SAP Adapter** (future):
+- Receive enterprise service orders
+- Complex product configuration mapping
+- Multi-country support
+- Custom pricing rules integration
+
+**APIs**:
+```
+# Sales Integration
+POST   /api/v1/adapters/sales/pyxis/orders      # Receive Pyxis order (fallback to REST)
+POST   /api/v1/adapters/sales/tempo/services    # Receive Tempo service (fallback to REST)
+GET    /api/v1/adapters/sales/availability      # Unified availability API
+POST   /api/v1/adapters/sales/:system/status    # Send status update
+
+# ERP Integration
+POST   /api/v1/adapters/erp/completion          # Send completion to Oracle
+POST   /api/v1/adapters/erp/invoice             # Trigger invoice generation
+
+# E-Signature Integration
+POST   /api/v1/adapters/esign/send              # Send contract for signature
+POST   /api/v1/adapters/esign/webhook           # Receive signature callback
+
+# Master Data Sync
+GET    /api/v1/adapters/master-data/products    # Fetch products
+GET    /api/v1/adapters/master-data/stores      # Fetch stores
+POST   /api/v1/adapters/master-data/sync        # Trigger full sync
+
+# Communication Gateways
+POST   /api/v1/adapters/comms/sms/send          # Send SMS (Enterprise Messaging Service)
+POST   /api/v1/adapters/comms/email/send        # Send Email
+POST   /api/v1/adapters/comms/push/send         # Send Push notification
+POST   /api/v1/adapters/comms/webhook           # Delivery receipt callback
+
+# Adapter Management
+GET    /api/v1/adapters/registry                # List registered adapters
+GET    /api/v1/adapters/health                  # Health check all adapters
+GET    /api/v1/adapters/config/:system          # Get adapter configuration
+PUT    /api/v1/adapters/config/:system          # Update adapter configuration
+```
+
+**Events Published**:
+```
+# Sales Integration Events
+integration.sales.order.received
+integration.sales.order.normalized
+integration.sales.order.failed
+integration.sales.status.sent
+integration.sales.tv_modifications.sent
+
+# ERP Events
+integration.erp.completion.sent
+integration.erp.invoice.triggered
+integration.erp.payment.confirmed
+
+# E-Signature Events
+integration.esign.contract.sent
+integration.esign.signature.received
+integration.esign.signature.failed
+
+# Master Data Events
+integration.masterdata.products.synced
+integration.masterdata.stores.synced
+integration.masterdata.sync.failed
+
+# Communication Events
+integration.comms.sms.sent
+integration.comms.sms.delivered
+integration.comms.sms.failed
+integration.comms.email.sent
+integration.comms.email.delivered
+integration.comms.push.sent
+```
+
+**Events Consumed**:
+```
+# From Orchestration Service
+projects.service_order.created
+projects.service_order.status_changed
+projects.tv_outcome.recorded
+projects.service_order.cancelled
+
+# From Execution Service
+execution.checkout.completed
+
+# From Contracts Service
+contracts.contract.signed
+contracts.wcf.signed
+
+# External System Events (Kafka)
+sales.pyxis.order.created
+sales.tempo.service.requested
+sales.*.order.cancelled
+esign.signature.completed
+esign.signature.declined
+comms.sms.delivery_receipt
+comms.email.delivery_receipt
+```
+
+**Database Schema**: `integrations` (adapter configs, mappings, audit logs)
+
+**Dependencies**:
+- **Orchestration & Control**: To create/update service orders
+- **Scheduling**: To provide availability data
+- **Configuration**: For adapter configurations and transformation rules
+- **Kafka**: For event streaming (REQUIRED)
+- **Redis**: For caching sales system configurations
+- **External Systems**:
+  - Pyxis/Tempo sales systems
+  - Oracle ERP
+  - Adobe Sign e-signature
+  - Enterprise Messaging Service (SMS/Email)
+  - Master Data Management (MDM) system
+  - PingID SSO
+
+**Architecture Pattern**:
+```typescript
+// Adapter Registry Pattern
+@Injectable()
+export class SalesAdapterRegistry {
+  private adapters = new Map<string, ISalesAdapter>();
+
+  constructor(
+    private readonly pyxisAdapter: PyxisAdapter,
+    private readonly tempoAdapter: TempoAdapter,
+    private readonly sapAdapter: SapAdapter,
+  ) {
+    this.adapters.set('pyxis', this.pyxisAdapter);
+    this.adapters.set('tempo', this.tempoAdapter);
+    this.adapters.set('sap', this.sapAdapter);
+  }
+
+  async processOrder(sourceSystem: string, externalOrder: any): Promise<ServiceOrder> {
+    const adapter = this.getAdapter(sourceSystem);
+    const normalized = await adapter.transformOrder(externalOrder);
+    await this.orderRepository.create(normalized);
+    await this.kafkaProducer.send({
+      topic: 'projects.service_order.created',
+      key: normalized.id,
+      value: normalized,
+    });
+    return normalized;
+  }
+}
+
+// Sales Adapter Interface
+export interface ISalesAdapter {
+  transformOrder(externalOrder: any): Promise<ServiceOrder>;
+  sendOrderStatusUpdate(orderId: string, status: OrderStatus): Promise<void>;
+  requestCancellation(orderId: string, reason: string): Promise<void>;
+  sendTVModifications(orderId: string, modifications: Modification[]): Promise<void>;
+}
+```
+
+**Kafka Topics**:
+```
+# Input Topics (from sales systems)
+sales.pyxis.order.created
+sales.tempo.service.requested
+sales.{system}.order.updated
+sales.{system}.order.cancelled
+
+# Output Topics (to sales systems)
+fsm.order.status_updated
+fsm.order.assigned
+fsm.order.completed
+fsm.tv.outcome_recorded
+fsm.tv.modifications_required
+```
+
+**Monitoring & Observability** (Datadog):
+```
+Metrics:
+- integration.adapter.{system}.orders.received (counter)
+- integration.adapter.{system}.orders.normalized (counter)
+- integration.adapter.{system}.orders.failed (counter)
+- integration.adapter.{system}.transformation.duration (histogram)
+- integration.adapter.{system}.api.latency (histogram)
+- integration.adapter.{system}.health (gauge)
+
+Alerts:
+- Adapter transformation failure rate > 5%
+- Sales system API latency > 2s (p95)
+- Kafka consumer lag > 1000 messages
+- Adapter health check failing
+```
+
+---
+
+### Other Integration Adapters
+
 These are **stateless, event-driven services** that bridge between domain services and external systems.
 
-### Sales Adapter (Pyxis/Tempo)
-- **Inbound**: Receive service orders from Pyxis/Tempo
-- **Outbound**: Provide slot availability API, send schedule confirmations, TV outcomes, cancellations
+**Implementation Note**: The adapters below are part of the Integration Adapters Service (Service 10) described above, but are listed separately for clarity.
 
 ### ERP Adapter (Oracle)
 - **Inbound**: None (one-way)
 - **Outbound**: Send service completion status, amounts, provider IDs for payment processing
 
-### E-Signature Adapter
+### E-Signature Adapter (Adobe Sign)
 - **Inbound**: Webhook callbacks from e-signature provider
 - **Outbound**: Send contracts/WCFs for signature
 
@@ -739,7 +968,7 @@ These are **stateless, event-driven services** that bridge between domain servic
 
 ### Communication Gateways (SMS/Email/Push)
 - **Inbound**: Delivery receipts
-- **Outbound**: Send notifications
+- **Outbound**: Send notifications via Enterprise Messaging Service
 
 ---
 

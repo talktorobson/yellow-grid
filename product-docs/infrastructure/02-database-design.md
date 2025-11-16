@@ -1481,3 +1481,526 @@ This database design provides a robust, scalable, and secure foundation for the 
 - **Backup Retention**: 30 days daily, 12 months monthly
 - **Recovery Point Objective (RPO)**: 5 minutes
 - **Recovery Time Objective (RTO)**: 30 minutes
+
+---
+
+## AHS FSM-Specific Schema: Sales Systems & Channels
+
+**Added**: 2025-01-15
+**Status**: Critical addition for multi-sales-system support
+
+### Multi-Tenancy & Sales System Architecture
+
+The AHS FSM platform must support multiple sales systems (Pyxis, Tempo, SAP) and multiple sales channels (store, web, call center, mobile, partner). This section extends the generic schema with FSM-specific tables.
+
+### Country Management
+
+```sql
+-- Countries table (master data)
+CREATE TABLE countries (
+  code VARCHAR(2) PRIMARY KEY, -- ISO 3166-1 alpha-2: 'ES', 'FR', 'IT', 'PL'
+  name VARCHAR(100) NOT NULL,
+  currency VARCHAR(3) NOT NULL, -- ISO 4217: 'EUR', 'PLN'
+  timezone VARCHAR(50) NOT NULL, -- 'Europe/Madrid', 'Europe/Paris', etc.
+  locale VARCHAR(10) NOT NULL, -- 'es-ES', 'fr-FR', 'it-IT', 'pl-PL'
+  is_active BOOLEAN DEFAULT true,
+  configuration JSONB, -- Country-specific config (tax rates, regulations, etc.)
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_countries_is_active ON countries(is_active);
+```
+
+### Business Units & Stores
+
+```sql
+-- Business Units (Leroy Merlin, Brico Depot, etc.)
+CREATE TABLE business_units (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  country_code VARCHAR(2) NOT NULL REFERENCES countries(code),
+  code VARCHAR(50) NOT NULL UNIQUE, -- 'LM_ES', 'BD_FR', etc.
+  name VARCHAR(100) NOT NULL,
+  type VARCHAR(50), -- 'RETAIL', 'B2B', 'FRANCHISE'
+  is_active BOOLEAN DEFAULT true,
+  configuration JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(country_code, code)
+);
+
+CREATE INDEX idx_business_units_country_code ON business_units(country_code);
+CREATE INDEX idx_business_units_is_active ON business_units(is_active);
+
+-- Individual store locations
+CREATE TABLE stores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_unit_id UUID NOT NULL REFERENCES business_units(id),
+  store_code VARCHAR(50) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  address JSONB NOT NULL,
+  phone VARCHAR(50),
+  email VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  operational_hours JSONB,
+  configuration JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(business_unit_id, store_code)
+);
+
+CREATE INDEX idx_stores_business_unit_id ON stores(business_unit_id);
+CREATE INDEX idx_stores_is_active ON stores(is_active);
+CREATE INDEX idx_stores_search ON stores USING GIN(to_tsvector('simple', name || ' ' || (address->>'city')));
+```
+
+### Sales Systems Configuration
+
+```sql
+-- Sales systems (Pyxis, Tempo, SAP, etc.)
+CREATE TABLE sales_systems (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  code VARCHAR(50) UNIQUE NOT NULL, -- 'PYXIS', 'TEMPO', 'SAP_COMMERCE'
+  vendor VARCHAR(100),
+  description TEXT,
+  api_base_url VARCHAR(500),
+  api_version VARCHAR(20),
+  authentication_type VARCHAR(50),
+  is_active BOOLEAN DEFAULT true,
+  supported_countries VARCHAR(2)[],
+  configuration JSONB,
+  data_mapping JSONB, -- Field mappings between sales system and FSM
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_sales_systems_code ON sales_systems(code);
+CREATE INDEX idx_sales_systems_is_active ON sales_systems(is_active);
+
+-- Business Unit ↔ Sales System mapping
+CREATE TABLE business_unit_sales_systems (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_unit_id UUID NOT NULL REFERENCES business_units(id),
+  sales_system_id UUID NOT NULL REFERENCES sales_systems(id),
+  is_primary BOOLEAN DEFAULT false,
+  priority INTEGER DEFAULT 100,
+  is_active BOOLEAN DEFAULT true,
+  configuration JSONB,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(business_unit_id, sales_system_id)
+);
+
+CREATE INDEX idx_bu_sales_systems_bu_id ON business_unit_sales_systems(business_unit_id);
+CREATE INDEX idx_bu_sales_systems_sales_system_id ON business_unit_sales_systems(sales_system_id);
+CREATE INDEX idx_bu_sales_systems_is_primary ON business_unit_sales_systems(is_primary) WHERE is_primary = true;
+```
+
+### Service Orders with Sales Context
+
+```sql
+-- Service orders with multi-sales-system support
+CREATE TABLE service_orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Multi-tenancy
+  country_code VARCHAR(2) NOT NULL REFERENCES countries(code),
+  business_unit_id UUID NOT NULL REFERENCES business_units(id),
+  store_id UUID NOT NULL REFERENCES stores(id),
+
+  -- Sales system context (CRITICAL FIELDS)
+  sales_system_id UUID NOT NULL REFERENCES sales_systems(id),
+  sales_channel VARCHAR(50) NOT NULL, -- 'IN_STORE', 'ONLINE', 'PHONE', 'PARTNER', 'B2B', 'MOBILE_APP'
+  sales_order_id VARCHAR(255) NOT NULL, -- External sales system order ID
+  sales_order_number VARCHAR(100), -- Human-readable order number
+  sales_order_line_id VARCHAR(255), -- Line item ID if multiple services
+  sales_order_metadata JSONB, -- Sales system-specific data
+
+  -- Project and service details
+  project_id UUID,
+  service_type VARCHAR(50) NOT NULL,
+  product_category VARCHAR(100),
+  product_sku VARCHAR(100),
+  product_name VARCHAR(500),
+
+  -- Customer information
+  customer_id UUID NOT NULL,
+  customer_name VARCHAR(255),
+  customer_phone VARCHAR(50),
+  customer_email VARCHAR(255),
+  service_address JSONB NOT NULL,
+
+  -- Dates and status
+  order_date TIMESTAMP NOT NULL,
+  requested_date DATE,
+  scheduled_date DATE,
+  status VARCHAR(50) NOT NULL,
+  priority VARCHAR(10), -- 'P1', 'P2'
+
+  -- Financial
+  order_value_cents INTEGER,
+  service_fee_cents INTEGER,
+
+  -- Audit
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  -- ====== NEW: External Sales System References (v2.0) ======
+  external_sales_order_id VARCHAR(100), -- Original sales order ID from Pyxis/Tempo/SAP
+  external_project_id VARCHAR(100),     -- Sales system's project/customer order grouping ID
+  external_lead_id VARCHAR(100),        -- Original lead/opportunity ID
+  external_system_source VARCHAR(50),   -- 'PYXIS', 'TEMPO', 'SAP', etc.
+
+  -- ====== NEW: Sales Potential Assessment (v2.0) - TV/Quotation only ======
+  sales_potential VARCHAR(20) DEFAULT 'LOW' CHECK (sales_potential IN ('LOW', 'MEDIUM', 'HIGH')),
+  sales_potential_score DECIMAL(5,2),      -- 0.00-100.00
+  sales_potential_updated_at TIMESTAMP,
+  sales_pre_estimation_id VARCHAR(100),    -- Link to pre-estimation from sales system
+  sales_pre_estimation_value DECIMAL(12,2),
+  sales_pre_estimation_currency VARCHAR(3),
+  salesman_notes TEXT,                     -- Notes from salesman (for NLP analysis)
+
+  -- ====== NEW: Risk Assessment (v2.0) ======
+  risk_level VARCHAR(20) DEFAULT 'LOW' CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+  risk_score DECIMAL(5,2),                 -- 0.00-100.00
+  risk_assessed_at TIMESTAMP,
+  risk_factors JSONB,                      -- Array of risk factor objects
+  risk_acknowledged_by UUID REFERENCES users(id),
+  risk_acknowledged_at TIMESTAMP,
+
+  CONSTRAINT valid_sales_channel CHECK (sales_channel IN ('IN_STORE', 'ONLINE', 'PHONE', 'PARTNER', 'B2B', 'MOBILE_APP'))
+);
+
+-- Indexes
+CREATE INDEX idx_service_orders_country_code ON service_orders(country_code);
+CREATE INDEX idx_service_orders_business_unit_id ON service_orders(business_unit_id);
+CREATE INDEX idx_service_orders_store_id ON service_orders(store_id);
+CREATE INDEX idx_service_orders_sales_system_id ON service_orders(sales_system_id);
+CREATE INDEX idx_service_orders_sales_channel ON service_orders(sales_channel);
+CREATE INDEX idx_service_orders_sales_order_id ON service_orders(sales_order_id);
+CREATE INDEX idx_service_orders_status ON service_orders(status);
+CREATE INDEX idx_service_orders_order_date ON service_orders(order_date);
+CREATE INDEX idx_service_orders_scheduled_date ON service_orders(scheduled_date) WHERE scheduled_date IS NOT NULL;
+
+-- Composite indexes
+CREATE INDEX idx_service_orders_country_bu_store ON service_orders(country_code, business_unit_id, store_id);
+CREATE INDEX idx_service_orders_sales_system_channel ON service_orders(sales_system_id, sales_channel);
+
+-- Unique constraint: Same sales order cannot be duplicated per sales system
+CREATE UNIQUE INDEX idx_service_orders_sales_order_unique ON service_orders(sales_system_id, sales_order_id, sales_order_line_id);
+
+-- ====== NEW: Indexes for v2.0 Features ======
+
+-- External reference lookups (composite for performance)
+CREATE INDEX idx_so_external_sales_order ON service_orders(external_system_source, external_sales_order_id)
+  WHERE external_sales_order_id IS NOT NULL;
+CREATE INDEX idx_so_external_project ON service_orders(external_system_source, external_project_id)
+  WHERE external_project_id IS NOT NULL;
+CREATE INDEX idx_so_external_lead ON service_orders(external_system_source, external_lead_id)
+  WHERE external_lead_id IS NOT NULL;
+
+-- Sales potential queries (TV/Quotation only)
+CREATE INDEX idx_so_sales_potential ON service_orders(sales_potential)
+  WHERE service_type IN ('TV', 'QUOTATION');
+CREATE INDEX idx_so_pre_estimation ON service_orders(sales_pre_estimation_id)
+  WHERE sales_pre_estimation_id IS NOT NULL;
+
+-- Risk assessment queries
+CREATE INDEX idx_so_risk_level ON service_orders(risk_level)
+  WHERE risk_level IN ('HIGH', 'CRITICAL');
+CREATE INDEX idx_so_risk_assessed_at ON service_orders(risk_assessed_at);
+
+-- Composite index for dashboard queries (risk + potential + status)
+CREATE INDEX idx_so_dashboard_risk_potential ON service_orders(
+  risk_level, sales_potential, status, scheduled_date
+) WHERE service_type IN ('TV', 'QUOTATION', 'INSTALLATION');
+```
+
+### Sales Channel Configurations
+
+```sql
+-- Channel-specific business rules
+CREATE TABLE sales_channel_configurations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_unit_id UUID NOT NULL REFERENCES business_units(id),
+  sales_channel VARCHAR(50) NOT NULL,
+
+  -- SLA overrides
+  sla_p1_hours INTEGER,
+  sla_p2_hours INTEGER,
+
+  -- Pricing rules
+  pricing_markup_percentage DECIMAL(5,2),
+  discount_percentage DECIMAL(5,2),
+
+  -- Scheduling preferences
+  allow_same_day_scheduling BOOLEAN DEFAULT false,
+  require_customer_confirmation BOOLEAN DEFAULT true,
+  auto_assign BOOLEAN DEFAULT false,
+
+  -- Notification preferences
+  send_sms_notifications BOOLEAN DEFAULT true,
+  send_email_notifications BOOLEAN DEFAULT true,
+  notification_language VARCHAR(10),
+
+  -- Business rules
+  rules JSONB,
+
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+
+  UNIQUE(business_unit_id, sales_channel)
+);
+
+CREATE INDEX idx_sales_channel_config_bu_id ON sales_channel_configurations(business_unit_id);
+CREATE INDEX idx_sales_channel_config_channel ON sales_channel_configurations(sales_channel);
+```
+
+### Sales System Integration Events
+
+```sql
+-- Integration event tracking
+CREATE TABLE sales_system_integration_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sales_system_id UUID NOT NULL REFERENCES sales_systems(id),
+  event_type VARCHAR(100) NOT NULL, -- 'ORDER_RECEIVED', 'ORDER_UPDATED', 'ORDER_CANCELLED', 'SYNC_ERROR'
+  sales_order_id VARCHAR(255),
+  service_order_id UUID REFERENCES service_orders(id),
+  status VARCHAR(50) NOT NULL, -- 'SUCCESS', 'FAILURE', 'PENDING', 'RETRY'
+  payload JSONB,
+  error_message TEXT,
+  retry_count INTEGER DEFAULT 0,
+  processed_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_integration_events_sales_system_id ON sales_system_integration_events(sales_system_id);
+CREATE INDEX idx_integration_events_event_type ON sales_system_integration_events(event_type);
+CREATE INDEX idx_integration_events_status ON sales_system_integration_events(status);
+CREATE INDEX idx_integration_events_sales_order_id ON sales_system_integration_events(sales_order_id);
+CREATE INDEX idx_integration_events_created_at ON sales_system_integration_events(created_at);
+```
+
+### Query Examples
+
+```sql
+-- Get all service orders from Pyxis via online channel in Spain
+SELECT
+  so.id,
+  so.sales_order_id,
+  so.sales_channel,
+  ss.name AS sales_system_name,
+  bu.name AS business_unit_name,
+  s.name AS store_name,
+  so.status
+FROM service_orders so
+JOIN sales_systems ss ON so.sales_system_id = ss.id
+JOIN business_units bu ON so.business_unit_id = bu.id
+JOIN stores s ON so.store_id = s.id
+WHERE so.country_code = 'ES'
+  AND ss.code = 'PYXIS'
+  AND so.sales_channel = 'ONLINE'
+  AND so.order_date >= NOW() - INTERVAL '30 days';
+
+-- Sales channel performance metrics
+SELECT
+  so.sales_channel,
+  bu.name AS business_unit,
+  COUNT(*) AS order_count,
+  AVG(EXTRACT(EPOCH FROM (so.scheduled_date - so.order_date::DATE)) / 3600) AS avg_scheduling_hours,
+  COUNT(*) FILTER (WHERE so.status = 'COMPLETED') AS completed_count,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE so.status = 'COMPLETED') / COUNT(*), 2) AS completion_rate_pct
+FROM service_orders so
+JOIN business_units bu ON so.business_unit_id = bu.id
+WHERE so.order_date >= NOW() - INTERVAL '30 days'
+GROUP BY so.sales_channel, bu.name
+ORDER BY order_count DESC;
+```
+
+---
+
+## v2.0 Feature Additions (2025-01-16)
+
+### Projects Table (Project Ownership)
+
+```sql
+-- FSM Projects table (customer service projects)
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_name VARCHAR(255) NOT NULL,
+  customer_id UUID NOT NULL,
+  country_code VARCHAR(2) NOT NULL,
+  business_unit_id UUID NOT NULL,
+  status VARCHAR(50) NOT NULL,
+
+  -- ====== NEW: Project Ownership ("Pilote du Chantier") ======
+  responsible_operator_id UUID REFERENCES users(id),
+  assignment_mode VARCHAR(20) CHECK (assignment_mode IN ('AUTO', 'MANUAL')),
+  assigned_at TIMESTAMP,
+  assigned_by VARCHAR(100), -- User ID or 'SYSTEM'
+
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_projects_responsible_operator ON projects(responsible_operator_id);
+CREATE INDEX idx_projects_assignment_mode ON projects(assignment_mode);
+CREATE INDEX idx_projects_customer ON projects(customer_id);
+CREATE INDEX idx_projects_country_bu ON projects(country_code, business_unit_id);
+```
+
+### Project Ownership History
+
+```sql
+CREATE TABLE project_ownership_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  previous_operator_id UUID REFERENCES users(id),
+  new_operator_id UUID REFERENCES users(id),
+  changed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  changed_by VARCHAR(100) NOT NULL, -- User ID or 'SYSTEM'
+  reason VARCHAR(255)
+);
+
+CREATE INDEX idx_ownership_history_project ON project_ownership_history(project_id);
+CREATE INDEX idx_ownership_history_operator ON project_ownership_history(new_operator_id);
+CREATE INDEX idx_ownership_history_changed_at ON project_ownership_history(changed_at DESC);
+```
+
+### Operator Workload (Materialized View)
+
+```sql
+CREATE MATERIALIZED VIEW operator_workload AS
+SELECT
+  p.responsible_operator_id AS operator_id,
+  COUNT(DISTINCT p.id) AS total_projects,
+  COUNT(so.id) AS total_service_orders,
+  SUM(so.estimated_duration_minutes) AS total_workload_minutes,
+  SUM(so.estimated_duration_minutes) / 60.0 AS total_workload_hours
+FROM projects p
+LEFT JOIN service_orders so ON so.project_id = p.id
+WHERE so.status NOT IN ('CANCELLED', 'COMPLETED', 'CLOSED')
+  AND p.status NOT IN ('CANCELLED', 'COMPLETED')
+GROUP BY p.responsible_operator_id;
+
+CREATE UNIQUE INDEX idx_operator_workload_operator ON operator_workload(operator_id);
+
+-- Refresh strategy: Every 5 minutes
+CREATE OR REPLACE FUNCTION refresh_operator_workload()
+RETURNS void AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW CONCURRENTLY operator_workload;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Schedule refresh (requires pg_cron extension)
+-- SELECT cron.schedule('refresh-operator-workload', '*/5 * * * *', 'SELECT refresh_operator_workload()');
+```
+
+### Sales Pre-Estimations
+
+```sql
+CREATE TABLE sales_pre_estimations (
+  id VARCHAR(100) PRIMARY KEY, -- ID from sales system (Pyxis, Tempo, SAP)
+  sales_system_id VARCHAR(50) NOT NULL, -- 'PYXIS', 'TEMPO', 'SAP'
+  customer_id UUID NOT NULL,
+  estimated_value DECIMAL(12,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL,
+  product_categories TEXT[] NOT NULL,
+  created_at TIMESTAMP NOT NULL,
+  valid_until TIMESTAMP,
+  salesman_id VARCHAR(100),
+  salesman_notes TEXT,
+  confidence_level VARCHAR(20) CHECK (confidence_level IN ('LOW', 'MEDIUM', 'HIGH')),
+  metadata JSONB
+);
+
+CREATE INDEX idx_pre_estimation_customer ON sales_pre_estimations(customer_id);
+CREATE INDEX idx_pre_estimation_value ON sales_pre_estimations(estimated_value DESC);
+CREATE INDEX idx_pre_estimation_system ON sales_pre_estimations(sales_system_id);
+CREATE INDEX idx_pre_estimation_valid_until ON sales_pre_estimations(valid_until) WHERE valid_until IS NOT NULL;
+```
+
+### Sales Potential Assessments
+
+```sql
+CREATE TABLE sales_potential_assessments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_order_id UUID NOT NULL REFERENCES service_orders(id) ON DELETE CASCADE,
+  assessed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  potential_level VARCHAR(20) NOT NULL CHECK (potential_level IN ('LOW', 'MEDIUM', 'HIGH')),
+  potential_score DECIMAL(5,2) NOT NULL,
+  model_version VARCHAR(50) NOT NULL,
+  input_features JSONB NOT NULL,
+  contributing_factors JSONB NOT NULL
+);
+
+CREATE INDEX idx_potential_assessments_so ON sales_potential_assessments(service_order_id);
+CREATE INDEX idx_potential_assessments_level ON sales_potential_assessments(potential_level, assessed_at);
+CREATE INDEX idx_potential_assessments_assessed_at ON sales_potential_assessments(assessed_at DESC);
+```
+
+### Risk Assessments
+
+```sql
+CREATE TABLE risk_assessments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_order_id UUID NOT NULL REFERENCES service_orders(id) ON DELETE CASCADE,
+  assessed_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  risk_level VARCHAR(20) NOT NULL CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+  risk_score DECIMAL(5,2) NOT NULL,
+  model_version VARCHAR(50) NOT NULL,
+  input_features JSONB NOT NULL,
+  risk_factors JSONB NOT NULL, -- Array of RiskFactor objects
+  triggered_by VARCHAR(50) NOT NULL -- 'BATCH_JOB' | 'EVENT_CLAIM_FILED' | 'EVENT_RESCHEDULE' etc.
+);
+
+CREATE INDEX idx_risk_assessments_so ON risk_assessments(service_order_id);
+CREATE INDEX idx_risk_assessments_level ON risk_assessments(risk_level, assessed_at);
+CREATE INDEX idx_risk_assessments_assessed_at ON risk_assessments(assessed_at DESC);
+CREATE INDEX idx_risk_assessments_triggered_by ON risk_assessments(triggered_by);
+```
+
+### External Reference Mappings
+
+```sql
+CREATE TABLE external_reference_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  fsm_entity_type VARCHAR(50) NOT NULL, -- 'SERVICE_ORDER', 'PROJECT', 'CUSTOMER'
+  fsm_entity_id UUID NOT NULL,
+  external_system_source VARCHAR(50) NOT NULL, -- 'PYXIS', 'TEMPO', 'SAP'
+  external_reference_type VARCHAR(50) NOT NULL, -- 'SALES_ORDER', 'PROJECT', 'LEAD', 'CUSTOMER', 'PRODUCT'
+  external_reference_id VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  metadata JSONB
+);
+
+CREATE INDEX idx_external_ref_fsm_entity ON external_reference_mappings(fsm_entity_type, fsm_entity_id);
+CREATE INDEX idx_external_ref_external ON external_reference_mappings(
+  external_system_source,
+  external_reference_type,
+  external_reference_id
+);
+CREATE INDEX idx_external_ref_created_at ON external_reference_mappings(created_at DESC);
+```
+
+---
+
+**v2.0 Summary**: This schema design now enables:
+- **External Sales System References**: Bidirectional traceability with Pyxis/Tempo/SAP
+- **Project Ownership**: Operator assignment with workload balancing
+- **Sales Potential Assessment**: AI-powered assessment for TV/Quotation service orders
+- **Risk Assessment**: AI-powered risk scoring with daily batch + event-triggered evaluations
+- **Complete Audit Trail**: All assessments, ownership changes, and external references tracked
+
+---
+
+**Note**: The base schema design enables:
+- Multi-sales-system support (Pyxis, Tempo, SAP)
+- Multi-channel tracking (store, web, call center, mobile, partner)
+- Channel-specific business rules and SLAs
+- Integration event audit trail
+- Future extensibility without schema changes (via JSONB fields)
+

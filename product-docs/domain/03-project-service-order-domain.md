@@ -1,7 +1,37 @@
 # Project & Service Order Domain Model - AHS Field Service Execution Platform
 
+**Version**: 2.0
+**Last Updated**: 2025-01-16
+**Status**: Updated with Feature Additions
+
 ## Document Purpose
 This document defines the complete domain model for Projects, Service Orders, Journeys, Dependencies, and their associated state machines. It serves as the authoritative specification for all project and service order management business logic.
+
+## Recent Updates (v2.0 - 2025-01-16)
+
+### New Features Integrated
+
+**1. External Sales System References**
+- Service orders now store external references (sales order ID, project ID, lead ID) for bidirectional traceability with sales systems (Pyxis, Tempo, SAP)
+- See section 1.2 for external reference value objects
+
+**2. Project Ownership ("Pilote du Chantier")**
+- Each project has one responsible operator
+- Auto-assignment based on workload balancing or manual assignment
+- See section 2.1 for Project entity updates
+
+**3. Sales Potential Assessment (TV/Quotation)**
+- AI-powered assessment of sales potential (LOW/MEDIUM/HIGH)
+- Based on salesman notes (NLP), customer context, pre-estimation value
+- See section 1.3 for sales potential attributes and methods
+
+**4. Service Order Risk Assessment**
+- AI-powered risk assessment (LOW/MEDIUM/HIGH/CRITICAL)
+- Daily batch + event-triggered assessments
+- Risk factors: claims, reschedules, payment issues, provider quality
+- See section 1.4 for risk assessment attributes and methods
+
+**Complete technical details in**: `DOMAIN_MODEL_UPDATES.md`
 
 ---
 
@@ -43,11 +73,45 @@ class ServiceOrder extends AggregateRoot<ServiceOrderId> {
   private _buffers: Buffer[]
   private _metadata: ServiceOrderMetadata
 
+  // ====== NEW: External Sales System References (v2.0) ======
+  private _externalSalesOrderId?: string // External sales order ID from Pyxis/Tempo/SAP
+  private _externalProjectId?: string    // External project ID from sales system
+  private _externalLeadId?: string       // External lead/opportunity ID
+  private _externalSystemSource?: string // 'PYXIS' | 'TEMPO' | 'SAP' | etc.
+
+  // ====== NEW: Sales Potential Assessment (v2.0) - TV/Quotation only ======
+  private _salesPotential: SalesPotential     // 'LOW' | 'MEDIUM' | 'HIGH'
+  private _salesPotentialScore?: number       // 0-100
+  private _salesPotentialUpdatedAt?: DateTime
+  private _salesPreEstimationId?: string      // Link to pre-estimation from sales system
+  private _salesPreEstimationValue?: Money
+  private _salesmanNotes?: string             // Notes from salesman (for NLP analysis)
+
+  // ====== NEW: Risk Assessment (v2.0) ======
+  private _riskLevel: RiskLevel              // 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  private _riskScore?: number                // 0-100
+  private _riskAssessedAt?: DateTime
+  private _riskFactors: RiskFactor[]         // Array of contributing risk factors
+  private _riskAcknowledgedBy?: UserId
+  private _riskAcknowledgedAt?: DateTime
+
   // Getters
   get id(): ServiceOrderId { return this._id }
   get projectId(): ProjectId | undefined { return this._projectId }
   get customerInfo(): CustomerInfo { return this._customerInfo }
   get requiredSkills(): ReadonlyArray<Skill> { return this._requiredSkills }
+
+  // New getters (v2.0)
+  get externalSalesOrderId(): string | undefined { return this._externalSalesOrderId }
+  get externalProjectId(): string | undefined { return this._externalProjectId }
+  get externalLeadId(): string | undefined { return this._externalLeadId }
+  get externalSystemSource(): string | undefined { return this._externalSystemSource }
+  get salesPotential(): SalesPotential { return this._salesPotential }
+  get salesPotentialScore(): number | undefined { return this._salesPotentialScore }
+  get riskLevel(): RiskLevel { return this._riskLevel }
+  get riskScore(): number | undefined { return this._riskScore }
+  get riskFactors(): ReadonlyArray<RiskFactor> { return this._riskFactors }
+  get isRiskAcknowledged(): boolean { return this._riskAcknowledgedBy !== undefined }
   get state(): ServiceOrderState { return this._state }
   get scheduledSlot(): ScheduledSlot | undefined { return this._scheduledSlot }
   get assignedProviderId(): ProviderId | undefined { return this._assignedProviderId }
@@ -748,6 +812,12 @@ class Project extends AggregateRoot<ProjectId> {
   private _timeline: ProjectTimeline
   private _metadata: ProjectMetadata
 
+  // ====== NEW: Project Ownership ("Pilote du Chantier") - v2.0 ======
+  private _responsibleOperatorId?: UserId
+  private _assignmentMode: ProjectAssignmentMode // 'AUTO' | 'MANUAL'
+  private _assignedAt?: DateTime
+  private _assignedBy?: string // User ID or 'SYSTEM'
+
   // Getters
   get id(): ProjectId { return this._id }
   get name(): string { return this._name }
@@ -755,6 +825,11 @@ class Project extends AggregateRoot<ProjectId> {
   get serviceOrderIds(): ReadonlyArray<ServiceOrderId> { return this._serviceOrderIds }
   get status(): ProjectStatus { return this._status }
   get timeline(): ProjectTimeline { return this._timeline }
+
+  // New getters (v2.0)
+  get responsibleOperatorId(): UserId | undefined { return this._responsibleOperatorId }
+  get assignmentMode(): ProjectAssignmentMode { return this._assignmentMode }
+  get hasResponsibleOperator(): boolean { return this._responsibleOperatorId !== undefined }
 
   // Business Methods
   addServiceOrder(serviceOrderId: ServiceOrderId): Result<void> {
@@ -1487,13 +1562,92 @@ interface JourneyRepository {
 
 ---
 
+## Appendix A: Feature Additions (v2.0)
+
+### Complete Implementation Details
+
+For complete implementation details of the new features added in v2.0, see:
+
+**`DOMAIN_MODEL_UPDATES.md`** - Contains:
+- Complete TypeScript code for all new business methods
+- New domain events (SalesPotentialAssessed, RiskAssessed, ProjectOwnershipChanged, etc.)
+- Event handler implementations
+- Business rule validations
+- Integration with AI/ML models
+
+**`FEATURE_ADDITIONS_ANALYSIS.md`** - Contains:
+- Comprehensive analysis of all new features
+- Data model changes (20 new columns, 5 new tables)
+- API endpoint specifications (10+ new endpoints)
+- Kafka event schemas
+- Implementation roadmap
+- Cross-cutting concerns
+
+### New Value Objects (v2.0)
+
+```typescript
+// External Reference
+type ExternalSystemSource = 'PYXIS' | 'TEMPO' | 'SAP'
+
+// Sales Potential
+type SalesPotential = 'LOW' | 'MEDIUM' | 'HIGH'
+
+// Risk Assessment
+type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+interface RiskFactor {
+  factor: string
+  description: string
+  weight: number // 0.0-1.0
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+}
+
+// Project Ownership
+type ProjectAssignmentMode = 'AUTO' | 'MANUAL'
+```
+
+### New Business Rules (v2.0)
+
+**External References**:
+- BR-EXT-001: Service orders store external references for bidirectional traceability
+- BR-EXT-002: External references include system source (PYXIS/TEMPO/SAP)
+- BR-EXT-003: Enable traceability, commission linking, pre-estimation matching
+
+**Project Ownership**:
+- BR-PO-001: Each project has exactly one responsible operator
+- BR-PO-002: Assignment mode (AUTO/MANUAL) configurable per country
+- BR-PO-003: Auto-assignment uses workload balancing
+- BR-PO-004: Project ownership determines notification routing
+- BR-PO-005: Operators can take ownership via single/batch operations
+
+**Sales Potential**:
+- BR-SP-001: Only TV/Quotation service orders have sales potential
+- BR-SP-002: Three levels: LOW (default), MEDIUM, HIGH
+- BR-SP-003: AI assesses on creation, salesman notes update, pre-estimation link
+- BR-SP-004: Assessment uses NLP, customer context, pre-estimation, product categories
+- BR-SP-005: High-potential TVs prioritized in dashboards
+
+**Risk Assessment**:
+- BR-RA-001: All service orders have risk level (LOW/MEDIUM/HIGH/CRITICAL)
+- BR-RA-002: Daily batch assessment (midnight) + event-triggered
+- BR-RA-003: 8 risk factors: claims, reschedules, payment, provider quality, etc.
+- BR-RA-004: HIGH/CRITICAL creates task and sends alert
+- BR-RA-005: HIGH/CRITICAL requires operator acknowledgment
+
+---
+
 ## Document Control
 
-- **Version**: 1.0.0
-- **Last Updated**: 2025-11-14
+- **Version**: 2.0.0
+- **Last Updated**: 2025-01-16
 - **Owner**: Platform Architecture Team
 - **Review Cycle**: Quarterly
+- **Change Log**:
+  - v2.0.0 (2025-01-16): Added external references, project ownership, sales potential, risk assessment
+  - v1.0.0 (2025-11-14): Initial version
 - **Related Documents**:
   - `/product-docs/domain/01-domain-model-overview.md`
   - `/product-docs/domain/02-provider-capacity-domain.md`
+  - `/product-docs/DOMAIN_MODEL_UPDATES.md` (v2.0 detailed implementation)
+  - `/product-docs/FEATURE_ADDITIONS_ANALYSIS.md` (v2.0 comprehensive analysis)
   - `/product-docs/prd/ahs-field-service-prd.md`
