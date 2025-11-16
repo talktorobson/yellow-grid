@@ -1,20 +1,21 @@
 # CLAUDE.md - AI Assistant Guide
 
-**Last Updated**: 2025-01-15
+**Last Updated**: 2025-01-16
 **Project**: Yellow Grid Platform
-**Status**: Documentation Phase (Pre-Development)
+**Status**: Documentation Complete (v2.0) - Pre-Development
 
 ---
 
 ## 🎯 Quick Start for AI Assistants
 
-This is the **Yellow Grid Platform**, a comprehensive field service management system for multi-country operations. The project is currently in the **documentation and planning phase** with no code implementation yet.
+This is the **Yellow Grid Platform**, a comprehensive Field Service Management (FSM) system for multi-country operations.
 
 ### Critical Context
-- **Current State**: Comprehensive engineering documentation (40+ files, ~39,400 lines)
-- **Implementation Status**: Pre-development (documentation complete, code not started)
+- **Current State**: Complete engineering documentation (69 files, ~45,000 lines)
+- **Version**: 2.0 (includes AI/ML features)
+- **Implementation Status**: Pre-development (documentation 100% complete, code not started)
 - **Team Size**: Expected 10-14 engineers
-- **Timeline**: 28-week implementation roadmap planned
+- **Timeline**: 28-week implementation roadmap
 - **Architecture Philosophy**: Start simple (modular monolith), scale smart (microservices when needed)
 
 ---
@@ -22,28 +23,62 @@ This is the **Yellow Grid Platform**, a comprehensive field service management s
 ## 📁 Repository Structure
 
 ```
-/home/user/fsm/
-├── product-docs/              # Complete engineering documentation (40+ files)
-│   ├── README.md              # Master documentation index
-│   ├── IMPLEMENTATION_GUIDE.md # 28-week roadmap
-│   ├── DOCUMENTATION_STATUS.md # Completion tracker
-│   ├── architecture/          # System design & technical decisions (5 docs)
-│   ├── domain/                # Business domain models & logic (9 docs)
-│   ├── api/                   # REST API specifications (8 docs)
-│   ├── integration/           # External system integrations (7 docs)
-│   ├── security/              # Security, RBAC, GDPR (6 docs)
-│   ├── infrastructure/        # Database, Kafka, deployment (7 docs)
-│   ├── operations/            # Monitoring, logging, incidents (6 docs)
-│   ├── testing/               # Testing strategies & standards (6 docs)
-│   └── development/           # Dev workflows, coding standards (6 docs)
-├── docs/                      # Architecture simplification analysis
-│   ├── architecture-simplification-analysis.md
-│   └── simplification-quick-reference.md
-├── ARCHITECTURE_SIMPLIFICATION.md  # Key simplification recommendations
-├── ENGINEERING_KIT_SUMMARY.md     # High-level project summary
-├── DOCUMENTATION_FIXES.md         # Documentation improvement notes
-└── AGENTS.md                      # Repository guidelines for AI agents
+yellow-grid/
+├── README.md                          # Entry point
+├── CLAUDE.md                          # This file - AI assistant guide
+├── AGENTS.md                          # Repository guidelines
+├── IMPORTANT_REPOSITORY_STRUCTURE.md  # Mockup vs Product separation
+├── DOCUMENTATION_CONSOLIDATION_PLAN.md # Latest consolidation details
+│
+├── business-requirements/             # Source business requirements (READ-ONLY)
+│   ├── README.md
+│   ├── Yellow Grid Platform - PRD.md
+│   └── [Source documents: Word, PDF, images]
+│
+├── product-docs/                      # ⭐ COMPLETE ENGINEERING SPECS (69 files)
+│   ├── README.md                      # Master documentation index
+│   ├── 00-ENGINEERING_KIT_SUMMARY.md  # High-level project summary
+│   ├── DOCUMENTATION_STATUS.md        # Current status (SIMPLIFIED)
+│   ├── IMPLEMENTATION_GUIDE.md        # 28-week roadmap
+│   │
+│   ├── architecture/ (11 docs)        # System design & technical decisions
+│   ├── domain/ (13 docs)              # Business domain models & logic
+│   ├── api/ (9 docs)                  # REST API specifications
+│   ├── integration/ (8 docs)          # External system integrations
+│   ├── security/ (6 docs)             # Security, RBAC, GDPR
+│   ├── infrastructure/ (8 docs)       # Database, Kafka, ML, deployment
+│   ├── operations/ (6 docs)           # Monitoring, logging, incidents
+│   ├── testing/ (6 docs)              # Testing strategies & standards
+│   ├── development/ (9 docs)          # Dev workflows, coding standards
+│   └── implementation-artifacts/      # TypeScript models, OpenAPI, SQL, Avro
+│
+├── roadshow-mockup/                   # Demo ONLY (NOT for production)
+└── src/generated/                     # Generated code from OpenAPI specs
 ```
+
+---
+
+## 🚨 IMPORTANT: Documentation Changes (v2.0 - Jan 2025)
+
+### What Changed
+✅ **DELETED** 6 obsolete analysis files (~5,400 lines):
+- COMPREHENSIVE_SPEC_REVIEW_2025-01-15.md
+- PRD_V2_GAP_ANALYSIS.md
+- DOCUMENTATION_CONSOLIDATION_SUMMARY.md
+- FEATURE_ADDITIONS_ANALYSIS.md
+- UX_FLOW_GAP_ANALYSIS.md
+- DOMAIN_MODEL_UPDATES.md
+
+✅ **SIMPLIFIED** DOCUMENTATION_STATUS.md (540 → 225 lines)
+
+✅ **REORGANIZED** business-to-product-docs → business-requirements/
+
+✅ **UPDATED** All navigation files (README.md, ENGINEERING_KIT_SUMMARY.md)
+
+### Why
+These were working documents used during documentation development. All their content has been **implemented** in the actual specifications. They added noise, not value.
+
+**Principle**: Keep only authoritative specifications, not analysis reports.
 
 ---
 
@@ -52,63 +87,98 @@ This is the **Yellow Grid Platform**, a comprehensive field service management s
 ### Architectural Approach
 **Start as Modular Monolith** → Extract to Microservices only when needed
 
-### Core Domain Services (9 services, can be simplified to 6)
+### Core Domain Services (9 services)
 
-**Original 9 Services**:
-1. **Identity & Access** - Authentication, RBAC, JWT, user management
-2. **Configuration** - System config, feature flags, business rules
-3. **Provider & Capacity** - Provider hierarchy, teams, calendars, zones
-4. **Orchestration & Control** - Projects, service orders, journeys, tasks
-5. **Scheduling & Availability** - Buffer logic, slot calculation, capacity
-6. **Assignment & Dispatch** - Candidate filtering, scoring, offers
-7. **Execution & Mobile** - Check-in/out, checklists, offline sync
-8. **Communication & Notifications** - SMS, email, masked communication
+1. **Identity & Access** - Authentication, RBAC, JWT
+2. **Configuration** - System config, feature flags
+3. **Provider & Capacity** - Provider hierarchy, teams, calendars
+4. **Orchestration & Control** - Projects, service orders, journeys
+5. **Scheduling & Availability** - Buffer logic, slot calculation
+6. **Assignment & Dispatch** - Candidate filtering, scoring
+7. **Execution & Mobile** - Check-in/out, checklists
+8. **Communication & Notifications** - SMS, email, push
 9. **Contracts, Documents & Media** - E-signature, WCF, storage
 
-**Simplified 6 Services** (see ARCHITECTURE_SIMPLIFICATION.md):
-1. **Platform Service** (Identity + Configuration merged)
-2. **Provider & Capacity**
-3. **Orchestration & Control**
-4. **Dispatch Service** (Scheduling + Assignment merged)
-5. **Execution & Mobile**
-6. **Customer Interaction** (Communication + Contracts merged)
+**Note**: Can be simplified to 6 services (see architecture/08-architecture-simplification-options.md)
 
 ### Technology Stack
 
-**Backend**:
-- Language: TypeScript
-- Framework: NestJS
-- Runtime: Node.js 20 LTS
-- ORM: Prisma
-- Validation: class-validator, class-transformer
+**Backend**: TypeScript + Node.js 20 LTS + NestJS + Prisma
+**Database**: PostgreSQL 15+ (multi-schema with RLS)
+**Messaging**: Apache Kafka (Confluent Cloud / AWS MSK) or PostgreSQL Outbox Pattern
+**Frontend**: React (web), React Native (mobile)
+**Infrastructure**: Docker + Kubernetes (AWS EKS / Azure AKS)
+**Observability**: OpenTelemetry + Prometheus + Grafana
+**ML**: Python + FastAPI (model serving) + XGBoost + Random Forest
 
-**Database**:
-- Primary: PostgreSQL 15+ (multi-schema with RLS, or simplified single schema)
-- Caching: Redis/Valkey
-- Search: PostgreSQL Full-Text Search (or OpenSearch for advanced needs)
+---
 
-**Messaging & Events**:
-- Primary: Apache Kafka (Confluent Cloud / AWS MSK)
-- Alternative: PostgreSQL Outbox Pattern (simpler, see ARCHITECTURE_SIMPLIFICATION.md)
-- Schema: Avro with Schema Registry
+## 📚 Documentation Navigation
 
-**Frontend**:
-- Web: React + TypeScript
-- Mobile: React Native
-- State: Redux/Zustand
-- API: REST (OpenAPI 3.1)
+### For New AI Assistants - Read These First
 
-**Infrastructure**:
-- Container: Docker
-- Orchestration: Kubernetes (AWS EKS / Azure AKS)
-- CI/CD: GitHub Actions
-- Cloud: AWS or Azure
+**Phase 1 - Understanding the System** (30 min):
+1. `product-docs/00-ENGINEERING_KIT_SUMMARY.md` - High-level overview
+2. `product-docs/README.md` - Master index
+3. `product-docs/architecture/01-architecture-overview.md` - System design
 
-**Observability**:
-- Tracing: OpenTelemetry (or simplified correlation IDs)
-- Metrics: Prometheus + Grafana
-- Logging: Structured JSON logs
-- APM: Datadog/New Relic
+**Phase 2 - Domain Knowledge** (As needed):
+- `product-docs/domain/01-domain-model-overview.md` - DDD principles
+- Specific domain files for the feature you're working on
+
+**Phase 3 - API Contracts** (As needed):
+- `product-docs/api/01-api-design-principles.md` - REST standards
+- Specific API files for the endpoints you're implementing
+
+### Quick Reference by Task
+
+| Task | Read This |
+|------|-----------|
+| **Understanding architecture** | architecture/01-architecture-overview.md |
+| **Provider management** | domain/02-provider-capacity-domain.md |
+| **Service orders** | domain/03-project-service-order-domain.md |
+| **Scheduling logic** | domain/04-scheduling-buffer-logic.md |
+| **Assignment transparency** | domain/05-assignment-dispatch-logic.md |
+| **Mobile operations** | domain/06-execution-field-operations.md |
+| **Contract lifecycle** | domain/07-contract-document-lifecycle.md |
+| **Task management** | domain/08-task-management.md |
+| **AI features** | domain/10-ai-context-linking.md, infrastructure/08-ml-infrastructure.md |
+| **Database schemas** | infrastructure/02-database-design.md |
+| **Kafka events** | integration/02-event-schema-registry.md |
+| **Security & RBAC** | security/02-rbac-model.md |
+| **Testing approach** | testing/01-testing-strategy.md |
+
+---
+
+## 🆕 v2.0 Features (Added January 2025)
+
+### 1. External Sales System References
+- Bidirectional traceability (FSM ↔ Pyxis/Tempo/SAP)
+- Commission linking, pre-estimation matching
+- See: domain/03-project-service-order-domain.md, integration/03-sales-integration.md
+
+### 2. Project Ownership ("Pilote du Chantier")
+- Responsible operator per project
+- AUTO/MANUAL assignment modes by country
+- Workload balancing algorithm
+- See: domain/03-project-service-order-domain.md
+
+### 3. AI-Powered Sales Potential Assessment
+- XGBoost ML model (15 features, 3-class output)
+- Prioritize high-conversion Technical Visits
+- SHAP explainability
+- See: domain/10-ai-context-linking.md, infrastructure/08-ml-infrastructure.md
+
+### 4. AI-Powered Risk Assessment
+- Random Forest ML model (20 features, 4-class output)
+- Proactive risk identification
+- Automated task creation for high-risk SOs
+- See: domain/10-ai-context-linking.md, infrastructure/08-ml-infrastructure.md
+
+### 5. Complete ML Infrastructure
+- Model serving (FastAPI), feature store (Redis), model registry (S3)
+- Training pipelines (Airflow), monitoring
+- See: infrastructure/08-ml-infrastructure.md
 
 ---
 
@@ -142,13 +212,13 @@ Provider (legal entity)
 ### Critical Workflows
 
 **1. Technical Visit (TV) Flow**:
-- Pre-installation assessment visit
+- Pre-installation assessment
 - Three outcomes: YES / YES-BUT / NO
-- Can block/unblock subsequent installation orders
+- Can block/unblock installation orders
 - Integration with sales for scope changes
 
-**2. Assignment Transparency**:
-- Funnel audit trail (who was filtered out and why)
+**2. Assignment Transparency** (⭐ UNIQUE DIFFERENTIATOR):
+- Complete funnel audit trail
 - Scoring breakdown with rationale
 - Multiple assignment modes: direct, offer, broadcast
 - Country-specific auto-accept (ES/IT)
@@ -163,79 +233,27 @@ Provider (legal entity)
 
 ## 🔧 Development Conventions
 
-### File & Code Organization
-
-**NestJS Module Structure** (when implementation starts):
-```
-src/
-├── modules/
-│   ├── platform/           # Identity + Configuration
-│   │   ├── auth/
-│   │   │   ├── auth.module.ts
-│   │   │   ├── auth.service.ts
-│   │   │   ├── auth.controller.ts
-│   │   │   └── __tests__/
-│   │   ├── rbac/
-│   │   └── config/
-│   ├── providers/          # Provider & Capacity
-│   ├── orchestration/      # Projects, Orders, Journeys
-│   ├── dispatch/           # Scheduling + Assignment
-│   ├── execution/          # Execution & Mobile
-│   └── customer/           # Communication + Contracts
-├── common/                 # Shared utilities
-│   ├── decorators/
-│   ├── filters/
-│   ├── guards/
-│   ├── interceptors/
-│   ├── pipes/
-│   └── utils/
-├── config/                 # Configuration
-├── database/               # Prisma schema, migrations
-└── main.ts
-```
-
 ### Naming Conventions
-
-**Files**:
-- Modules: `*.module.ts`
-- Services: `*.service.ts`
-- Controllers: `*.controller.ts`
-- DTOs: `*.dto.ts`
-- Entities: `*.entity.ts`
-- Tests: `*.spec.ts`
 
 **REST API**:
 - Plural collections: `/api/v1/providers`
 - Singular instances: `/api/v1/providers/{providerId}`
-- Nested resources: `/api/v1/providers/{providerId}/work-teams`
 - Query params: snake_case (e.g., `?country_code=FR`)
 
 **Kafka Events**:
 - Format: `{domain}.{entity}.{action}`
-- Examples:
-  - `projects.service_order.created`
-  - `assignment.offer.accepted`
-  - `execution.checkin.completed`
+- Examples: `projects.service_order.created`, `assignment.offer.accepted`
 
 **Database**:
 - Tables: snake_case (e.g., `service_orders`, `work_teams`)
 - Columns: snake_case (e.g., `country_code`, `created_at`)
-- Indexes: `idx_{table}_{column}`
-- Foreign keys: `fk_{table}_{ref_table}`
 
 ### Code Style
-
-**TypeScript**:
-- Strict mode enabled
+- TypeScript strict mode enabled
 - 2-space indentation
 - ESLint + Prettier enforced
 - No `any` types (use `unknown` if needed)
 - Explicit return types on functions
-
-**Imports Order**:
-1. External modules (e.g., `@nestjs/common`)
-2. Internal modules (e.g., `@/common/decorators`)
-3. Relative imports
 
 ---
 
@@ -255,21 +273,6 @@ src/
 Unit Tests (60%)
 ```
 
-### Test Commands (when implemented)
-```bash
-npm run test:unit           # Unit tests
-npm run test:integration    # Integration tests
-npm run test:e2e           # E2E tests
-npm run test               # All tests
-npm run test:coverage      # Coverage report
-npm run test:watch         # Watch mode
-```
-
-### Test File Locations
-- Unit: `src/**/__tests__/*.spec.ts` or `src/**/*.spec.ts`
-- Integration: `test/integration/**/*.test.ts`
-- E2E: `test/e2e/**/*.e2e-spec.ts`
-
 ---
 
 ## 🔐 Security Considerations
@@ -282,15 +285,12 @@ npm run test:watch         # Watch mode
 
 ### Security Checklist (for code reviews)
 - [ ] Input validation (all API endpoints)
-- [ ] SQL injection prevention (use Prisma parameterized queries)
+- [ ] SQL injection prevention (Prisma parameterized queries)
 - [ ] XSS prevention (sanitize user inputs)
-- [ ] CSRF protection (SameSite cookies)
 - [ ] Rate limiting (per user/IP)
 - [ ] Secrets in environment variables (never in code)
 - [ ] Sensitive data logging (mask PII)
-- [ ] API authentication (JWT on all protected endpoints)
 - [ ] Authorization checks (verify user permissions)
-- [ ] Audit logging (sensitive operations)
 
 ### GDPR Compliance
 - **Data Residency**: Country-specific data storage
@@ -310,12 +310,9 @@ main (production)
 develop (integration)
   ↑
 feature/TICKET-ID-short-description
-hotfix/TICKET-ID-critical-fix
 ```
 
-### Commit Message Format
-Follow **Conventional Commits**:
-
+### Commit Message Format (Conventional Commits)
 ```
 <type>(<scope>): <subject>
 
@@ -324,117 +321,14 @@ Follow **Conventional Commits**:
 <footer>
 ```
 
-**Types**:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `style`: Formatting changes
-- `refactor`: Code restructuring
-- `perf`: Performance improvement
-- `test`: Adding/updating tests
-- `chore`: Build tasks, configs, etc.
+**Types**: feat, fix, docs, style, refactor, perf, test, chore
 
 **Examples**:
 ```bash
 feat(assignment): add provider scoring transparency
 fix(scheduling): correct buffer stacking for holidays
 docs(api): update scheduling API examples
-refactor(providers): extract scoring logic to separate service
 ```
-
-### Pull Request Requirements
-- **Approvals**: 1 approval (2 for critical changes: DB migrations, auth, API contracts)
-- **CI**: All tests pass, lint passes, build succeeds
-- **Coverage**: No coverage decrease
-- **Documentation**: Update relevant docs if needed
-
----
-
-## 📚 Documentation Navigation
-
-### Essential Reads for New AI Assistants
-
-**Phase 1 - Understanding the System** (Read First):
-1. `ENGINEERING_KIT_SUMMARY.md` - High-level overview
-2. `product-docs/README.md` - Master index
-3. `product-docs/architecture/01-architecture-overview.md` - System design
-4. `product-docs/architecture/03-service-boundaries.md` - Domain services
-5. `ARCHITECTURE_SIMPLIFICATION.md` - Simplification recommendations
-
-**Phase 2 - Domain Knowledge**:
-1. `product-docs/domain/01-domain-model-overview.md` - DDD principles
-2. `product-docs/domain/02-provider-capacity-domain.md` - Provider hierarchy
-3. `product-docs/domain/03-project-service-order-domain.md` - Service orders
-4. `product-docs/domain/05-assignment-dispatch-logic.md` - Assignment logic
-5. `product-docs/domain/06-execution-field-operations.md` - Mobile operations
-
-**Phase 3 - API Contracts**:
-1. `product-docs/api/01-api-design-principles.md` - REST standards
-2. `product-docs/api/02-authentication-authorization.md` - Auth & RBAC
-3. Specific API docs in `product-docs/api/` as needed
-
-**Phase 4 - Implementation Details**:
-1. `product-docs/development/01-development-workflow.md` - Dev lifecycle
-2. `product-docs/testing/01-testing-strategy.md` - Testing approach
-3. `product-docs/infrastructure/02-database-design.md` - Database schemas
-4. `product-docs/operations/01-observability-strategy.md` - Monitoring
-
-### Quick Reference Files
-
-**When working on...**:
-- **Authentication**: `product-docs/api/02-authentication-authorization.md`
-- **Provider Management**: `product-docs/domain/02-provider-capacity-domain.md`, `product-docs/api/03-provider-capacity-api.md`
-- **Service Orders**: `product-docs/domain/03-project-service-order-domain.md`
-- **Scheduling**: `product-docs/domain/04-scheduling-buffer-logic.md`, `product-docs/api/04-scheduling-api.md`
-- **Assignment**: `product-docs/domain/05-assignment-dispatch-logic.md`, `product-docs/api/05-assignment-dispatch-api.md`
-- **Mobile App**: `product-docs/domain/06-execution-field-operations.md`, `product-docs/api/06-execution-mobile-api.md`
-- **Contracts**: `product-docs/domain/07-contract-document-lifecycle.md`, `product-docs/api/08-document-media-api.md`
-- **Database**: `product-docs/infrastructure/02-database-design.md`
-- **Events**: `product-docs/architecture/05-event-driven-architecture.md`, `product-docs/integration/02-event-schema-registry.md`
-- **Testing**: `product-docs/testing/01-testing-strategy.md`
-- **Deployment**: `product-docs/infrastructure/06-deployment-architecture.md`
-
----
-
-## 🚀 Implementation Roadmap
-
-### Current Status: Pre-Development (Documentation Complete)
-
-### 28-Week Implementation Plan
-
-**Phase 1: Foundation (Weeks 1-4)**
-- Infrastructure setup (AWS/Azure, Postgres, Kafka/Outbox)
-- Core services (Identity, Configuration, Provider basics)
-- Event infrastructure
-- Observability foundation
-
-**Phase 2: Core Business Logic (Weeks 5-12)**
-- Orchestration & Projects
-- Scheduling & Buffer Logic
-- Assignment & Dispatch
-- Execution & Mobile
-- Contracts & Documents
-
-**Phase 3: Communication & UX (Weeks 13-16)**
-- Notification system
-- Operator Web App (Control Tower)
-
-**Phase 4: Mobile App & Advanced (Weeks 17-24)**
-- React Native mobile app
-- Offline sync
-- Advanced scheduling
-- Analytics
-
-**Phase 5: Integration & Production (Weeks 25-28)**
-- Sales integration (Pyxis/Tempo)
-- ERP integration (Oracle)
-- Security hardening
-- Performance optimization
-- Production launch
-
-**Phase 6: Scale (Week 29+)**
-- Pilot rollout
-- Multi-country expansion
 
 ---
 
@@ -443,64 +337,51 @@ refactor(providers): extract scoring logic to separate service
 ### Do's ✅
 
 **Architecture**:
-- ✅ Start with modular monolith (simpler, faster development)
-- ✅ Keep clear module boundaries even in monolith
-- ✅ Use application-level tenant filtering (simpler than RLS)
-- ✅ Defer optimizations (partitioning, caching) until proven needed
+- ✅ Start with modular monolith
+- ✅ Keep clear module boundaries
+- ✅ Use application-level tenant filtering
+- ✅ Defer optimizations until proven needed
 
 **Code Quality**:
-- ✅ Write tests alongside code (TDD approach)
+- ✅ Write tests alongside code (TDD)
 - ✅ Use TypeScript strict mode
-- ✅ Validate all API inputs (class-validator)
-- ✅ Handle errors explicitly (no silent failures)
-- ✅ Log with correlation IDs for traceability
+- ✅ Validate all API inputs
+- ✅ Handle errors explicitly
+- ✅ Log with correlation IDs
 
 **API Design**:
-- ✅ Follow OpenAPI specs in `product-docs/api/`
-- ✅ Version APIs (`/api/v1/...`)
+- ✅ Follow OpenAPI specs in product-docs/api/
+- ✅ Version APIs (/api/v1/...)
 - ✅ Use proper HTTP status codes
 - ✅ Paginate list endpoints
 - ✅ Include `_links` for HATEOAS
 
 **Security**:
 - ✅ Validate and sanitize all inputs
-- ✅ Use parameterized queries (Prisma prevents SQL injection)
+- ✅ Use parameterized queries (Prisma)
 - ✅ Store secrets in environment variables
 - ✅ Implement rate limiting
-- ✅ Log security events (auth failures, permission denials)
-
-**Testing**:
-- ✅ Aim for 80%+ coverage
-- ✅ Test critical paths first
-- ✅ Use test data factories
-- ✅ Clean up test data after tests
+- ✅ Log security events
 
 ### Don'ts ❌
 
 **Architecture**:
-- ❌ Don't create microservices from day 1 (adds complexity)
-- ❌ Don't add Kafka if simple events suffice (use Outbox pattern)
-- ❌ Don't add OpenSearch prematurely (PostgreSQL FTS is sufficient)
+- ❌ Don't create microservices from day 1
+- ❌ Don't add Kafka if simple events suffice
+- ❌ Don't add OpenSearch prematurely
 - ❌ Don't partition tables before 20M+ rows
-- ❌ Don't add circuit breakers until proven necessary
 
 **Code Quality**:
 - ❌ Don't use `any` type in TypeScript
 - ❌ Don't skip error handling
-- ❌ Don't log sensitive data (passwords, tokens, PII)
-- ❌ Don't commit secrets or credentials
+- ❌ Don't log sensitive data
+- ❌ Don't commit secrets
 - ❌ Don't bypass validation
-
-**API Design**:
-- ❌ Don't break API contracts without versioning
-- ❌ Don't return raw database errors to clients
-- ❌ Don't use unbounded list queries (always paginate)
-- ❌ Don't mix authentication and authorization logic
 
 **Testing**:
 - ❌ Don't skip tests ("will add later" = never)
-- ❌ Don't write flaky tests (fix or delete)
-- ❌ Don't test implementation details (test behavior)
+- ❌ Don't write flaky tests
+- ❌ Don't test implementation details
 - ❌ Don't share state between tests
 
 ---
@@ -510,9 +391,9 @@ refactor(providers): extract scoring logic to separate service
 ### When Implementing Features
 
 1. **Read Relevant Docs First**:
-   - Check `product-docs/domain/` for business rules
-   - Check `product-docs/api/` for API contracts
-   - Check `product-docs/architecture/` for patterns
+   - Check product-docs/domain/ for business rules
+   - Check product-docs/api/ for API contracts
+   - Check product-docs/architecture/ for patterns
 
 2. **Follow the Spec**:
    - Implement exactly as documented
@@ -520,19 +401,19 @@ refactor(providers): extract scoring logic to separate service
    - Ask for clarification if spec is unclear
 
 3. **Consider Simplifications**:
-   - Review `ARCHITECTURE_SIMPLIFICATION.md` for recommendations
+   - Review architecture/08-architecture-simplification-options.md
    - Prefer simple solutions over complex ones
-   - Start with PostgreSQL-based solutions before adding new infrastructure
+   - Start with PostgreSQL-based solutions before adding infrastructure
 
 4. **Write Tests**:
    - Unit tests for business logic
    - Integration tests for API endpoints
-   - Follow patterns in `product-docs/testing/`
+   - Follow patterns in product-docs/testing/
 
 5. **Update Documentation**:
    - Update API specs if changes are made
    - Update domain docs if business logic changes
-   - Keep `DOCUMENTATION_STATUS.md` current
+   - Keep DOCUMENTATION_STATUS.md current
 
 ### When Reviewing Code
 
@@ -557,12 +438,12 @@ refactor(providers): extract scoring logic to separate service
 
 1. **Cite Documentation**:
    - Reference specific files and sections
-   - Example: "See `product-docs/domain/02-provider-capacity-domain.md:45-67`"
+   - Example: "See product-docs/domain/02-provider-capacity-domain.md:45-67"
 
 2. **Consider Context**:
    - Project is pre-implementation (no code yet)
    - Specifications are comprehensive and authoritative
-   - Simplification recommendations in `ARCHITECTURE_SIMPLIFICATION.md` are worth considering
+   - Simplification recommendations are worth considering
 
 3. **Be Specific**:
    - Provide concrete examples
@@ -584,23 +465,17 @@ refactor(providers): extract scoring logic to separate service
 ### Documentation Status
 
 This repository has:
-- ✅ Complete architecture documentation (5 files)
-- ✅ Complete domain models (9 files)
-- ✅ Complete API specifications (8 files)
-- ✅ Complete integration specs (7 files)
+- ✅ Complete architecture documentation (11 files)
+- ✅ Complete domain models (13 files)
+- ✅ Complete API specifications (9 files)
+- ✅ Complete integration specs (8 files)
 - ✅ Complete security documentation (6 files)
-- ✅ Complete infrastructure docs (7 files)
+- ✅ Complete infrastructure docs (8 files)
 - ✅ Complete operations guides (6 files)
 - ✅ Complete testing strategy (6 files)
-- ✅ Complete development workflows (6 files)
+- ✅ Complete development workflows (9 files)
+- ✅ **Total: 69 files, ~45,000 lines, 100% complete**
 - ⚠️ **No code implementation yet** (pre-development phase)
-
-### Known Documentation Gaps
-
-See `DOCUMENTATION_FIXES.md` for detailed improvement notes. Key items:
-1. Some development guides need expansion
-2. Technical stack doc could be split for easier maintenance
-3. Test environment setup needs more detail
 
 ---
 
@@ -616,37 +491,13 @@ See `DOCUMENTATION_FIXES.md` for detailed improvement notes. Key items:
 - **Test Coverage**: > 80% overall, > 90% for critical paths
 - **Build Time**: < 10 minutes
 - **Deployment Time**: < 15 minutes
-- **Mean Time to Recovery (MTTR)**: < 30 minutes
+- **MTTR**: < 30 minutes
 
 ### Business Metrics
 - Assignment success rate: > 95%
 - Provider acceptance rate: > 85%
 - Customer satisfaction (CSAT): > 4.5/5
 - First-time-fix rate: > 90%
-
----
-
-## 🆘 When You Need Help
-
-### Unclear Requirements?
-- Check `product-docs/domain/` for business rules
-- Check `product-docs/api/` for API contracts
-- Ask the user for clarification with specific questions
-
-### Technical Decisions?
-- Review `product-docs/architecture/` for patterns
-- Review `ARCHITECTURE_SIMPLIFICATION.md` for recommendations
-- Consider simpler solutions first (Postgres over OpenSearch, Outbox over Kafka, etc.)
-
-### Security Concerns?
-- Review `product-docs/security/` for guidelines
-- Check GDPR requirements in `product-docs/security/03-data-privacy-gdpr.md`
-- When in doubt, ask the user
-
-### Testing Questions?
-- Check `product-docs/testing/01-testing-strategy.md`
-- Follow test pyramid (60% unit, 30% integration, 10% E2E)
-- Aim for 80%+ coverage
 
 ---
 
@@ -664,28 +515,22 @@ See `DOCUMENTATION_FIXES.md` for detailed improvement notes. Key items:
 **DDD**: Domain-Driven Design
 **BFF**: Backend For Frontend
 **CQRS**: Command Query Responsibility Segregation
-**NFR**: Non-Functional Requirement
 
 ---
 
 ## 📞 Additional Resources
 
 ### Documentation Index
-- **Master Index**: `product-docs/README.md`
-- **Implementation Guide**: `product-docs/IMPLEMENTATION_GUIDE.md`
-- **Status Tracker**: `product-docs/DOCUMENTATION_STATUS.md`
-- **Simplification Guide**: `ARCHITECTURE_SIMPLIFICATION.md`
-- **Engineering Kit Summary**: `ENGINEERING_KIT_SUMMARY.md`
+- **Master Index**: product-docs/README.md
+- **Implementation Guide**: product-docs/IMPLEMENTATION_GUIDE.md
+- **Status Tracker**: product-docs/DOCUMENTATION_STATUS.md
+- **Consolidation Plan**: DOCUMENTATION_CONSOLIDATION_PLAN.md (latest changes)
 
 ### External References
 - NestJS: https://docs.nestjs.com/
 - Prisma: https://www.prisma.io/docs
 - Kafka: https://kafka.apache.org/documentation/
 - PostgreSQL: https://www.postgresql.org/docs/
-
-### Repository Links
-- Git branch: `claude/create-codebase-documentation-01VrzYM4ZnreM77qUeVekEgW`
-- No main branch specified yet (pre-development)
 
 ---
 
@@ -701,7 +546,8 @@ See `DOCUMENTATION_FIXES.md` for detailed improvement notes. Key items:
 
 ---
 
-**Document Version**: 1.0.0
+**Document Version**: 2.0.1
 **Created**: 2025-01-15
+**Updated**: 2025-01-16 (Documentation consolidation)
 **Maintained By**: Development Team + AI Assistants
 **Review Frequency**: Monthly or when major changes occur
