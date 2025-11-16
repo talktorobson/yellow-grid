@@ -12,6 +12,8 @@ import { ExecutionsModule } from './modules/executions/executions.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
+import { WCFModule } from './modules/wcf/wcf.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { ContractsModule } from './modules/contracts/contracts.module';
     AuthModule,
     ProjectsModule,
     ContractsModule,
+    WCFModule,
+    TasksModule,
     ProvidersModule,
     ServiceOrdersModule,
     AssignmentsModule,
