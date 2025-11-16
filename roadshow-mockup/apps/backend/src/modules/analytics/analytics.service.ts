@@ -55,10 +55,10 @@ export class AnalyticsService {
 
     const totalAssignments = provider.assignments.length;
     const acceptedAssignments = provider.assignments.filter(
-      (a) => a.status === 'ACCEPTED' || a.status === 'ASSIGNED',
+      (a: any) => a.status === 'ACCEPTED' || a.status === 'ASSIGNED',
     ).length;
     const completedJobs = provider.assignments.filter(
-      (a) => a.serviceOrder.status === 'COMPLETED',
+      (a: any) => a.serviceOrder.status === 'COMPLETED',
     ).length;
 
     return {

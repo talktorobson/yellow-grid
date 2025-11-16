@@ -10,6 +10,10 @@ import { ServiceOrdersModule } from './modules/service-orders/service-orders.mod
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { ExecutionsModule } from './modules/executions/executions.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
+import { WCFModule } from './modules/wcf/wcf.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
   imports: [
@@ -32,6 +36,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 
     // Feature modules
     AuthModule,
+    ProjectsModule,
+    ContractsModule,
+    WCFModule,
+    TasksModule,
     ProvidersModule,
     ServiceOrdersModule,
     AssignmentsModule,
