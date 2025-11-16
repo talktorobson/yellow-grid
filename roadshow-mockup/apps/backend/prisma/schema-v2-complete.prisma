@@ -1,0 +1,870 @@
+// Yellow Grid Platform - Complete Production Schema
+// Full Implementation (Option A)
+// Version: 2.0 - Complete Workflow Implementation
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MULTI-TENANCY & CONFIGURATION
+// ============================================================================
+
+enum CountryCode {
+  ES // Spain
+  FR // France
+  IT // Italy
+  PL // Poland
+}
+
+enum BusinessUnit {
+  LEROY_MERLIN
+  BRICO_DEPOT
+}
+
+enum AssignmentModeConfig {
+  AUTO    // Automatic assignment with workload balancing
+  MANUAL  // Manual assignment by operator
+}
+
+model Country {
+  id                      String               @id @default(uuid())
+  code                    CountryCode          @unique
+  name                    String
+  currency                String               // EUR, PLN, etc.
+  locale                  String               // es-ES, fr-FR, it-IT, pl-PL
+  timezone                String               // Europe/Madrid, Europe/Paris, etc.
+  active                  Boolean              @default(true)
+
+  // Country-specific rules
+  providerAutoAccept      Boolean              @default(false) @map("provider_auto_accept") // ES, IT = true
+  projectOwnershipMode    AssignmentModeConfig @default(AUTO) @map("project_ownership_mode")
+  contractAutoSendHours   Int                  @default(2) @map("contract_auto_send_hours") // Auto-send after N hours
+  offerTimeoutHours       Int                  @default(4) @map("offer_timeout_hours") // Provider response timeout
+
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+
+  providers     Provider[]
+  serviceOrders ServiceOrder[]
+  users         User[]
+  projects      Project[]
+
+  @@map("countries")
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION
+// ============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  COUNTRY_ADMIN
+  OPERATOR
+  PROVIDER_ADMIN
+  TECHNICIAN
+}
+
+model User {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  firstName    String       @map("first_name")
+  lastName     String       @map("last_name")
+  role         UserRole
+  countryCode  CountryCode  @map("country_code")
+  buCode       BusinessUnit @map("bu_code")
+  active       Boolean      @default(true)
+  lastLoginAt  DateTime?    @map("last_login_at")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  country Country @relation(fields: [countryCode], references: [code])
+
+  // Relationships
+  providerId String?   @unique @map("provider_id")
+  provider   Provider? @relation(fields: [providerId], references: [id])
+
+  workTeamId String?   @unique @map("work_team_id")
+  workTeam   WorkTeam? @relation(fields: [workTeamId], references: [id])
+
+  // Pilote du Chantier (Project Ownership)
+  ownedProjects          Project[]        @relation("ProjectOwner")
+  createdProjects        Project[]        @relation("ProjectCreator")
+
+  // Task management
+  assignedTasks          TaskManagement[] @relation("TaskAssignee")
+  createdTasks           TaskManagement[] @relation("TaskCreator")
+
+  // Audit trails
+  createdContracts       Contract[]       @relation("ContractCreator")
+  goExecOverrides        ServiceOrder[]   @relation("GoExecOverrider")
+
+  @@index([email])
+  @@index([countryCode, buCode])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================================================
+// PROVIDERS & CAPACITY
+// ============================================================================
+
+enum ProviderServiceType {
+  P1_ONLY
+  P2_ONLY
+  P1_AND_P2
+}
+
+enum ProviderRiskStatus {
+  OK
+  ON_WATCH
+  SUSPENDED
+}
+
+model Provider {
+  id            String              @id @default(uuid())
+  externalId    String              @unique @map("external_id")
+  name          String
+  legalName     String              @map("legal_name")
+  countryCode   CountryCode         @map("country_code")
+  buCode        BusinessUnit        @map("bu_code")
+  serviceTypes  ProviderServiceType @map("service_types")
+
+  // Quality & Performance
+  rating        Float               @default(0.0) // 0.0 to 5.0
+  tier          Int                 @default(2) // 1 (best), 2, 3 - for scoring
+  totalJobs     Int                 @default(0) @map("total_jobs")
+  completedJobs Int                 @default(0) @map("completed_jobs")
+
+  // Risk Management
+  riskStatus    ProviderRiskStatus  @default(OK) @map("risk_status")
+  riskReason    String?             @map("risk_reason")
+  suspendedFrom DateTime?           @map("suspended_from")
+  suspendedUntil DateTime?          @map("suspended_until")
+
+  // Certifications (JSON array)
+  certifications Json?              // [{code: 'CERT_001', name: 'Kitchen Install', expiresAt: '...'}]
+
+  active        Boolean             @default(true)
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  country Country @relation(fields: [countryCode], references: [code])
+
+  // Relationships
+  workTeams   WorkTeam[]
+  assignments Assignment[]
+  user        User?
+  zones       ProviderZone[]
+  metrics     ProviderMetrics?
+  invoices    ProviderInvoice[]
+
+  @@index([countryCode, buCode])
+  @@index([active])
+  @@index([riskStatus])
+  @@index([tier])
+  @@map("providers")
+}
+
+model ProviderZone {
+  id         String   @id @default(uuid())
+  providerId String   @map("provider_id")
+  postalCode String   @map("postal_code")
+  city       String
+  region     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, postalCode])
+  @@index([postalCode])
+  @@map("provider_zones")
+}
+
+model WorkTeam {
+  id          String   @id @default(uuid())
+  providerId  String   @map("provider_id")
+  name        String
+  capacity    Int      @default(1)
+  active      Boolean  @default(true)
+  currentLoad Int      @default(0) @map("current_load")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  user        User?
+  assignments Assignment[]
+  executions  Execution[]
+
+  @@index([providerId])
+  @@index([active])
+  @@map("work_teams")
+}
+
+// ============================================================================
+// PROJECTS (Container for Service Orders)
+// ============================================================================
+
+enum ProjectStatus {
+  CREATED
+  IN_PROGRESS
+  PARTIALLY_COMPLETED
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model Project {
+  id                     String        @id @default(uuid())
+  externalId             String?       @unique @map("external_id") // From sales system
+  name                   String?
+  status                 ProjectStatus @default(CREATED)
+  countryCode            CountryCode   @map("country_code")
+  buCode                 BusinessUnit  @map("bu_code")
+
+  // Worksite address (single address for whole project)
+  worksiteStreet         String        @map("worksite_street")
+  worksiteCity           String        @map("worksite_city")
+  worksitePostal         String        @map("worksite_postal")
+  worksiteCountry        CountryCode   @map("worksite_country")
+
+  // Pilote du Chantier (Project Ownership) ⭐
+  responsibleOperatorId  String?       @map("responsible_operator_id")
+  assignmentMode         AssignmentModeConfig @default(AUTO) @map("assignment_mode")
+  totalEstimatedHours    Float         @default(0) @map("total_estimated_hours") // For workload balancing
+
+  // Project value
+  totalValue             Decimal?      @map("total_value") @db.Decimal(10, 2)
+  paidAmount             Decimal       @default(0) @map("paid_amount") @db.Decimal(10, 2)
+
+  description            String?       @db.Text
+  createdAt              DateTime      @default(now()) @map("created_at")
+  createdBy              String?       @map("created_by")
+  updatedAt              DateTime      @updatedAt @map("updated_at")
+  completedAt            DateTime?     @map("completed_at")
+
+  country             Country          @relation(fields: [countryCode], references: [code])
+  responsibleOperator User?            @relation("ProjectOwner", fields: [responsibleOperatorId], references: [id])
+  creator             User?            @relation("ProjectCreator", fields: [createdBy], references: [id])
+
+  // Relationships
+  contacts        ProjectContact[]
+  serviceOrders   ServiceOrder[]
+  contracts       Contract[]
+
+  @@index([countryCode, buCode])
+  @@index([status])
+  @@index([responsibleOperatorId])
+  @@index([worksitePostal])
+  @@map("projects")
+}
+
+model ProjectContact {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  name      String
+  email     String?
+  phone     String?
+  isPrimary Boolean  @default(false) @map("is_primary") // One primary contact
+  role      String?  // "Husband", "Wife", "Property Manager", etc.
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([email])
+  @@map("project_contacts")
+}
+
+// ============================================================================
+// SERVICE ORDERS
+// ============================================================================
+
+enum ServiceOrderStatus {
+  CREATED
+  SCHEDULED
+  CONTRACT_PENDING
+  CONTRACT_SENT
+  CONTRACT_SIGNED
+  ASSIGNED
+  ACCEPTED
+  GO_EXEC_NOK
+  IN_PROGRESS
+  COMPLETED
+  VALIDATED
+  WCF_PENDING
+  WCF_SIGNED
+  CLOSED
+  CANCELLED
+  BLOCKED
+  REWORK_NEEDED
+}
+
+enum ServicePriority {
+  P1 // 24-72h
+  P2 // 3-7 days
+}
+
+enum ServiceType {
+  INSTALLATION
+  TECHNICAL_VISIT
+  QUOTATION
+  MAINTENANCE
+  REPAIR
+  REWORK
+}
+
+enum TVOutcome {
+  PENDING
+  YES
+  YES_BUT
+  NO
+}
+
+enum SalesPotential {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum StatusTagType {
+  CONTRACT // OK/NOK - Before assignment
+  GO_EXEC  // OK/NOK - After assigned, before execution
+  WCF      // OK/NOK - After execution
+}
+
+model ServiceOrder {
+  id               String             @id @default(uuid())
+  externalId       String?            @unique @map("external_id")
+
+  // Project association ⭐ CRITICAL
+  projectId        String             @map("project_id")
+
+  // Multi-tenancy
+  countryCode      CountryCode        @map("country_code")
+  buCode           BusinessUnit       @map("bu_code")
+
+  // Order details
+  status           ServiceOrderStatus @default(CREATED)
+  priority         ServicePriority
+  serviceType      ServiceType        @map("service_type")
+  description      String?            @db.Text
+  specialNotes     String?            @map("special_notes") @db.Text
+
+  // Customer info (duplicated from project for convenience)
+  customerName     String             @map("customer_name")
+  customerEmail    String             @map("customer_email")
+  customerPhone    String             @map("customer_phone")
+
+  // Address (from worksite)
+  addressStreet    String             @map("address_street")
+  addressCity      String             @map("address_city")
+  addressPostal    String             @map("address_postal")
+  addressCountry   CountryCode        @map("address_country")
+
+  // Scheduling
+  scheduledDate    DateTime?          @map("scheduled_date")
+  estimatedHours   Float              @default(2.0) @map("estimated_hours")
+
+  // ========== SALES INTEGRATION (Kafka from sales system) ==========
+  salesOrderId            String?    @map("sales_order_id") // External sales order ID
+  salesProjectId          String?    @map("sales_project_id") // External project ID
+  salesLeadId             String?    @map("sales_lead_id") // Opportunity/lead ID
+  salesSystemSource       String?    @map("sales_system_source") // PYXIS, TEMPO, SAP
+
+  // ========== TV POTENTIAL ASSESSMENT (AI-powered) ⭐ ==========
+  salesPotential          SalesPotential? @map("sales_potential")
+  salesPotentialScore     Float?     @map("sales_potential_score") // 0-100
+  salesPotentialUpdatedAt DateTime?  @map("sales_potential_updated_at")
+  salesPreEstimationId    String?    @map("sales_pre_estimation_id") // Link to pre-estimation
+  salesPreEstimationValue Decimal?   @map("sales_pre_estimation_value") @db.Decimal(10, 2)
+  salesmanNotes           String?    @map("salesman_notes") @db.Text // For NLP analysis
+
+  // ========== RISK ASSESSMENT (AI-powered) ⭐ ==========
+  riskLevel               RiskLevel? @map("risk_level")
+  riskScore               Float?     @map("risk_score") // 0-100
+  riskAssessedAt          DateTime?  @map("risk_assessed_at")
+  riskFactors             Json?      @map("risk_factors") // [{factor, weight, description}]
+  riskAcknowledgedBy      String?    @map("risk_acknowledged_by")
+  riskAcknowledgedAt      DateTime?  @map("risk_acknowledged_at")
+
+  // ========== CONTRACT WORKFLOW ⭐ ==========
+  contractId              String?    @unique @map("contract_id")
+  contractStatus          String?    @map("contract_status") // OK, NOK (for status tag)
+  contractSentAt          DateTime?  @map("contract_sent_at")
+  contractSignedAt        DateTime?  @map("contract_signed_at")
+
+  // ========== GO EXECUTION CHECKS ⭐ ==========
+  goExecStatus            String?    @map("go_exec_status") // OK, NOK (for status tag)
+  goExecBlockReason       String?    @map("go_exec_block_reason") // Why blocked
+  goExecOverride          Boolean    @default(false) @map("go_exec_override") // Operator derogation
+  goExecOverrideBy        String?    @map("go_exec_override_by")
+  goExecOverrideAt        DateTime?  @map("go_exec_override_at")
+
+  // External system statuses (from Kafka)
+  paymentStatus           String?    @map("payment_status") // From sales system
+  productDeliveryStatus   String?    @map("product_delivery_status") // From supply chain
+
+  // ========== WCF (WORK CLOSING FORM) ⭐ ==========
+  wcfId                   String?    @unique @map("wcf_id")
+  wcfStatus               String?    @map("wcf_status") // OK, NOK (for status tag)
+  wcfSentAt               DateTime?  @map("wcf_sent_at")
+  wcfSignedAt             DateTime?  @map("wcf_signed_at")
+
+  // ========== PROVIDER PAYMENT ==========
+  providerPaymentStatus   String?    @map("provider_payment_status") // PENDING, AUTHORIZED, PAID
+  providerInvoiceId       String?    @unique @map("provider_invoice_id")
+
+  // ========== TECHNICAL VISIT DEPENDENCY ==========
+  requiresTV       Boolean            @default(false) @map("requires_tv")
+  tvOrderId        String?            @map("tv_order_id")
+  tvOutcome        TVOutcome          @default(PENDING) @map("tv_outcome")
+  tvCompletedAt    DateTime?          @map("tv_completed_at")
+  blockedByTV      Boolean            @default(false) @map("blocked_by_tv")
+
+  // ========== REWORK ==========
+  isRework         Boolean            @default(false) @map("is_rework")
+  originalOrderId  String?            @map("original_order_id")
+  reworkReason     String?            @map("rework_reason") @db.Text
+
+  // Timestamps
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  completedAt      DateTime?          @map("completed_at")
+
+  // Relations
+  country Country @relation(fields: [countryCode], references: [code])
+  project Project @relation(fields: [projectId], references: [id])
+
+  contract          Contract?         @relation(fields: [contractId], references: [id])
+  wcf               WorkClosingForm?  @relation(fields: [wcfId], references: [id])
+  providerInvoice   ProviderInvoice?  @relation(fields: [providerInvoiceId], references: [id])
+  goExecOverrider   User?             @relation("GoExecOverrider", fields: [goExecOverrideBy], references: [id])
+
+  tvConfirmationOrder ServiceOrder?  @relation("TVConfirmation", fields: [tvOrderId], references: [id])
+  blockedOrders       ServiceOrder[] @relation("TVConfirmation")
+  originalOrder       ServiceOrder?  @relation("Rework", fields: [originalOrderId], references: [id])
+  reworkOrders        ServiceOrder[] @relation("Rework")
+
+  assignment      Assignment?
+  execution       Execution?
+  assignmentLog   AssignmentLog?
+  tasks           TaskManagement[]
+  alerts          Alert[]
+
+  @@index([projectId])
+  @@index([countryCode, buCode])
+  @@index([status])
+  @@index([serviceType])
+  @@index([scheduledDate])
+  @@index([addressPostal])
+  @@index([tvOrderId])
+  @@index([salesOrderId])
+  @@index([riskLevel])
+  @@index([salesPotential])
+  @@map("service_orders")
+}
+
+// ============================================================================
+// CONTRACTS
+// ============================================================================
+
+enum ContractStatus {
+  PENDING
+  SENT
+  SIGNED
+  REFUSED
+  SKIPPED
+}
+
+enum SignatureType {
+  DIGITAL
+  MANUAL
+  SKIPPED
+}
+
+model Contract {
+  id                String         @id @default(uuid())
+  projectId         String         @map("project_id")
+
+  // Can bundle multiple SOs into one contract
+  serviceOrderIds   String[]       @map("service_order_ids")
+
+  templateId        String         @map("template_id") // Contract template used
+  status            ContractStatus @default(PENDING)
+  sentAt            DateTime?      @map("sent_at")
+  signedAt          DateTime?      @map("signed_at")
+  signatureType     SignatureType? @map("signature_type")
+  pdfUrl            String?        @map("pdf_url")
+
+  createdBy         String         @map("created_by")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  project       Project        @relation(fields: [projectId], references: [id])
+  creator       User           @relation("ContractCreator", fields: [createdBy], references: [id])
+  serviceOrders ServiceOrder[]
+
+  @@index([projectId])
+  @@index([status])
+  @@map("contracts")
+}
+
+// ============================================================================
+// WORK CLOSING FORM (WCF)
+// ============================================================================
+
+enum WCFStatus {
+  PENDING
+  SENT
+  SIGNED_OK
+  SIGNED_WITH_RESERVES
+  REFUSED
+}
+
+model WorkClosingForm {
+  id              String    @id @default(uuid())
+  serviceOrderId  String    @unique @map("service_order_id")
+  status          WCFStatus @default(PENDING)
+  sentAt          DateTime  @map("sent_at")
+  signedAt        DateTime? @map("signed_at")
+  signatureType   SignatureType? @map("signature_type")
+  hasReserves     Boolean   @default(false) @map("has_reserves")
+  reserves        String?   @db.Text
+  pdfUrl          String?   @map("pdf_url")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  serviceOrder ServiceOrder @relation
+
+  @@index([status])
+  @@map("work_closing_forms")
+}
+
+// ============================================================================
+// PROVIDER INVOICES & PAYMENT
+// ============================================================================
+
+enum InvoiceStatus {
+  PENDING
+  SIGNED
+  CONTESTED
+  PAID
+}
+
+model ProviderInvoice {
+  id              String        @id @default(uuid())
+  serviceOrderId  String        @map("service_order_id")
+  providerId      String        @map("provider_id")
+
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String
+  status          InvoiceStatus @default(PENDING)
+
+  proFormaUrl     String?       @map("pro_forma_url")
+  sentAt          DateTime      @map("sent_at")
+  signedAt        DateTime?     @map("signed_at")
+  paidAt          DateTime?     @map("paid_at")
+  paymentRef      String?       @map("payment_ref") // From external payment system
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  serviceOrder ServiceOrder @relation
+  provider     Provider     @relation(fields: [providerId], references: [id])
+
+  @@index([serviceOrderId])
+  @@index([providerId])
+  @@index([status])
+  @@map("provider_invoices")
+}
+
+// ============================================================================
+// ASSIGNMENTS & DATE NEGOTIATION
+// ============================================================================
+
+enum AssignmentStatus {
+  PENDING
+  OFFERED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  ASSIGNED
+  DATE_NEGOTIATION
+}
+
+enum AssignmentMode {
+  DIRECT       // Direct assignment
+  OFFER        // Offer with accept/refuse (FR, PL)
+  AUTO_ACCEPT  // ES/IT auto-accept
+  BROADCAST    // Multiple offers
+}
+
+model Assignment {
+  id             String           @id @default(uuid())
+  serviceOrderId String           @unique @map("service_order_id")
+  providerId     String           @map("provider_id")
+  workTeamId     String?          @map("work_team_id")
+  status         AssignmentStatus @default(PENDING)
+  mode           AssignmentMode
+
+  // Scoring (transparency)
+  score          Float            // 0-100
+  scoreBreakdown Json             @map("score_breakdown")
+
+  // Provider acceptance flow
+  offeredAt      DateTime?        @map("offered_at")
+  respondedAt    DateTime?        @map("responded_at")
+  expiresAt      DateTime?        @map("expires_at") // 4h timeout
+
+  // Date negotiation (up to 3 rounds)
+  dateNegotiationRound Int?       @map("date_negotiation_round") // Current round (1-3)
+  originalDate         DateTime?  @map("original_date") // Original offered date
+
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  serviceOrder     ServiceOrder       @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  provider         Provider           @relation(fields: [providerId], references: [id])
+  workTeam         WorkTeam?          @relation(fields: [workTeamId], references: [id])
+  dateNegotiations DateNegotiation[]
+
+  @@index([serviceOrderId])
+  @@index([providerId])
+  @@index([status])
+  @@map("assignments")
+}
+
+model DateNegotiation {
+  id           String    @id @default(uuid())
+  assignmentId String    @map("assignment_id")
+  round        Int       // 1, 2, or 3 (max 3 rounds)
+  proposedDate DateTime  @map("proposed_date")
+  proposedBy   String    // 'provider' or 'customer'
+  status       String    // PENDING, ACCEPTED, REJECTED
+  createdAt    DateTime  @default(now()) @map("created_at")
+  respondedAt  DateTime? @map("responded_at")
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, round])
+  @@index([assignmentId])
+  @@map("date_negotiations")
+}
+
+model AssignmentLog {
+  id                  String   @id @default(uuid())
+  serviceOrderId      String   @unique @map("service_order_id")
+  funnelData          Json     @map("funnel_data")
+  candidatesEvaluated Int      @map("candidates_evaluated")
+  filteringSteps      Json     @map("filtering_steps")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOrderId])
+  @@map("assignment_logs")
+}
+
+// ============================================================================
+// EXECUTION & FIELD OPERATIONS
+// ============================================================================
+
+enum ExecutionStatus {
+  PENDING
+  BLOCKED       // Go Exec NOK
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  INCOMPLETE
+  FAILED
+}
+
+enum CompletionStatus {
+  COMPLETE
+  INCOMPLETE
+  FAILED
+}
+
+model Execution {
+  id             String          @id @default(uuid())
+  serviceOrderId String          @unique @map("service_order_id")
+  workTeamId     String          @map("work_team_id")
+  status         ExecutionStatus @default(PENDING)
+
+  // Check-in/out
+  checkInAt      DateTime?       @map("check_in_at")
+  checkInLat     Float?          @map("check_in_lat")
+  checkInLon     Float?          @map("check_in_lon")
+  checkOutAt     DateTime?       @map("check_out_at")
+  checkOutLat    Float?          @map("check_out_lat")
+  checkOutLon    Float?          @map("check_out_lon")
+  actualHours    Float?          @map("actual_hours")
+
+  // Checklist tracking
+  checklistItems      Json?            @map("checklist_items") // [{id, label, completed}]
+  checklistCompletion Float?           @map("checklist_completion") // Percentage
+
+  // Completion status
+  completionStatus    CompletionStatus? @map("completion_status")
+  incompleteReason    String?          @map("incomplete_reason") @db.Text
+
+  // Blocking (Go Exec NOK)
+  blockedReason       String?          @map("blocked_reason")
+  canCheckIn          Boolean          @default(false) @map("can_check_in")
+
+  // Media
+  notes               String?          @db.Text
+  photos              Json?            // Array of photo URLs
+  audioRecordings     Json?            @map("audio_recordings") // Array of audio URLs
+
+  // Customer feedback
+  customerSignature   String?          @map("customer_signature")
+  customerRating      Float?           @map("customer_rating") // 1-5
+  customerFeedback    String?          @map("customer_feedback") @db.Text
+
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  workTeam     WorkTeam     @relation(fields: [workTeamId], references: [id])
+
+  @@index([serviceOrderId])
+  @@index([workTeamId])
+  @@index([status])
+  @@map("executions")
+}
+
+// ============================================================================
+// TASK MANAGEMENT & ALERTS
+// ============================================================================
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskType {
+  MANUAL_ASSIGNMENT       // No providers found, need manual intervention
+  DATE_NEGOTIATION_FAILED // 3 rounds failed, need resolution
+  GO_EXEC_NOK             // Payment/delivery issue
+  WCF_RESERVES            // Customer signed with reserves
+  WCF_REFUSED             // Customer refused WCF
+  INCOMPLETE_JOB          // Job checked out incomplete
+  GENERAL                 // Generic task
+}
+
+model TaskManagement {
+  id              String       @id @default(uuid())
+  serviceOrderId  String?      @map("service_order_id")
+  type            TaskType
+  priority        TaskPriority @default(MEDIUM)
+  status          TaskStatus   @default(PENDING)
+
+  title           String
+  description     String       @db.Text
+  assignedTo      String?      @map("assigned_to")
+  createdBy       String       @map("created_by")
+
+  dueDate         DateTime?    @map("due_date")
+  completedAt     DateTime?    @map("completed_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+  assignee     User?         @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  creator      User          @relation("TaskCreator", fields: [createdBy], references: [id])
+
+  @@index([serviceOrderId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([type])
+  @@map("task_management")
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertType {
+  PAYMENT_OVERDUE
+  PRODUCT_DELAYED
+  GO_EXEC_NOK
+  PROVIDER_TIMEOUT
+  WCF_OVERDUE
+  RISK_ESCALATION
+  GENERAL
+}
+
+model Alert {
+  id              String        @id @default(uuid())
+  serviceOrderId  String?       @map("service_order_id")
+  type            AlertType
+  severity        AlertSeverity @default(INFO)
+
+  title           String
+  message         String        @db.Text
+
+  isRead          Boolean       @default(false) @map("is_read")
+  readAt          DateTime?     @map("read_at")
+  readBy          String?       @map("read_by")
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+
+  @@index([serviceOrderId])
+  @@index([isRead])
+  @@index([type])
+  @@index([severity])
+  @@map("alerts")
+}
+
+// ============================================================================
+// ANALYTICS & REPORTING
+// ============================================================================
+
+model ProviderMetrics {
+  id                  String   @id @default(uuid())
+  providerId          String   @unique @map("provider_id")
+
+  totalAssignments    Int      @default(0) @map("total_assignments")
+  acceptedOffers      Int      @default(0) @map("accepted_offers")
+  rejectedOffers      Int      @default(0) @map("rejected_offers")
+  completedJobs       Int      @default(0) @map("completed_jobs")
+
+  averageRating       Float    @default(0.0) @map("average_rating")
+  averageResponseTime Float    @default(0.0) @map("average_response_time") // minutes
+  firstTimeFixRate    Float    @default(0.0) @map("first_time_fix_rate") // percentage
+
+  lastCalculatedAt    DateTime @default(now()) @map("last_calculated_at")
+
+  @@map("provider_metrics")
+}
