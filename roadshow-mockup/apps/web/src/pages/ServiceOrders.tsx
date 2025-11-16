@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { serviceOrdersApi } from '../api';
 import type { ServiceOrder } from '../types';
 import { format } from 'date-fns';
-import { Search, Filter, TrendingUp, AlertTriangle, DollarSign } from 'lucide-react';
+import { Search } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function ServiceOrders() {

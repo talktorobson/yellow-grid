@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { serviceOrdersApi, assignmentsApi, executionsApi } from '../api';
-import type { ServiceOrder, Assignment, Execution, SalesPotential, RiskLevel } from '../types';
+import { SalesPotential, RiskLevel } from '../types';
+import type { ServiceOrder, Assignment, Execution } from '../types';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   DollarSign,
   Shield,
   User,
@@ -665,7 +665,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessSalesPotential({
-                    salesPotential: 'HIGH',
+                    salesPotential: SalesPotential.HIGH,
                     salesPotentialScore: 0.87,
                     salesPreEstimationValue: 15000,
                     salesmanNotes: 'Strong interest in solar + battery expansion',
@@ -678,7 +678,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessSalesPotential({
-                    salesPotential: 'MEDIUM',
+                    salesPotential: SalesPotential.MEDIUM,
                     salesPotentialScore: 0.52,
                     salesPreEstimationValue: 8000,
                   })
@@ -690,7 +690,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessSalesPotential({
-                    salesPotential: 'LOW',
+                    salesPotential: SalesPotential.LOW,
                     salesPotentialScore: 0.23,
                   })
                 }
@@ -720,7 +720,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessRisk({
-                    riskLevel: 'CRITICAL',
+                    riskLevel: RiskLevel.CRITICAL,
                     riskScore: 0.92,
                     riskFactors: { complexity: 'Very high', history: 'Multiple failures' },
                   })
@@ -732,7 +732,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessRisk({
-                    riskLevel: 'HIGH',
+                    riskLevel: RiskLevel.HIGH,
                     riskScore: 0.78,
                     riskFactors: { complexity: 'High', timeline: 'Tight' },
                   })
@@ -744,7 +744,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessRisk({
-                    riskLevel: 'MEDIUM',
+                    riskLevel: RiskLevel.MEDIUM,
                     riskScore: 0.52,
                     riskFactors: { customerHistory: 'First-time', siteComplexity: 'Moderate' },
                   })
@@ -756,7 +756,7 @@ export default function ServiceOrderDetail() {
               <button
                 onClick={() =>
                   handleAssessRisk({
-                    riskLevel: 'LOW',
+                    riskLevel: RiskLevel.LOW,
                     riskScore: 0.18,
                   })
                 }

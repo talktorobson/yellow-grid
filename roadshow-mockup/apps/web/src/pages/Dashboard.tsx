@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { serviceOrdersApi, assignmentsApi, executionsApi, tasksApi } from '../api';
+import { serviceOrdersApi, assignmentsApi, executionsApi } from '../api';
 import { AlertCircle, TrendingUp, Users, CheckCircle } from 'lucide-react';
 
 interface DashboardStats {
