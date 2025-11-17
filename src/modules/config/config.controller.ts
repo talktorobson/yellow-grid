@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Put, Patch, Body, Param, UseGuards, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { UpdateSystemConfigDto, UpdateCountryConfigDto, UpdateBusinessUnitConfigDto } from './dto';
@@ -33,6 +33,14 @@ export class ConfigController {
     return this.configService.updateSystemConfig(dto, user.userId);
   }
 
+  @Patch('system')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Partially update system configuration (Admin only)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'System configuration updated' })
+  async patchSystemConfig(@Body() dto: UpdateSystemConfigDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.configService.updateSystemConfig(dto, user.userId);
+  }
+
   // ============================================================================
   // COUNTRY CONFIG ENDPOINTS
   // ============================================================================
@@ -49,6 +57,18 @@ export class ConfigController {
   @ApiOperation({ summary: 'Update country configuration (Admin only)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Country configuration updated' })
   async updateCountryConfig(
+    @Param('countryCode') countryCode: string,
+    @Body() dto: UpdateCountryConfigDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.configService.updateCountryConfig(countryCode.toUpperCase(), dto, user.userId);
+  }
+
+  @Patch('country/:countryCode')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Partially update country configuration (Admin only)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Country configuration updated' })
+  async patchCountryConfig(
     @Param('countryCode') countryCode: string,
     @Body() dto: UpdateCountryConfigDto,
     @CurrentUser() user: CurrentUserPayload,

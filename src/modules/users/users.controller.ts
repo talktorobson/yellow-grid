@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -48,7 +49,8 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all users with pagination and filters' })
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Get all users with pagination and filters (Admin only)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -59,6 +61,10 @@ export class UsersController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of users with pagination',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Insufficient permissions - Admin role required',
   })
   async findAll(@Query() query: QueryUsersDto, @CurrentUser() user: CurrentUserPayload) {
     return this.usersService.findAll(query, user.countryCode, user.businessUnit);
@@ -95,6 +101,42 @@ export class UsersController {
     description: 'Cannot update other users without admin role',
   })
   async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    // Users can update themselves, or admins can update anyone
+    const isAdmin = user.roles.includes('ADMIN');
+    const isSelf = id === user.userId;
+
+    if (!isAdmin && !isSelf) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
+
+    // Non-admins cannot change isActive status
+    if (!isAdmin && dto.isActive !== undefined) {
+      throw new ForbiddenException('Only admins can change user active status');
+    }
+
+    return this.usersService.update(id, dto, user.userId, user.countryCode, user.businessUnit);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Partially update user (Admin or self)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User successfully updated',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Cannot update other users without admin role',
+  })
+  async patch(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: CurrentUserPayload,

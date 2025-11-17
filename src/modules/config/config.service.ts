@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { UpdateSystemConfigDto, UpdateCountryConfigDto, UpdateBusinessUnitConfigDto } from './dto';
 
@@ -124,6 +124,9 @@ export class ConfigService {
   // ============================================================================
 
   async getCountryConfig(countryCode: string) {
+    // Validate country code
+    this.validateCountryCode(countryCode);
+
     const config = await this.prisma.countryConfig.findUnique({
       where: { countryCode },
     });
@@ -137,6 +140,9 @@ export class ConfigService {
   }
 
   async updateCountryConfig(countryCode: string, dto: UpdateCountryConfigDto, currentUserId: string) {
+    // Validate country code
+    this.validateCountryCode(countryCode);
+
     let config = await this.prisma.countryConfig.findUnique({
       where: { countryCode },
     });
@@ -203,6 +209,16 @@ export class ConfigService {
     return config;
   }
 
+  private readonly VALID_COUNTRIES = ['FR', 'ES', 'IT', 'PL', 'RO', 'PT'];
+
+  private validateCountryCode(countryCode: string) {
+    if (!this.VALID_COUNTRIES.includes(countryCode)) {
+      throw new NotFoundException(
+        `Country code '${countryCode}' is not supported. Valid codes: ${this.VALID_COUNTRIES.join(', ')}`
+      );
+    }
+  }
+
   private getCountryDefaults(countryCode: string) {
     const defaults: Record<string, any> = {
       FR: {
@@ -241,9 +257,27 @@ export class ConfigService {
         staticBufferDays: 1,
         autoAcceptAssignments: false,
       },
+      RO: {
+        timezone: 'Europe/Bucharest',
+        locale: 'ro-RO',
+        currency: 'RON',
+        workingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+        globalBufferDays: 2,
+        staticBufferDays: 1,
+        autoAcceptAssignments: false,
+      },
+      PT: {
+        timezone: 'Europe/Lisbon',
+        locale: 'pt-PT',
+        currency: 'EUR',
+        workingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+        globalBufferDays: 2,
+        staticBufferDays: 1,
+        autoAcceptAssignments: false,
+      },
     };
 
-    return defaults[countryCode] || defaults.FR;
+    return defaults[countryCode];
   }
 
   // ============================================================================
