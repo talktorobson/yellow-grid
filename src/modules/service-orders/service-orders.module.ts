@@ -5,9 +5,10 @@ import { ServiceOrderStateMachineService } from './service-order-state-machine.s
 import { AssignmentsService } from './assignments.service';
 import { AssignmentsController } from './assignments.controller';
 import { PrismaModule } from '../../common/prisma/prisma.module';
+import { SchedulingModule } from '../scheduling/scheduling.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, SchedulingModule],
   controllers: [ServiceOrdersController, AssignmentsController],
   providers: [ServiceOrdersService, ServiceOrderStateMachineService, AssignmentsService],
   exports: [ServiceOrdersService, ServiceOrderStateMachineService, AssignmentsService],
