@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { ExecutionsStackParamList } from './types';
 import ExecutionsListScreen from '@screens/executions/ExecutionsListScreen';
+import ExecutionDetailScreen from '@screens/executions/ExecutionDetailScreen';
 import CheckInScreen from '@screens/executions/CheckInScreen';
 import CheckOutScreen from '@screens/executions/CheckOutScreen';
 import MediaCaptureScreen from '@screens/executions/MediaCaptureScreen';
@@ -15,6 +16,11 @@ export const ExecutionsNavigator = () => {
         name="ExecutionsList"
         component={ExecutionsListScreen}
         options={{ title: 'Executions' }}
+      />
+      <Stack.Screen
+        name="ExecutionDetail"
+        component={ExecutionDetailScreen}
+        options={{ title: 'Execution Details' }}
       />
       <Stack.Screen
         name="CheckIn"
