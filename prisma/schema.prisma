@@ -51,6 +51,9 @@ model User {
   refreshTokens RefreshToken[]
   devices       RegisteredDevice[]
 
+  // Project ownership (Phase 2)
+  pilotedProjects Project[] @relation("ProjectPilot")
+
   // Audit
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -246,6 +249,11 @@ model Provider {
   workTeams   WorkTeam[]
   users       User[] // Provider managers/admins
 
+  // Phase 2 relations
+  serviceOrders ServiceOrder[]
+  assignments   Assignment[]
+  bookings      Booking[]
+
   // Audit
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -287,6 +295,11 @@ model WorkTeam {
 
   // Structured specialties (replaces JSON skills)
   specialtyAssignments ProviderSpecialtyAssignment[]
+
+  // Phase 2 relations
+  serviceOrders ServiceOrder[]
+  assignments   Assignment[]
+  bookings      Booking[]
 
   // Calendar
   workingDays Json @map("working_days") // ["MON", "TUE", ...]
@@ -476,6 +489,9 @@ model ServiceCatalog {
   pricing             ServicePricing[]
   skillRequirements   ServiceSkillRequirement[]
   specialtyMappings   SpecialtyServiceMapping[]
+
+  // Phase 2 relations
+  serviceOrders       ServiceOrder[]
 
   // Audit
   createdAt           DateTime      @default(now()) @map("created_at")
@@ -802,4 +818,494 @@ enum ReconciliationStatus {
   COMPLETED
   FAILED
   PARTIAL
+}
+
+// ============================================================================
+// PROJECT & SERVICE ORDER MODULE (Phase 2)
+// ============================================================================
+
+model Project {
+  id                  String   @id @default(uuid())
+  externalProjectId   String?  @unique @map("external_project_id") // Sales system project ID
+
+  // Multi-tenancy
+  countryCode         String   @map("country_code") @db.VarChar(3)
+  businessUnit        String   @map("business_unit") @db.VarChar(50)
+
+  // Customer information
+  customerName        String   @map("customer_name") @db.VarChar(255)
+  customerEmail       String?  @map("customer_email")
+  customerPhone       String?  @map("customer_phone")
+  customerAddress     Json     @map("customer_address") // {street, city, postalCode, country}
+
+  // Project metadata
+  projectName         String   @map("project_name") @db.VarChar(255)
+  projectDescription  String?  @map("project_description") @db.Text
+
+  // Project ownership (Pilote du Chantier)
+  pilotUserId         String?  @map("pilot_user_id") // Responsible operator
+  pilotAssignmentMode PilotAssignmentMode @default(AUTO) @map("pilot_assignment_mode")
+  pilotAssignedAt     DateTime? @map("pilot_assigned_at")
+
+  // External references (v2.0)
+  externalSalesOrderId String?  @map("external_sales_order_id")
+  externalLeadId       String?  @map("external_lead_id")
+  externalSystemSource String?  @map("external_system_source") @db.VarChar(50) // PYXIS, TEMPO, SAP
+
+  // Status
+  status              ProjectStatus @default(CREATED)
+
+  // Relations
+  pilotUser           User?         @relation("ProjectPilot", fields: [pilotUserId], references: [id], onDelete: SetNull)
+  serviceOrders       ServiceOrder[]
+
+  // Audit
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  createdBy           String?  @map("created_by") @db.VarChar(100)
+
+  @@index([countryCode, businessUnit])
+  @@index([pilotUserId])
+  @@index([status])
+  @@index([externalProjectId])
+  @@map("projects")
+}
+
+enum PilotAssignmentMode {
+  AUTO    // Automatic workload balancing
+  MANUAL  // Manual assignment by manager
+}
+
+enum ProjectStatus {
+  CREATED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ServiceOrder {
+  id                      String   @id @default(uuid())
+  externalServiceOrderId  String?  @unique @map("external_service_order_id")
+
+  // Relations
+  projectId               String?  @map("project_id")
+  serviceId               String   @map("service_id")
+  assignedProviderId      String?  @map("assigned_provider_id")
+  assignedWorkTeamId      String?  @map("assigned_work_team_id")
+
+  // Multi-tenancy
+  countryCode             String   @map("country_code") @db.VarChar(3)
+  businessUnit            String   @map("business_unit") @db.VarChar(50)
+
+  // Customer information (can override project)
+  customerInfo            Json     @map("customer_info") // {name, email, phone, address}
+
+  // Service details
+  serviceType             ServiceType @map("service_type")
+  priority                ServicePriority
+  estimatedDurationMinutes Int     @map("estimated_duration_minutes")
+
+  // Location
+  serviceAddress          Json     @map("service_address") // {street, city, postalCode, lat, lng}
+
+  // Scheduling window
+  requestedStartDate      DateTime @map("requested_start_date")
+  requestedEndDate        DateTime @map("requested_end_date")
+  requestedTimeSlot       String?  @map("requested_time_slot") // AM, PM, or specific time
+
+  // Scheduled slot (after booking)
+  scheduledDate           DateTime? @map("scheduled_date")
+  scheduledStartTime      DateTime? @map("scheduled_start_time")
+  scheduledEndTime        DateTime? @map("scheduled_end_time")
+
+  // External sales references (v2.0)
+  externalSalesOrderId    String?  @map("external_sales_order_id")
+  externalProjectId       String?  @map("external_project_id")
+  externalLeadId          String?  @map("external_lead_id")
+  externalSystemSource    String?  @map("external_system_source") @db.VarChar(50)
+
+  // Sales potential (TV/Quotation only - v2.0)
+  salesPotential          SalesPotential? @map("sales_potential")
+  salesPotentialScore     Decimal?  @map("sales_potential_score") @db.Decimal(5, 2) // 0-100
+  salesPotentialUpdatedAt DateTime? @map("sales_potential_updated_at")
+  salesPreEstimationId    String?   @map("sales_pre_estimation_id")
+  salesPreEstimationValue Decimal?  @map("sales_pre_estimation_value") @db.Decimal(10, 2)
+  salesmanNotes           String?   @map("salesman_notes") @db.Text
+
+  // Risk assessment (v2.0)
+  riskLevel               RiskLevel @default(LOW) @map("risk_level")
+  riskScore               Decimal?  @map("risk_score") @db.Decimal(5, 2) // 0-100
+  riskAssessedAt          DateTime? @map("risk_assessed_at")
+  riskAcknowledgedBy      String?   @map("risk_acknowledged_by")
+  riskAcknowledgedAt      DateTime? @map("risk_acknowledged_at")
+
+  // State machine
+  state                   ServiceOrderState @default(CREATED)
+  stateChangedAt          DateTime @default(now()) @map("state_changed_at")
+
+  // Relations
+  project                 Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  service                 ServiceCatalog @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  assignedProvider        Provider? @relation(fields: [assignedProviderId], references: [id], onDelete: SetNull)
+  assignedWorkTeam        WorkTeam? @relation(fields: [assignedWorkTeamId], references: [id], onDelete: SetNull)
+  dependencies            ServiceOrderDependency[] @relation("DependentOrder")
+  dependents              ServiceOrderDependency[] @relation("BlockedOrder")
+  buffers                 ServiceOrderBuffer[]
+  assignments             Assignment[]
+  bookings                Booking[]
+  riskFactors             ServiceOrderRiskFactor[]
+
+  // Audit
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  createdBy               String?  @map("created_by") @db.VarChar(100)
+
+  @@index([projectId])
+  @@index([serviceId])
+  @@index([assignedProviderId])
+  @@index([assignedWorkTeamId])
+  @@index([countryCode, businessUnit])
+  @@index([state])
+  @@index([priority])
+  @@index([scheduledDate])
+  @@index([riskLevel])
+  @@map("service_orders")
+}
+
+enum ServicePriority {
+  P1  // Priority: 24-72h response
+  P2  // Standard: 3-7 days response
+}
+
+enum ServiceOrderState {
+  CREATED
+  SCHEDULED
+  ASSIGNED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  VALIDATED
+  CLOSED
+  CANCELLED
+}
+
+enum SalesPotential {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ServiceOrderDependency {
+  id                 String   @id @default(uuid())
+
+  // The service order that depends on another
+  dependentOrderId   String   @map("dependent_order_id")
+
+  // The service order that must be completed first
+  blocksOrderId      String   @map("blocks_order_id")
+
+  // Dependency type
+  dependencyType     DependencyType @map("dependency_type")
+
+  // Static buffer between dependent services (in days)
+  staticBufferDays   Int      @default(0) @map("static_buffer_days")
+
+  // Relations
+  dependentOrder     ServiceOrder @relation("DependentOrder", fields: [dependentOrderId], references: [id], onDelete: Cascade)
+  blockedOrder       ServiceOrder @relation("BlockedOrder", fields: [blocksOrderId], references: [id], onDelete: Cascade)
+
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@unique([dependentOrderId, blocksOrderId])
+  @@index([dependentOrderId])
+  @@index([blocksOrderId])
+  @@map("service_order_dependencies")
+}
+
+enum DependencyType {
+  REQUIRES_COMPLETION  // Must finish first
+  REQUIRES_VALIDATION  // Must be validated first
+}
+
+model ServiceOrderBuffer {
+  id                       String       @id @default(uuid())
+  serviceOrderId           String       @map("service_order_id")
+
+  // Travel buffer (PRD-compliant: fixed minutes before/after job)
+  // Applied when work team has multiple jobs in one day
+  travelBufferMinutesStart Int          @default(0) @map("travel_buffer_minutes_start")
+  travelBufferMinutesEnd   Int          @default(0) @map("travel_buffer_minutes_end")
+
+  // Reason for transparency
+  reason                   String       @db.Text
+  appliedAt                DateTime     @default(now()) @map("applied_at")
+
+  // Configuration reference
+  configRef                String?      @map("config_ref") // Reference to CalendarConfig
+
+  // Relations
+  serviceOrder             ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceOrderId])
+  @@index([serviceOrderId])
+  @@map("service_order_buffers")
+}
+
+model ServiceOrderRiskFactor {
+  id             String   @id @default(uuid())
+  serviceOrderId String   @map("service_order_id")
+
+  // Risk factor details
+  factorType     RiskFactorType @map("factor_type")
+  factorScore    Decimal  @map("factor_score") @db.Decimal(5, 2) // Contribution to risk score
+  description    String   @db.Text
+
+  // Detection
+  detectedAt     DateTime @default(now()) @map("detected_at")
+  detectedBy     String   @map("detected_by") @db.VarChar(50) // SYSTEM, USER_EMAIL
+
+  // Relations
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOrderId])
+  @@map("service_order_risk_factors")
+}
+
+enum RiskFactorType {
+  CLAIM_HISTORY
+  RESCHEDULE_FREQUENCY
+  PAYMENT_ISSUES
+  PROVIDER_QUALITY
+  COMPLEX_SERVICE
+  CUSTOMER_HISTORY
+}
+
+// ============================================================================
+// ASSIGNMENT & DISPATCH MODULE (Phase 2)
+// ============================================================================
+
+model Assignment {
+  id                      String   @id @default(uuid())
+  serviceOrderId          String   @map("service_order_id")
+  providerId              String   @map("provider_id")
+  workTeamId              String?  @map("work_team_id")
+
+  // Assignment metadata
+  assignmentMode          AssignmentMode @map("assignment_mode")
+  assignmentMethod        String   @map("assignment_method") @db.VarChar(50) // DIRECT, OFFER, BROADCAST, AUTO
+
+  // Assignment funnel
+  funnelExecutionId       String?  @map("funnel_execution_id") // Link to funnel audit
+  providerRank            Int?     @map("provider_rank") // Rank in candidate list
+  providerScore           Decimal? @map("provider_score") @db.Decimal(5, 2)
+  scoreBreakdown          Json?    @map("score_breakdown") // Detailed scoring
+
+  // State
+  state                   AssignmentState @default(PENDING)
+  stateChangedAt          DateTime @default(now()) @map("state_changed_at")
+
+  // Provider response
+  acceptedAt              DateTime? @map("accepted_at")
+  rejectedAt              DateTime? @map("rejected_at")
+  rejectionReason         String?   @map("rejection_reason") @db.Text
+
+  // Date negotiation (up to 3 rounds)
+  negotiationRound        Int      @default(0) @map("negotiation_round")
+  proposedDate            DateTime? @map("proposed_date")
+  counterproposalDate     DateTime? @map("counterproposal_date")
+
+  // Relations
+  serviceOrder            ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  provider                Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  workTeam                WorkTeam? @relation(fields: [workTeamId], references: [id], onDelete: SetNull)
+
+  // Audit
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  createdBy               String?  @map("created_by") @db.VarChar(100)
+
+  @@index([serviceOrderId])
+  @@index([providerId])
+  @@index([workTeamId])
+  @@index([state])
+  @@index([funnelExecutionId])
+  @@map("assignments")
+}
+
+enum AssignmentMode {
+  DIRECT        // Operator selects specific provider
+  OFFER         // Send offer, wait for acceptance
+  BROADCAST     // Send to multiple providers
+  AUTO_ACCEPT   // Auto-accept (ES/IT only)
+}
+
+enum AssignmentState {
+  PENDING
+  OFFERED
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+}
+
+model AssignmentFunnelExecution {
+  id                       String   @id @default(uuid())
+  serviceOrderId           String   @map("service_order_id")
+
+  // Funnel input
+  requestedDate            DateTime @map("requested_date")
+  requestedSlot            String?  @map("requested_slot")
+
+  // Funnel results
+  totalProvidersEvaluated  Int      @map("total_providers_evaluated")
+  eligibleProviders        Int      @map("eligible_providers")
+  funnelSteps              Json     @map("funnel_steps") // Array of funnel step audits
+
+  // Execution metadata
+  executionTimeMs          Int      @map("execution_time_ms")
+  executedAt               DateTime @default(now()) @map("executed_at")
+  executedBy               String   @map("executed_by") @db.VarChar(100)
+
+  @@index([serviceOrderId])
+  @@index([executedAt])
+  @@map("assignment_funnel_executions")
+}
+
+// ============================================================================
+// CALENDAR & BOOKING MODULE (Phase 2)
+// ============================================================================
+
+model Booking {
+  id               String   @id @default(uuid())
+  serviceOrderId   String   @map("service_order_id")
+  providerId       String   @map("provider_id")
+  workTeamId       String   @map("work_team_id")
+
+  // Booking slot
+  bookingDate      DateTime @map("booking_date") @db.Date
+  startSlot        Int      @map("start_slot") // 0-95 (15-min slots)
+  endSlot          Int      @map("end_slot")   // 0-95
+  durationMinutes  Int      @map("duration_minutes")
+
+  // Booking type
+  bookingType      BookingType @map("booking_type")
+
+  // Pre-booking (temporary hold)
+  expiresAt        DateTime? @map("expires_at")
+  holdReference    String?   @unique @map("hold_reference") // For idempotency
+
+  // Status
+  status           BookingStatus @default(PRE_BOOKED)
+  confirmedAt      DateTime? @map("confirmed_at")
+  cancelledAt      DateTime? @map("cancelled_at")
+  cancellationReason String? @map("cancellation_reason") @db.Text
+
+  // Relations
+  serviceOrder     ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  provider         Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  workTeam         WorkTeam @relation(fields: [workTeamId], references: [id], onDelete: Restrict)
+
+  // Audit
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  createdBy        String?  @map("created_by") @db.VarChar(100)
+
+  @@unique([workTeamId, bookingDate, startSlot, endSlot])
+  @@index([serviceOrderId])
+  @@index([providerId])
+  @@index([workTeamId, bookingDate])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("bookings")
+}
+
+enum BookingType {
+  SERVICE_ORDER   // Regular service order booking
+  EXTERNAL_BLOCK  // Manual block (vacation, maintenance)
+  STORE_CLOSURE   // Store/provider closure
+}
+
+enum BookingStatus {
+  PRE_BOOKED      // Temporary hold (48h TTL)
+  CONFIRMED       // Confirmed booking
+  CANCELLED       // Cancelled
+  EXPIRED         // Pre-booking expired
+}
+
+// ============================================================================
+// CALENDAR CONFIGURATION MODULE (Phase 2 - PRD Compliant)
+// ============================================================================
+
+model CalendarConfig {
+  id                         String   @id @default(uuid())
+
+  // Multi-tenancy
+  countryCode                String   @map("country_code") @db.VarChar(3)
+  businessUnit               String   @map("business_unit") @db.VarChar(50)
+
+  // Working days (0=Sunday, 1=Monday, ..., 6=Saturday)
+  workingDays                Json     @map("working_days") // [1,2,3,4,5] for Mon-Fri
+  timezone                   String   @db.VarChar(50) // Europe/Madrid, Europe/Paris
+
+  // Shift definitions
+  morningShiftStart          String   @map("morning_shift_start") @db.VarChar(5) // "08:00"
+  morningShiftEnd            String   @map("morning_shift_end") @db.VarChar(5)   // "14:00"
+  afternoonShiftStart        String   @map("afternoon_shift_start") @db.VarChar(5) // "14:00"
+  afternoonShiftEnd          String   @map("afternoon_shift_end") @db.VarChar(5) // "20:00"
+  eveningShiftStart          String?  @map("evening_shift_start") @db.VarChar(5)  // "20:00" (optional)
+  eveningShiftEnd            String?  @map("evening_shift_end") @db.VarChar(5)    // "22:00"
+
+  // PRD-compliant buffer configuration (BR-5)
+  // Global buffer: Block bookings within N non-working days from today
+  globalBufferNonWorkingDays Int      @default(0) @map("global_buffer_non_working_days")
+  // Static buffer: Block bookings within N non-working days from deliveryDate
+  staticBufferNonWorkingDays Int      @default(0) @map("static_buffer_non_working_days")
+  // Travel buffer: Fixed minutes added before/after each job
+  travelBufferMinutes        Int      @default(0) @map("travel_buffer_minutes")
+
+  // Cross-day jobs allowed
+  crossDayAllowed            Boolean  @default(false) @map("cross_day_allowed")
+
+  // Holiday region code for Nager.Date API (supports regional holidays)
+  holidayRegion              String?  @map("holiday_region") @db.VarChar(10) // e.g., "MD" for Madrid
+
+  // Audit
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  createdBy                  String?  @map("created_by") @db.VarChar(100)
+
+  @@unique([countryCode, businessUnit])
+  @@index([countryCode, businessUnit])
+  @@map("calendar_configs")
+}
+
+// ============================================================================
+// HOLIDAY CALENDAR (for buffer calculations)
+// ============================================================================
+
+model Holiday {
+  id          String   @id @default(uuid())
+
+  // Multi-tenancy
+  countryCode String   @map("country_code") @db.VarChar(3)
+
+  // Holiday details
+  date        DateTime @db.Date
+  name        String   @db.VarChar(255)
+  isNational  Boolean  @default(true) @map("is_national")
+  regions     Json?    // Array of region codes if regional
+
+  // Relations
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([countryCode, date])
+  @@index([countryCode, date])
+  @@map("holidays")
 }
