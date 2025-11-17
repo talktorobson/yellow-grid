@@ -4,3 +4,7 @@ export * from './refresh-token.dto';
 export * from './auth-response.dto';
 export * from './provider-register.dto';
 export * from './provider-login.dto';
+export * from './technician-register.dto';
+export * from './technician-login.dto';
+export * from './biometric-setup.dto';
+export * from './biometric-login.dto';
