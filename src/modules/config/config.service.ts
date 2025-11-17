@@ -18,7 +18,7 @@ export class ConfigService {
 
     // Convert to object format
     const result: Record<string, any> = {};
-    configs.forEach((config) => {
+    configs.forEach((config: any) => {
       result[config.key] = config.value;
     });
 

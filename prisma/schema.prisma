@@ -17,21 +17,39 @@ datasource db {
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
-  password  String   // bcrypt hashed
+  password  String?  // bcrypt hashed (nullable for future SSO-only users)
   firstName String   @map("first_name")
   lastName  String   @map("last_name")
+  phone     String?
 
   // Multi-tenancy (application-level)
   countryCode String @map("country_code") @db.VarChar(3) // ES, FR, IT, PL
   businessUnit String @map("business_unit") @db.VarChar(50) // LM_ES, BD_FR
 
+  // User classification and auth method
+  userType     UserType @default(INTERNAL) @map("user_type")
+  authProvider String   @default("local") @map("auth_provider") @db.VarChar(20) // local, sso, auth0
+  externalAuthId String? @unique @map("external_auth_id") // For future Auth0 migration
+
+  // Provider linkage (only for EXTERNAL users)
+  providerId   String? @map("provider_id")
+  provider     Provider? @relation(fields: [providerId], references: [id])
+
+  workTeamId   String? @map("work_team_id")
+  workTeam     WorkTeam? @relation(fields: [workTeamId], references: [id])
+
   // Account status
   isActive  Boolean  @default(true) @map("is_active")
   isVerified Boolean @default(false) @map("is_verified")
 
+  // Multi-factor authentication
+  mfaEnabled Boolean @default(false) @map("mfa_enabled")
+  mfaSecret  String? @map("mfa_secret") // Encrypted TOTP secret
+
   // Roles & Permissions
   roles         UserRole[]
   refreshTokens RefreshToken[]
+  devices       RegisteredDevice[]
 
   // Audit
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -39,8 +57,17 @@ model User {
   lastLoginAt DateTime? @map("last_login_at")
 
   @@index([email])
+  @@index([userType])
   @@index([countryCode, businessUnit])
+  @@index([providerId])
+  @@index([workTeamId])
   @@map("users")
+}
+
+enum UserType {
+  INTERNAL             // Operators, admins, managers
+  EXTERNAL_PROVIDER    // Provider company users (managers)
+  EXTERNAL_TECHNICIAN  // Field technicians
 }
 
 model Role {
@@ -105,6 +132,29 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+// Device registration for biometric authentication (technicians)
+model RegisteredDevice {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  deviceId   String   @unique @map("device_id")
+  publicKey  String   @map("public_key") @db.Text // For biometric challenge-response
+  platform   String   @db.VarChar(20) // ios, android
+  deviceName String   @map("device_name") @db.VarChar(255)
+  deviceModel String? @map("device_model") @db.VarChar(100)
+
+  isActive   Boolean  @default(true) @map("is_active")
+
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([isActive])
+  @@map("registered_devices")
 }
 
 // ============================================================================
@@ -192,8 +242,9 @@ model Provider {
   // Status
   status      ProviderStatus @default(ACTIVE)
 
-  // Work teams
+  // Relations
   workTeams   WorkTeam[]
+  users       User[] // Provider managers/admins
 
   // Audit
   createdAt   DateTime @default(now()) @map("created_at")
@@ -229,15 +280,14 @@ model WorkTeam {
   // Geographic coverage
   postalCodes Json @map("postal_codes") // ["28001", "28002", ...]
 
-  // Technicians
+  // Relations
+  provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   technicians Technician[]
+  users       User[] // Technician users
 
   // Calendar
   workingDays Json @map("working_days") // ["MON", "TUE", ...]
   shifts      Json // [{code:"M", startLocal:"08:00", endLocal:"13:00"}]
-
-  // Relations
-  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")

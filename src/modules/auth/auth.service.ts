@@ -208,9 +208,13 @@ export class AuthService {
     const accessTokenPayload = {
       sub: user.id,
       email: user.email,
+      userType: user.userType || 'INTERNAL', // Default to INTERNAL for existing users
       countryCode: user.countryCode,
       businessUnit: user.businessUnit,
+      providerId: user.providerId,
+      workTeamId: user.workTeamId,
       roles,
+      authMethod: user.authProvider || 'local',
     };
 
     const accessToken = this.jwtService.sign(accessTokenPayload);
@@ -257,7 +261,11 @@ export class AuthService {
         lastName: user.lastName,
         countryCode: user.countryCode,
         businessUnit: user.businessUnit,
+        userType: user.userType || 'INTERNAL',
         roles,
+        providerId: user.providerId,
+        workTeamId: user.workTeamId,
+        mfaEnabled: user.mfaEnabled,
       },
     };
   }
