@@ -10,6 +10,11 @@ import { ServiceCatalogEventProcessor } from './event-processor.service';
 import { ServiceCatalogController } from './service-catalog.controller';
 import { EventSyncController } from './event-sync.controller';
 
+// Sync services
+import { SyncService } from './sync/sync.service';
+import { ServiceCatalogEventConsumer } from './sync/service-catalog-event.consumer';
+import { ReconciliationService } from './sync/reconciliation.service';
+
 @Module({
   imports: [PrismaModule],
   controllers: [ServiceCatalogController, EventSyncController],
@@ -19,6 +24,11 @@ import { EventSyncController } from './event-sync.controller';
     PricingService,
     GeographicService,
     ProviderSpecialtyService,
+
+    // Sync services (Phase 3)
+    SyncService,
+    ServiceCatalogEventConsumer,
+    ReconciliationService,
     ServiceCatalogEventLogService,
     ServiceCatalogSyncService,
     ServiceCatalogEventProcessor,
@@ -28,6 +38,9 @@ import { EventSyncController } from './event-sync.controller';
     PricingService,
     GeographicService,
     ProviderSpecialtyService,
+    SyncService,
+    ServiceCatalogEventConsumer,
+    ReconciliationService,
     ServiceCatalogEventLogService,
     ServiceCatalogSyncService,
     ServiceCatalogEventProcessor,

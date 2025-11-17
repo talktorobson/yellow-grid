@@ -16,7 +16,11 @@ import { ServiceCatalogService } from './service-catalog.service';
 import { PricingService } from './pricing.service';
 import { GeographicService } from './geographic.service';
 import { ProviderSpecialtyService } from './provider-specialty.service';
+import { SyncService } from './sync/sync.service';
+import { ServiceCatalogEventConsumer } from './sync/service-catalog-event.consumer';
+import { ReconciliationService } from './sync/reconciliation.service';
 import { CalculatePriceDto } from './dto/calculate-price.dto';
+import { ServiceEventPayload } from './sync/dto/service-event.dto';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { DeprecateServiceDto } from './dto/deprecate-service.dto';
@@ -36,6 +40,9 @@ export class ServiceCatalogController {
     private readonly pricingService: PricingService,
     private readonly geographicService: GeographicService,
     private readonly providerSpecialtyService: ProviderSpecialtyService,
+    private readonly syncService: SyncService,
+    private readonly eventConsumer: ServiceCatalogEventConsumer,
+    private readonly reconciliationService: ReconciliationService,
   ) {}
 
   // ============================================================================
@@ -430,5 +437,94 @@ export class ServiceCatalogController {
   @Get('specialties/stats')
   async getSpecialtyStatistics(@Query('countryCode') countryCode: string) {
     return this.providerSpecialtyService.getStatistics(countryCode);
+  }
+
+  // ============================================================================
+  // SYNC & ADMIN ENDPOINTS (Phase 3)
+  // ============================================================================
+
+  /**
+   * Get sync statistics
+   * GET /api/v1/service-catalog/admin/sync/stats?source=PYXIS
+   */
+  @Get('admin/sync/stats')
+  async getSyncStatistics(
+    @Query('source') source: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    const start = startDate ? new Date(startDate) : undefined;
+    const end = endDate ? new Date(endDate) : undefined;
+
+    return this.syncService.getSyncStatistics(source, start, end);
+  }
+
+  /**
+   * Retry failed sync events
+   * POST /api/v1/service-catalog/admin/sync/retry
+   */
+  @Post('admin/sync/retry')
+  @HttpCode(HttpStatus.OK)
+  async retryFailedEvents(@Query('maxRetries') maxRetries?: number) {
+    const retriedCount = await this.syncService.retryFailedEvents(
+      maxRetries || 3,
+    );
+    return {
+      retriedCount,
+      message: `Successfully retried ${retriedCount} failed events`,
+    };
+  }
+
+  /**
+   * Simulate a Kafka event (for testing without Kafka)
+   * POST /api/v1/service-catalog/admin/sync/simulate
+   */
+  @Post('admin/sync/simulate')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async simulateEvent(@Body() payload: ServiceEventPayload) {
+    await this.eventConsumer.simulateEvent(payload);
+    return {
+      message: `Event ${payload.eventId} queued for processing`,
+      eventType: payload.eventType,
+      externalServiceCode: payload.data.externalServiceCode,
+    };
+  }
+
+  /**
+   * Get event consumer health status
+   * GET /api/v1/service-catalog/admin/sync/health
+   */
+  @Get('admin/sync/health')
+  getEventConsumerHealth() {
+    return this.eventConsumer.getHealthStatus();
+  }
+
+  /**
+   * Get reconciliation history
+   * GET /api/v1/service-catalog/admin/reconciliation/history?countryCode=ES&limit=10
+   */
+  @Get('admin/reconciliation/history')
+  async getReconciliationHistory(
+    @Query('countryCode') countryCode?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.reconciliationService.getReconciliationHistory(
+      countryCode,
+      limit ? parseInt(limit.toString(), 10) : 10,
+    );
+  }
+
+  /**
+   * Trigger manual reconciliation for a country
+   * POST /api/v1/service-catalog/admin/reconciliation/trigger
+   */
+  @Post('admin/reconciliation/trigger')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async triggerReconciliation(@Body() body: { countryCode: string }) {
+    await this.reconciliationService.manualReconciliation(body.countryCode);
+    return {
+      message: `Reconciliation triggered for ${body.countryCode}`,
+      countryCode: body.countryCode,
+    };
   }
 }
