@@ -27,7 +27,9 @@ describe('AuthController', () => {
       lastName: 'User',
       countryCode: 'FR',
       businessUnit: 'LEROY_MERLIN',
+      userType: 'INTERNAL',
       roles: ['OPERATOR'],
+      mfaEnabled: false,
     },
   };
 

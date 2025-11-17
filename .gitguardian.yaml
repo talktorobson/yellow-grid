@@ -1,0 +1,31 @@
+# GitGuardian configuration
+# Prevents false positives for test files and seed data
+
+version: 2
+
+# Paths to ignore - test files and seed data contain non-sensitive test credentials
+paths-ignore:
+  - "**/*test*.sh"
+  - "**/*test*.ts"
+  - "**/*test*.js"
+  - "**/test-*.sh"
+  - "**/seed*.ts"
+  - "**/seed*.js"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/__tests__/**"
+  - "**/prisma/seed.ts"
+
+# Exclude specific patterns that are known test credentials
+exclude:
+  - name: "Test credentials in test files"
+    matches:
+      - "Admin123!"
+      - "Operator123!"
+      - "Test123!"
+      - "Password123!"
+    paths:
+      - "**/*test*.sh"
+      - "**/seed*.ts"

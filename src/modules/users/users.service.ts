@@ -115,7 +115,7 @@ export class UsersService {
     ]);
 
     return {
-      data: users.map((user) => this.mapToResponse(user)),
+      data: users.map((user: any) => this.mapToResponse(user)),
       meta: {
         page,
         limit,
@@ -245,7 +245,7 @@ export class UsersService {
     }
 
     // Check if user already has this role
-    const hasRole = user.roles.some((ur) => ur.role.name === dto.roleName);
+    const hasRole = user.roles.some((ur: any) => ur.role.name === dto.roleName);
     if (hasRole) {
       throw new ConflictException('User already has this role');
     }
@@ -295,7 +295,7 @@ export class UsersService {
     }
 
     // Check if user has this role
-    const userRole = user.roles.find((ur) => ur.role.name === roleName);
+    const userRole = user.roles.find((ur: any) => ur.role.name === roleName);
     if (!userRole) {
       throw new NotFoundException('User does not have this role');
     }

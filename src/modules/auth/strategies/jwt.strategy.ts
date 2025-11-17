@@ -7,9 +7,13 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 export interface JwtPayload {
   sub: string;
   email: string;
+  userType: string;
   countryCode: string;
   businessUnit: string;
+  providerId?: string;
+  workTeamId?: string;
   roles: string[];
+  authMethod?: string;
 }
 
 @Injectable()
@@ -34,8 +38,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         firstName: true,
         lastName: true,
+        userType: true,
         countryCode: true,
         businessUnit: true,
+        providerId: true,
+        workTeamId: true,
         isActive: true,
       },
     });
@@ -50,9 +57,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      userType: user.userType,
       countryCode: user.countryCode,
       businessUnit: user.businessUnit,
+      providerId: user.providerId,
+      workTeamId: user.workTeamId,
       roles: payload.roles,
+      authMethod: payload.authMethod,
     };
   }
 }

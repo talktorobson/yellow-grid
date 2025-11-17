@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -68,6 +69,19 @@ export class ProvidersController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Provider successfully updated' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Provider not found' })
   async updateProvider(
+    @Param('id') id: string,
+    @Body() dto: UpdateProviderDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.providersService.updateProvider(id, dto, user.userId, user.countryCode, user.businessUnit);
+  }
+
+  @Patch(':id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Partially update provider (Admin only)' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Provider successfully updated' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Provider not found' })
+  async patchProvider(
     @Param('id') id: string,
     @Body() dto: UpdateProviderDto,
     @CurrentUser() user: CurrentUserPayload,
