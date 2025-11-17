@@ -231,9 +231,16 @@ WORK_TEAM_RESPONSE=$(curl -s -X POST "$BASE_URL/providers/$PROVIDER_ID/work-team
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "externalId":"TEAM-001",
     "name":"Work Team 1",
-    "serviceTypes":["INSTALLATION","TECHNICAL_VISIT"]
+    "maxDailyJobs":5,
+    "skills":["installation","repair","plumbing"],
+    "serviceTypes":["INSTALLATION","TECHNICAL_VISIT"],
+    "postalCodes":["75001","75002","75003"],
+    "workingDays":["MON","TUE","WED","THU","FRI"],
+    "shifts":[
+      {"code":"M","startLocal":"08:00","endLocal":"13:00"},
+      {"code":"A","startLocal":"14:00","endLocal":"19:00"}
+    ]
   }')
 
 WORK_TEAM_ID=$(echo "$WORK_TEAM_RESPONSE" | jq -r '.data.id // empty')
@@ -247,18 +254,17 @@ fi
 echo ""
 
 # 3.7 Get work team by ID
-test_endpoint "GET" "/providers/$PROVIDER_ID/work-teams/$WORK_TEAM_ID" "$ADMIN_TOKEN" "" "200" "Get work team by ID"
+test_endpoint "GET" "/providers/work-teams/$WORK_TEAM_ID" "$ADMIN_TOKEN" "" "200" "Get work team by ID"
 
 # 3.8 List work teams for provider
 test_endpoint "GET" "/providers/$PROVIDER_ID/work-teams" "$ADMIN_TOKEN" "" "200" "List work teams"
 
 # 3.9 Create technician
 log_test "Create technician"
-TECH_RESPONSE=$(curl -s -X POST "$BASE_URL/providers/$PROVIDER_ID/work-teams/$WORK_TEAM_ID/technicians" \
+TECH_RESPONSE=$(curl -s -X POST "$BASE_URL/providers/work-teams/$WORK_TEAM_ID/technicians" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "externalId":"TECH-001",
     "firstName":"John",
     "lastName":"Doe",
     "email":"john.doe@provider.com",
@@ -276,7 +282,7 @@ fi
 echo ""
 
 # 3.10 List technicians for work team
-test_endpoint "GET" "/providers/$PROVIDER_ID/work-teams/$WORK_TEAM_ID/technicians" "$ADMIN_TOKEN" "" "200" "List technicians"
+test_endpoint "GET" "/providers/work-teams/$WORK_TEAM_ID/technicians" "$ADMIN_TOKEN" "" "200" "List technicians"
 
 # ============================================================================
 # 4. CONFIG MODULE TESTS
