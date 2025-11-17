@@ -13,7 +13,7 @@
 |-------|----------|--------|----------|-------|
 | **Phase 1**: Foundation | 4 weeks | 🟢 Complete | 100% | Weeks 1-4 |
 | **Phase 2**: Scheduling & Assignment | 6 weeks | ⚪ Pending | 0% | Weeks 5-10 |
-| **Phase 3**: Mobile Execution | 6 weeks | ⚪ Pending | 0% | Weeks 11-16 |
+| **Phase 3**: Mobile Execution | 6 weeks | 🟡 In Progress | 30% | Weeks 11-16 |
 | **Phase 4**: Integration & Web UI | 4 weeks | ⚪ Pending | 0% | Weeks 17-20 |
 | **Phase 5**: Production Hardening | 4 weeks | ⚪ Pending | 0% | Weeks 21-24 |
 
@@ -594,11 +594,11 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 
 ---
 
-## Phase 3: Mobile Execution (Weeks 11-16) ⚪ Pending
+## Phase 3: Mobile Execution (Weeks 11-16) 🟡 In Progress
 
 **Team**: 12 engineers (ramp up +2, peak capacity)
 **Goal**: Field technician workflows + mobile app
-**Status**: Pending (0%)
+**Status**: In Progress (30%)
 
 ### Deliverables
 
@@ -621,15 +621,15 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 ---
 
 #### Execution Backend
-- [ ] **Check-in API** (GPS validation, geofencing)
-- [ ] **Check-out API** (duration calculation, validation)
-- [ ] **Service execution status updates**
+- [x] **Check-in API** (GPS validation, geofencing) — stub geofence + transition to IN_PROGRESS
+- [x] **Check-out API** (duration calculation, validation) — duration from check-in delta; transitions to COMPLETED
+- [x] **Service execution status updates**
 - [ ] **Media upload** (S3/CloudStorage, thumbnail generation)
-- [ ] **Offline sync endpoint** (batch updates, conflict resolution)
-- [ ] **API**: `/api/v1/execution/*`
+- [x] **Offline sync endpoint** (batch updates, conflict resolution placeholder)
+- [x] **API**: `/api/v1/execution/*`
 
 **Owner**: [Backend Team A]
-**Progress**: 0/6 complete
+**Progress**: 5/6 complete (media upload pending)
 
 ---
 
@@ -1776,4 +1776,3 @@ The Service Catalog module now has:
 - ✅ **Total: 197 tests, 86.31% coverage, all passing**
 
 **Ready for Production Deployment** 🚀
-

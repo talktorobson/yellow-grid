@@ -5,11 +5,16 @@ import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { StatusUpdateDto } from './dto/status-update.dto';
 import { OfflineSyncDto } from './dto/offline-sync.dto';
+import { MediaUploadRequestDto } from './dto/media-upload.dto';
+import { MediaUploadService } from './media-upload.service';
 
 @ApiTags('Execution')
 @Controller('execution')
 export class ExecutionController {
-  constructor(private readonly executionService: ExecutionService) {}
+  constructor(
+    private readonly executionService: ExecutionService,
+    private readonly mediaUploadService: MediaUploadService,
+  ) {}
 
   @Post('check-in')
   @ApiOperation({ summary: 'Technician check-in with GPS/geofence validation' })
@@ -37,5 +42,23 @@ export class ExecutionController {
   @ApiResponse({ status: 200, description: 'Batch processed' })
   async offlineSync(@Body() dto: OfflineSyncDto) {
     return this.executionService.offlineSync(dto.ops);
+  }
+
+  @Post('media/upload')
+  @ApiOperation({ summary: 'Request media upload (returns stubbed presigned URLs)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Upload URLs generated',
+    schema: {
+      properties: {
+        uploadUrl: { type: 'string' },
+        mediaUrl: { type: 'string' },
+        thumbnailUrl: { type: 'string' },
+        key: { type: 'string' },
+      },
+    },
+  })
+  async mediaUpload(@Body() dto: MediaUploadRequestDto) {
+    return this.mediaUploadService.createUpload(dto);
   }
 }

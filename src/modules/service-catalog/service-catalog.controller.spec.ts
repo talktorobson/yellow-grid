@@ -9,6 +9,7 @@ import { ServiceStatus, ServiceType, ServiceCategory } from '@prisma/client';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { DeprecateServiceDto } from './dto/deprecate-service.dto';
+jest.mock('csv-parse/sync', () => ({ parse: jest.fn() }), { virtual: true });
 
 describe('ServiceCatalogController - CRUD Endpoints', () => {
   let controller: ServiceCatalogController;

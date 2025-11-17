@@ -3,6 +3,20 @@ import { ServiceCatalogEventConsumer } from './service-catalog.consumer';
 import { ServiceCatalogSyncService } from '../services/service-catalog-sync.service';
 import { ServiceCatalogEventLogService } from '../services/service-catalog-event-log.service';
 import { ServiceCatalogEventType } from '../dto/kafka-event.dto';
+import { EventProcessingStatus } from '@prisma/client';
+
+jest.mock('kafkajs', () => ({
+  Kafka: jest.fn().mockReturnValue({
+    consumer: jest.fn().mockReturnValue({
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      subscribe: jest.fn(),
+      run: jest.fn(),
+      stop: jest.fn(),
+    }),
+  }),
+  logLevel: { NOTHING: 0 },
+}), { virtual: true });
 
 describe('ServiceCatalogEventConsumer', () => {
   let consumer: ServiceCatalogEventConsumer;
@@ -17,7 +31,7 @@ describe('ServiceCatalogEventConsumer', () => {
     externalSource: 'PYXIS',
     eventTimestamp: new Date('2025-01-17T10:30:00Z'),
     externalServiceCode: 'PYX_ES_HVAC_00123',
-    processingStatus: 'PENDING' as const,
+    processingStatus: EventProcessingStatus.PENDING,
     retryCount: 0,
     processingAttempts: 0,
     receivedAt: new Date(),
@@ -202,7 +216,7 @@ describe('ServiceCatalogEventConsumer', () => {
       const processedEventLog = {
         ...mockEventLog,
         eventId: 'evt_already_processed',
-        processingStatus: 'PROCESSED' as const,
+        processingStatus: EventProcessingStatus.COMPLETED,
         processedAt: new Date(),
       };
 
