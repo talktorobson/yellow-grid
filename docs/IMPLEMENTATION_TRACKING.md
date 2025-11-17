@@ -35,6 +35,7 @@
 - [x] CalendarConfig model (per-BU buffer settings)
 - [x] Non-working day calculation (skip weekends + holidays)
 - [x] Booking window validation (BUFFER_WINDOW_VIOLATION / BANK_HOLIDAY errors)
+- [x] **Buffer refactor committed and pushed** (commit: `68d5506`, 964 insertions, 112 deletions)
 
 **Next Up**:
 - [ ] Redis Calendar/Booking service (96 15-min slots, atomic booking)
@@ -60,6 +61,7 @@
   - Non-working day calculation
   - Travel buffer storage/retrieval
   - Nager.Date API integration
+  - ✅ **Committed and pushed**: commit `68d5506` to `origin/main`
 - ⚠️ Database migration pending: `refactor-buffers-prd-compliant` (database not running)
 - ✅ All TypeScript compilation clean
 - ✅ All modules wired into AppModule
@@ -704,13 +706,23 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 **Integration**:
 - ✅ Wired into SchedulingModule
 - ✅ All tests passing (17/17, 100%)
-- ⚠️ **Migration pending** (database not running): `refactor-buffers-prd-compliant`
+- ✅ **Committed and pushed** (commit: `68d5506`)
+
+**Git Commit**:
+- **Commit**: `68d5506` - "refactor(scheduling): implement PRD-compliant buffer logic (BR-5)"
+- **Pushed**: 2025-11-17 to `origin/main`
+- **Changes**: 964 insertions, 112 deletions across 3 files
+
+**Migration Status**:
+- ⚠️ **Pending**: Prisma migration `refactor-buffers-prd-compliant` (database not running)
+- Migration will be applied when database is available
 
 **Next Steps**:
-1. Run Prisma migration when database is available
-2. Seed CalendarConfig data for each business unit (ES, FR, IT, PL)
-3. Integrate `validateBookingWindow()` into Service Order scheduling workflow
-4. Update Service Order service to call buffer validation before booking
+1. ⏳ Run Prisma migration when database is available: `npx prisma migrate dev --name refactor-buffers-prd-compliant`
+2. ⏳ Seed CalendarConfig data for each business unit (ES, FR, IT, PL)
+3. ⏳ Integrate `validateBookingWindow()` into Service Order scheduling workflow
+4. ⏳ Update Service Order service to call buffer validation before scheduling
+5. ⏳ Add buffer validation to calendar pre-booking logic
 
 ---
 
