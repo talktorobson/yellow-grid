@@ -655,6 +655,143 @@ async function main() {
 
   console.log(`✅ Created ${skillRequirements.length} service skill requirements`);
 
+  // ============================================================================
+  // 9. SEED CALENDAR CONFIGS (PRD BR-5 Compliant Buffer Settings)
+  // ============================================================================
+  console.log('\n📅 Seeding calendar configurations...');
+
+  const calendarConfigs = [
+    // Spain - Leroy Merlin
+    {
+      countryCode: 'ES',
+      businessUnit: 'LM_ES',
+      workingDays: [1, 2, 3, 4, 5], // Monday-Friday
+      timezone: 'Europe/Madrid',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '14:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '20:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 3, // Block bookings within 3 non-working days from today
+      staticBufferNonWorkingDays: 2, // Block bookings within 2 non-working days from delivery
+      travelBufferMinutes: 30, // Fixed 30 minutes between jobs
+      crossDayAllowed: false,
+      holidayRegion: 'ES', // Nager.Date API country code
+      createdBy: 'system',
+    },
+    // Spain - Brico Depot
+    {
+      countryCode: 'ES',
+      businessUnit: 'BD_ES',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Madrid',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '14:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '20:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 3,
+      staticBufferNonWorkingDays: 2,
+      travelBufferMinutes: 30,
+      crossDayAllowed: false,
+      holidayRegion: 'ES',
+      createdBy: 'system',
+    },
+    // France - Leroy Merlin
+    {
+      countryCode: 'FR',
+      businessUnit: 'LM_FR',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Paris',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '13:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '19:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 4, // France: slightly longer buffer
+      staticBufferNonWorkingDays: 2,
+      travelBufferMinutes: 45, // France: longer travel times
+      crossDayAllowed: false,
+      holidayRegion: 'FR',
+      createdBy: 'system',
+    },
+    // France - Brico Depot
+    {
+      countryCode: 'FR',
+      businessUnit: 'BD_FR',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Paris',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '13:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '19:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 4,
+      staticBufferNonWorkingDays: 2,
+      travelBufferMinutes: 45,
+      crossDayAllowed: false,
+      holidayRegion: 'FR',
+      createdBy: 'system',
+    },
+    // Italy - Leroy Merlin
+    {
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Rome',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '13:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '19:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 3,
+      staticBufferNonWorkingDays: 2,
+      travelBufferMinutes: 30,
+      crossDayAllowed: false,
+      holidayRegion: 'IT',
+      createdBy: 'system',
+    },
+    // Poland - Leroy Merlin
+    {
+      countryCode: 'PL',
+      businessUnit: 'LM_PL',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Warsaw',
+      morningShiftStart: '08:00',
+      morningShiftEnd: '14:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '20:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 2, // Poland: shorter buffer
+      staticBufferNonWorkingDays: 1,
+      travelBufferMinutes: 30,
+      crossDayAllowed: false,
+      holidayRegion: 'PL',
+      createdBy: 'system',
+    },
+  ];
+
+  for (const config of calendarConfigs) {
+    await prisma.calendarConfig.upsert({
+      where: {
+        countryCode_businessUnit: {
+          countryCode: config.countryCode,
+          businessUnit: config.businessUnit,
+        },
+      },
+      update: config,
+      create: config,
+    });
+  }
+
+  console.log(`✅ Created ${calendarConfigs.length} calendar configurations`);
+
   console.log('\n✨ Database seeding completed!');
   console.log('\n📝 Test Credentials:');
   console.log('   Admin: admin@adeo.com / Admin123!');
@@ -667,6 +804,7 @@ async function main() {
   console.log(`   Provider Specialties: ${specialties.length}`);
   console.log(`   Contract Templates: ${contractTemplates.length}`);
   console.log(`   Sample Services: ${sampleServices.length}`);
+  console.log(`   Calendar Configs: ${calendarConfigs.length} (PRD BR-5 compliant)`);
 }
 
 main()
