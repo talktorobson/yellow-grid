@@ -273,7 +273,7 @@ model WorkTeam {
   // Capacity
   maxDailyJobs Int @default(5) @map("max_daily_jobs")
 
-  // Skills
+  // Skills (DEPRECATED - will be migrated to ProviderSpecialtyAssignment)
   skills     Json // ["installation", "repair", "tv"]
   serviceTypes Json @map("service_types") // ["P1", "P2"]
 
@@ -284,6 +284,9 @@ model WorkTeam {
   provider    Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
   technicians Technician[]
   users       User[] // Technician users
+
+  // Structured specialties (replaces JSON skills)
+  specialtyAssignments ProviderSpecialtyAssignment[]
 
   // Calendar
   workingDays Json @map("working_days") // ["MON", "TUE", ...]
@@ -342,4 +345,461 @@ enum EventStatus {
   PENDING
   PUBLISHED
   FAILED
+}
+
+// ============================================================================
+// SERVICE & PROVIDER REFERENTIAL MODULE
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// GEOGRAPHIC MASTER DATA (3-level hierarchy)
+// ----------------------------------------------------------------------------
+
+model Country {
+  id          String   @id @default(uuid())
+  code        String   @unique @db.VarChar(3) // ES, FR, IT, PL
+  name        String   @db.VarChar(100)
+
+  // Regional settings
+  timezone    String   @db.VarChar(50) // Europe/Madrid, Europe/Paris
+  currency    String   @db.VarChar(3)  // EUR
+  locale      String   @db.VarChar(10) // es-ES, fr-FR
+
+  // Relations
+  provinces   Province[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("countries")
+}
+
+model Province {
+  id          String   @id @default(uuid())
+  countryCode String   @map("country_code") @db.VarChar(3)
+  code        String   @db.VarChar(10) // 28 (Madrid), 75 (Paris)
+  name        String   @db.VarChar(100)
+
+  // Relations
+  country     Country  @relation(fields: [countryCode], references: [code], onDelete: Cascade)
+  cities      City[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([countryCode, code])
+  @@index([countryCode])
+  @@map("provinces")
+}
+
+model City {
+  id         String   @id @default(uuid())
+  provinceId String   @map("province_id")
+  code       String   @db.VarChar(20) // INE/INSEE codes
+  name       String   @db.VarChar(100)
+
+  // Relations
+  province    Province     @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  postalCodes PostalCode[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([provinceId, code])
+  @@index([provinceId])
+  @@map("cities")
+}
+
+model PostalCode {
+  id     String @id @default(uuid())
+  cityId String @map("city_id")
+  code   String @db.VarChar(10) // 28001, 75001, etc.
+
+  // Relations
+  city            City             @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  servicePricing  ServicePricing[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([cityId, code])
+  @@index([code]) // Fast postal code lookup
+  @@index([cityId])
+  @@map("postal_codes")
+}
+
+// ----------------------------------------------------------------------------
+// SERVICE CATALOG DOMAIN
+// ----------------------------------------------------------------------------
+
+model ServiceCatalog {
+  id                  String        @id @default(uuid())
+
+  // External sync tracking
+  externalServiceCode String        @unique @map("external_service_code") @db.VarChar(100) // PYX_ES_HVAC_00123
+  fsmServiceCode      String        @unique @map("fsm_service_code") @db.VarChar(50) // SVC_ES_001
+  externalSource      String        @map("external_source") @db.VarChar(20) // PYXIS, TEMPO, SAP, FSM_CUSTOM
+
+  // Multi-tenancy
+  countryCode         String        @map("country_code") @db.VarChar(3)
+  businessUnit        String        @map("business_unit") @db.VarChar(50)
+
+  // Basic attributes
+  serviceType         ServiceType   @map("service_type")
+  serviceCategory     ServiceCategory @map("service_category")
+  name                String        @db.VarChar(255)
+  description         String?       @db.Text
+
+  // Scope definition
+  scopeIncluded       Json          @map("scope_included")  // ["Remove old unit", "Install new unit"]
+  scopeExcluded       Json          @map("scope_excluded")  // ["Wall modifications"]
+  worksiteRequirements Json         @map("worksite_requirements") // ["Electrical outlet within 2m"]
+  productPrerequisites Json         @map("product_prerequisites") // ["HVAC unit pre-delivered"]
+
+  // Operational settings
+  estimatedDurationMinutes Int      @map("estimated_duration_minutes")
+  requiresPreServiceContract Boolean @default(false) @map("requires_pre_service_contract")
+  requiresPostServiceWCF    Boolean @default(true) @map("requires_post_service_wcf")
+  contractTemplateId        String? @map("contract_template_id")
+
+  // Status
+  status              ServiceStatus @default(CREATED)
+  deprecatedAt        DateTime?     @map("deprecated_at")
+  deprecationReason   String?       @map("deprecation_reason") @db.Text
+
+  // Sync metadata
+  syncChecksum        String        @map("sync_checksum") @db.VarChar(64) // SHA256
+  lastSyncedAt        DateTime?     @map("last_synced_at")
+
+  // Relations
+  contractTemplate    ContractTemplate?        @relation(fields: [contractTemplateId], references: [id], onDelete: SetNull)
+  pricing             ServicePricing[]
+  skillRequirements   ServiceSkillRequirement[]
+  specialtyMappings   SpecialtyServiceMapping[]
+
+  // Audit
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  createdBy           String?       @map("created_by") @db.VarChar(100) // SYNC_JOB, user email
+  updatedBy           String?       @map("updated_by") @db.VarChar(100)
+
+  @@index([countryCode, businessUnit])
+  @@index([serviceType])
+  @@index([serviceCategory])
+  @@index([status])
+  @@index([externalSource])
+  @@map("service_catalog")
+}
+
+enum ServiceType {
+  INSTALLATION
+  CONFIRMATION_TV
+  QUOTATION_TV
+  MAINTENANCE
+  REWORK
+  COMPLEX
+}
+
+enum ServiceCategory {
+  HVAC              // Heating, Ventilation, Air Conditioning
+  PLUMBING          // Plumbing installations
+  ELECTRICAL        // Electrical work
+  KITCHEN           // Kitchen installations
+  BATHROOM          // Bathroom installations
+  FLOORING          // Flooring installations
+  WINDOWS_DOORS     // Windows and doors
+  GARDEN            // Garden installations
+  FURNITURE         // Furniture assembly
+  OTHER             // Miscellaneous
+}
+
+enum ServiceStatus {
+  CREATED           // Initial creation
+  ACTIVE            // Ready for use
+  DEPRECATED        // No longer offered (but historical orders remain)
+  ARCHIVED          // Fully archived
+}
+
+// Regional pricing with postal code granularity
+model ServicePricing {
+  id           String   @id @default(uuid())
+  serviceId    String   @map("service_id")
+
+  // Multi-tenancy
+  countryCode  String   @map("country_code") @db.VarChar(3)
+  businessUnit String   @map("business_unit") @db.VarChar(50)
+
+  // Geographic scope (NULL postal code = country default)
+  postalCodeId String?  @map("postal_code_id")
+
+  // Pricing
+  baseRate     Decimal  @map("base_rate") @db.Decimal(10, 2) // Base hourly/fixed rate
+  currency     String   @db.VarChar(3) // EUR
+  rateType     RateType @map("rate_type") // HOURLY, FIXED
+
+  // Multipliers (defaults if not specified)
+  overtimeMultiplier  Decimal @default(1.5) @map("overtime_multiplier") @db.Decimal(3, 2)
+  weekendMultiplier   Decimal @default(1.3) @map("weekend_multiplier") @db.Decimal(3, 2)
+  holidayMultiplier   Decimal @default(1.5) @map("holiday_multiplier") @db.Decimal(3, 2)
+  urgentMultiplier    Decimal @default(1.2) @map("urgent_multiplier") @db.Decimal(3, 2)
+
+  // Validity
+  validFrom    DateTime @map("valid_from")
+  validUntil   DateTime? @map("valid_until")
+
+  // Relations
+  service      ServiceCatalog @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  postalCode   PostalCode?    @relation(fields: [postalCodeId], references: [id], onDelete: SetNull)
+
+  // Audit
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    String?  @map("created_by") @db.VarChar(100)
+  updatedBy    String?  @map("updated_by") @db.VarChar(100)
+
+  @@unique([serviceId, countryCode, businessUnit, postalCodeId, validFrom])
+  @@index([serviceId])
+  @@index([countryCode, businessUnit])
+  @@index([postalCodeId])
+  @@index([validFrom, validUntil])
+  @@map("service_pricing")
+}
+
+enum RateType {
+  HOURLY
+  FIXED
+}
+
+// Service-to-Skill mappings (required skills for a service)
+model ServiceSkillRequirement {
+  id               String  @id @default(uuid())
+  serviceId        String  @map("service_id")
+  specialtyId      String  @map("specialty_id")
+
+  // Requirement details
+  isRequired       Boolean @default(true) @map("is_required") // vs. NICE_TO_HAVE
+  minimumExperience ExperienceLevel @map("minimum_experience")
+
+  // Relations
+  service          ServiceCatalog    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  specialty        ProviderSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@unique([serviceId, specialtyId])
+  @@index([serviceId])
+  @@index([specialtyId])
+  @@map("service_skill_requirements")
+}
+
+// ----------------------------------------------------------------------------
+// PROVIDER SPECIALTY MODEL (structured capabilities)
+// ----------------------------------------------------------------------------
+
+model ProviderSpecialty {
+  id          String   @id @default(uuid())
+  code        String   @unique @db.VarChar(50) // HVAC_INSTALL, PLUMBING_REPAIR
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  category    ServiceCategory // Maps to service categories
+
+  // Certification requirements
+  requiresCertification Boolean @default(false) @map("requires_certification")
+  certificationAuthority String? @map("certification_authority") @db.VarChar(100)
+
+  // Relations
+  serviceRequirements ServiceSkillRequirement[]
+  serviceMappings     SpecialtyServiceMapping[]
+  providerAssignments ProviderSpecialtyAssignment[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("provider_specialties")
+}
+
+enum ExperienceLevel {
+  JUNIOR        // 0-2 years
+  INTERMEDIATE  // 2-5 years
+  SENIOR        // 5-10 years
+  EXPERT        // 10+ years
+}
+
+// Many-to-many mapping (Provider Specialty ↔ Service Catalog)
+model SpecialtyServiceMapping {
+  id          String @id @default(uuid())
+  specialtyId String @map("specialty_id")
+  serviceId   String @map("service_id")
+
+  // Relations
+  specialty   ProviderSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  service     ServiceCatalog    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([specialtyId, serviceId])
+  @@index([specialtyId])
+  @@index([serviceId])
+  @@map("specialty_service_mappings")
+}
+
+// Provider capabilities (Work Team specialties)
+model ProviderSpecialtyAssignment {
+  id         String   @id @default(uuid())
+  workTeamId String   @map("work_team_id")
+  specialtyId String  @map("specialty_id")
+
+  // Certification tracking
+  isCertified Boolean  @default(false) @map("is_certified")
+  certificationNumber String? @map("certification_number") @db.VarChar(100)
+  certificationIssuedAt DateTime? @map("certification_issued_at")
+  certificationExpiresAt DateTime? @map("certification_expires_at")
+
+  // Experience tracking
+  experienceLevel ExperienceLevel @map("experience_level")
+  yearsOfExperience Int @default(0) @map("years_of_experience")
+
+  // Performance metrics (updated after each job)
+  totalJobsCompleted Int @default(0) @map("total_jobs_completed")
+  totalJobsFailed    Int @default(0) @map("total_jobs_failed")
+  avgDurationMinutes Int? @map("avg_duration_minutes")
+  avgQualityScore    Decimal? @map("avg_quality_score") @db.Decimal(3, 2) // 0.00-5.00
+
+  // Status
+  isActive    Boolean  @default(true) @map("is_active")
+  assignedAt  DateTime @default(now()) @map("assigned_at")
+  revokedAt   DateTime? @map("revoked_at")
+  revocationReason String? @map("revocation_reason") @db.Text
+
+  // Relations
+  workTeam    WorkTeam          @relation(fields: [workTeamId], references: [id], onDelete: Cascade)
+  specialty   ProviderSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  // Audit
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([workTeamId, specialtyId])
+  @@index([workTeamId])
+  @@index([specialtyId])
+  @@index([isActive])
+  @@index([certificationExpiresAt]) // Monitor expiring certifications
+  @@map("provider_specialty_assignments")
+}
+
+// ----------------------------------------------------------------------------
+// CONTRACT TEMPLATES
+// ----------------------------------------------------------------------------
+
+model ContractTemplate {
+  id              String   @id @default(uuid())
+  code            String   @unique @db.VarChar(50) // INSTALL_STD_V1, TV_QUOTE_V2
+  name            String   @db.VarChar(255)
+  description     String?  @db.Text
+
+  // Multi-tenancy
+  countryCode     String   @map("country_code") @db.VarChar(3)
+  businessUnit    String?  @map("business_unit") @db.VarChar(50) // NULL = all BUs
+
+  // External template reference (Adobe Sign / DocuSign agnostic)
+  externalTemplateId String @map("external_template_id") @db.VarChar(100)
+  provider        ContractProvider // ADOBE_SIGN, DOCUSIGN
+
+  // Versioning
+  version         Int      @default(1)
+  isActive        Boolean  @default(true) @map("is_active")
+  supersededBy    String?  @map("superseded_by") // ID of newer version
+
+  // Relations
+  services        ServiceCatalog[]
+
+  // Audit
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdBy       String?  @map("created_by") @db.VarChar(100)
+
+  @@index([countryCode, businessUnit])
+  @@index([isActive])
+  @@map("contract_templates")
+}
+
+enum ContractProvider {
+  ADOBE_SIGN
+  DOCUSIGN
+}
+
+// ----------------------------------------------------------------------------
+// SYNC INFRASTRUCTURE (Event tracking & reconciliation)
+// ----------------------------------------------------------------------------
+
+model ServiceCatalogEventLog {
+  id                  String   @id @default(uuid())
+  eventId             String   @unique @map("event_id") @db.VarChar(100) // For idempotency
+
+  // Event metadata
+  eventType           String   @map("event_type") @db.VarChar(50) // service.created, service.updated
+  externalSource      String   @map("external_source") @db.VarChar(20) // PYXIS, TEMPO, SAP
+  externalServiceCode String   @map("external_service_code") @db.VarChar(100)
+
+  // Processing status
+  processingStatus    EventProcessingStatus @map("processing_status")
+  payload             Json     // Full event payload
+  errorMessage        String?  @map("error_message") @db.Text
+  retryCount          Int      @default(0) @map("retry_count")
+
+  // Timestamps
+  receivedAt          DateTime @default(now()) @map("received_at")
+  processedAt         DateTime? @map("processed_at")
+
+  @@index([eventId])
+  @@index([processingStatus, receivedAt])
+  @@index([externalServiceCode])
+  @@map("service_catalog_event_log")
+}
+
+enum EventProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+model ServiceCatalogReconciliation {
+  id                String   @id @default(uuid())
+
+  // Reconciliation run metadata
+  countryCode       String   @map("country_code") @db.VarChar(3)
+  runDate           DateTime @map("run_date")
+  status            ReconciliationStatus
+
+  // Metrics
+  totalServicesInFile     Int @map("total_services_in_file")
+  totalServicesInDB       Int @map("total_services_in_db")
+  servicesCreated         Int @default(0) @map("services_created")
+  servicesUpdated         Int @default(0) @map("services_updated")
+  servicesWithDrift       Int @default(0) @map("services_with_drift")
+  driftPercentage         Decimal? @map("drift_percentage") @db.Decimal(5, 2)
+
+  // File info
+  s3Bucket          String?  @map("s3_bucket") @db.VarChar(100)
+  s3Key             String?  @map("s3_key") @db.VarChar(255)
+
+  // Timestamps
+  startedAt         DateTime @default(now()) @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  errorMessage      String?  @map("error_message") @db.Text
+
+  @@index([countryCode, runDate])
+  @@index([status])
+  @@map("service_catalog_reconciliation")
+}
+
+enum ReconciliationStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  PARTIAL
 }

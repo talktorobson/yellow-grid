@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProvidersModule } from './modules/providers/providers.module';
 import { ConfigModuleApp } from './modules/config/config.module';
+import { ServiceCatalogModule } from './modules/service-catalog/service-catalog.module';
 
 // Controllers
 import { AppController } from './app.controller';
@@ -44,6 +45,7 @@ import { AppController } from './app.controller';
     UsersModule,
     ProvidersModule,
     ConfigModuleApp,
+    ServiceCatalogModule,
   ],
   controllers: [AppController],
 })
