@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import type { MainTabParamList } from './types';
 import { ServiceOrdersNavigator } from './ServiceOrdersNavigator';
-import ExecutionsListScreen from '@screens/executions/ExecutionsListScreen';
+import { ExecutionsNavigator } from './ExecutionsNavigator';
 import ProfileScreen from '@screens/profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -39,7 +39,7 @@ export const MainNavigator = () => {
       />
       <Tab.Screen
         name="Executions"
-        component={ExecutionsListScreen}
+        component={ExecutionsNavigator}
         options={{ title: 'Executions' }}
       />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
