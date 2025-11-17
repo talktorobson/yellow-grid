@@ -120,9 +120,9 @@ describe('PricingService', () => {
         finalRate: 100,
         totalCost: 100,
         pricingLevel: 'COUNTRY_DEFAULT',
-        postalCodeId: undefined,
+        postalCodeId: null,
         validFrom: mockPricing.validFrom,
-        validUntil: undefined,
+        validUntil: null,
       });
     });
 

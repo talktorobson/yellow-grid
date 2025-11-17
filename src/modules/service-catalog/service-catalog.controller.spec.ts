@@ -10,10 +10,14 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { DeprecateServiceDto } from './dto/deprecate-service.dto';
 jest.mock('csv-parse/sync', () => ({ parse: jest.fn() }), { virtual: true });
+import { SyncService } from './sync/sync.service';
+import { ServiceCatalogEventConsumer } from './consumers/service-catalog.consumer';
+import { ReconciliationService } from './sync/reconciliation.service';
 
 describe('ServiceCatalogController - CRUD Endpoints', () => {
   let controller: ServiceCatalogController;
   let serviceCatalogService: jest.Mocked<ServiceCatalogService>;
+  const mockEventConsumer = { onModuleInit: jest.fn() };
 
   const mockService = {
     id: 'svc-123',
@@ -46,38 +50,25 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ServiceCatalogController],
-      providers: [
-        {
-          provide: ServiceCatalogService,
-          useValue: {
-            create: jest.fn(),
-            update: jest.fn(),
-            deprecate: jest.fn(),
-            findById: jest.fn(),
-            findAll: jest.fn(),
-            search: jest.fn(),
-            getStatistics: jest.fn(),
-          },
-        },
-        {
-          provide: PricingService,
-          useValue: {},
-        },
-        {
-          provide: GeographicService,
-          useValue: {},
-        },
-        {
-          provide: ProviderSpecialtyService,
-          useValue: {},
-        },
-      ],
-    }).compile();
+    serviceCatalogService = {
+      create: jest.fn(),
+      update: jest.fn(),
+      deprecate: jest.fn(),
+      findById: jest.fn(),
+      findAll: jest.fn(),
+      search: jest.fn(),
+      getStatistics: jest.fn(),
+    } as any;
 
-    controller = module.get<ServiceCatalogController>(ServiceCatalogController);
-    serviceCatalogService = module.get(ServiceCatalogService);
+    controller = new ServiceCatalogController(
+      serviceCatalogService as any,
+      {} as PricingService,
+      {} as GeographicService,
+      {} as ProviderSpecialtyService,
+      {} as SyncService,
+      mockEventConsumer as any,
+      {} as ReconciliationService,
+    );
   });
 
   afterEach(() => {

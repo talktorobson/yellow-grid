@@ -16,6 +16,7 @@ import { ServiceCatalogModule } from './modules/service-catalog/service-catalog.
 import { ServiceOrdersModule } from './modules/service-orders/service-orders.module';
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { ExecutionModule } from './modules/execution/execution.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
 
 // Controllers
 import { AppController } from './app.controller';
@@ -56,6 +57,7 @@ import { AppController } from './app.controller';
 
     // Feature modules (Phase 3)
     ExecutionModule,
+    ContractsModule,
   ],
   controllers: [AppController],
 })

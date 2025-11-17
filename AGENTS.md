@@ -1,21 +1,27 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-`product-docs/README.md` is the canonical table of contents; keep it synchronized whenever a spec moves. Use `architecture`, `domain`, `api`, and `integration` for the primary designs, while security, infrastructure, operations, and testing sit in their sibling directories (`product-docs/README.md:7-97`). The README promises six development guides (`product-docs/README.md:98-106`), yet `product-docs/development` is empty, so backfill those workflow/coding/git/review/setup/CI-CD documents before branching into new topics.
+## Orientation
+- Yellow Grid Field Service Execution Platform backend lives in `src/` (NestJS + Prisma + PostgreSQL + Redis); Phase 1 modules cover auth/users/providers/config/service-catalog. Phase 2 adds scheduling + assignment (calendar pre-booking, provider ranking, assignment modes), and Phase 3 has execution + Work Closing Form stubs under `src/modules/execution`.
+- `product-docs/` holds v2.0 production-ready specs (69 docs). Use `product-docs/README.md` and `00-ENGINEERING_KIT_SUMMARY.md` as entry points and keep navigation current whenever specs move.
+- `roadshow-mockup/` is archived demo-only; avoid basing new work on it. `business-requirements/` are source materials (read-only). Generated/compiled outputs live in `dist/` and `node_modules/`—leave untouched.
 
-## Build, Test, and Development Commands
-Target Node 20 + TypeScript 5.x with NestJS/React scaffolding (`product-docs/architecture/02-technical-stack.md:13-25`). Run `npm ci`, `npm run lint`, `npm run test:unit`, and `npm run test:integration`; the CI workflow mirrors this sequence before building containers (`product-docs/architecture/02-technical-stack.md:670-690`). For local confidence also run `npm run test:watch`, `npm run typecheck`, `npm run test:e2e:local`, and `npm run build` as outlined in the testing strategy (`product-docs/testing/01-testing-strategy.md:253-263`).
+## Build, Run, and Test
+- Node 20+ / npm 9+ required. Typical flow: `npm ci` (or `npm install`), `docker-compose up -d` for Postgres + Redis, `npm run prisma:migrate` and `npm run prisma:generate`, then `npm run start:dev` (or `npm run start`/`npm run start:prod` after `npm run build`).
+- Quality checks: `npm run lint`, `npm run typecheck`, `npm run test` (unit), `npm run test:e2e` (integration; see `test/README.md` for `.env.test` and DB setup), `npm run test:cov` for coverage, `npm run format` for Prettier writes.
+- Prisma/test data helpers: `npm run db:seed`, `npm run prisma:studio`; adjust `DATABASE_URL`, `JWT_SECRET`, and Redis environment variables in `.env.local`/`.env.test` as needed.
+- Unit suite currently green via `npm test -- --runInBand`; expect noisy error logs from service-catalog sync/consumers (intentional mocks) and stubbed dependencies in `node_modules` (e.g., `kafkajs`, `csv-parse`).
 
-## Coding Style & Naming Conventions
-Default to strict TypeScript, 2-space indentation, and shared ESLint/Prettier configs noted in the technical stack doc (`product-docs/architecture/02-technical-stack.md:70-150,788-799`). Follow REST resource naming with plural collections, singular instances, and snake_case query params (`product-docs/api/01-api-design-principles.md:511-548`). Backend modules should keep NestJS naming (`*.module.ts`, `*.service.ts`) and align topic names such as `projects.service_order.created` when working with Kafka (`product-docs/architecture/05-event-driven-architecture.md:122-247`).
+## Coding Style & Conventions
+- Strict TypeScript with NestJS patterns (`*.module.ts`, `*.service.ts`, DTOs with `class-validator`), 2-space formatting via shared ESLint/Prettier config.
+- Follow REST naming from `product-docs/api/01-api-design-principles.md` (plural collections, singular instances, snake_case query params) and keep Swagger decorators aligned with existing controllers.
+- Maintain validation, rate limiting, and interceptors/globals configured in `src/main.ts` when adding endpoints; prefer Prisma for data access and keep multi-tenancy fields (`country_code`, `business_unit`, `user_type`) intact.
 
-## Testing Guidelines
-Quality gates require ≥80% overall coverage and 90% on critical flows (`product-docs/testing/01-testing-strategy.md:19-41`). Place unit specs under `src/__tests__` or `*.spec.ts` per the Jest config in `product-docs/testing/02-unit-testing-standards.md:11-45`, keeping state-machine modules at 95%. Integration suites live in `__tests__/integration`, while Playwright drives `tests/e2e` journeys (`product-docs/testing/04-e2e-testing.md:5-105`). Record flaky cases, attach HTML/JUnit artifacts for `npm run test:e2e`, and document any data-seeding quirks so they roll into the testing runbook.
+## Testing Expectations
+- Aim for ≥80% coverage overall and higher on critical auth/domain flows; place unit specs alongside code as `*.spec.ts` and E2E suites under `test/`.
+- E2E tests spin up a real Nest app + Postgres instance; ensure migrations and cleanup steps follow `test/README.md` (auth provider/technician flows).
 
-## Commit & Pull Request Guidelines
-Use Conventional Commits (e.g., `feat: add provider SLA guard`) per the toolchain table (`product-docs/architecture/02-technical-stack.md:788-799`). Each PR must state the affected specs, link to any architectural decision, and confirm docs stay current, mirroring the “Contributing to Documentation” checklist (`product-docs/README.md:138-146`). Before requesting review, verify security items like validation, secrets, and rate limiting using the security checklist (`product-docs/security/01-security-architecture.md:360-403`), and attach coverage or CI evidence when available.
-
-## Active Documentation Improvements
-1. Populate `product-docs/development` with the six guides linked in `product-docs/README.md:98-106`, landing at least one of those specs per sprint.
-2. Split `product-docs/architecture/02-technical-stack.md` into technology, CI/CD, observability, and migration docs so edits stay scoped; the current 845-line monolith mixes all of that and slows reviews.
-3. Extend `product-docs/testing/01-testing-strategy.md:247-292` (and reference it from `product-docs/testing/04-e2e-testing.md`) with a reproducible environment bootstrap covering datasets, secrets, and service flags so anyone can run the prescribed commands without guesswork.
+## Documentation Guardrails & Active Notes
+- Specs are authoritative: align code changes with `product-docs` content and update indexes (`product-docs/README.md`, `00-ENGINEERING_KIT_SUMMARY.md`, `CLAUDE.md`) when adding or moving specs.
+- Avoid reviving deleted analysis files listed in `DOCUMENTATION_CONSOLIDATION_PLAN.md`; keep navigation focused on authoritative specs.
+- `product-docs/architecture/02-technical-stack.md` remains a large monolith (~1.8k lines); scope edits carefully and plan the eventual split into tech/CI-CD/observability/migration docs.
+- Implementation tracking lives in `docs/IMPLEMENTATION_TRACKING.md`; append updates instead of deleting earlier entries so teams can merge contributions.

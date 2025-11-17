@@ -13,6 +13,7 @@ describe('SyncService', () => {
   const mockPrismaService = {
     serviceCatalog: {
       findUnique: jest.fn(),
+      findMany: jest.fn(),
       update: jest.fn(),
     },
     contractTemplate: {
@@ -21,6 +22,7 @@ describe('SyncService', () => {
     serviceCatalogEventLog: {
       update: jest.fn(),
       findMany: jest.fn(),
+      count: jest.fn(),
     },
   };
 
@@ -338,7 +340,22 @@ describe('SyncService', () => {
           eventId: 'evt_001',
           eventType: 'service.created',
           source: 'PYXIS',
-          data: { externalServiceCode: 'PYX_ES_HVAC_001' },
+          data: {
+            externalServiceCode: 'PYX_ES_HVAC_001',
+            countryCode: 'ES',
+            businessUnit: 'LM_ES',
+            type: 'installation',
+            category: 'hvac',
+            name: 'HVAC Installation',
+            description: 'Standard HVAC installation',
+            scopeIncluded: ['Install', 'Test'],
+            scopeExcluded: ['Wall work'],
+            worksiteRequirements: ['Power outlet'],
+            productPrerequisites: ['Unit delivered'],
+            estimatedDurationMinutes: 180,
+            requiresPreServiceContract: true,
+            requiresPostServiceWCF: true,
+          },
         },
       },
       {
@@ -349,7 +366,22 @@ describe('SyncService', () => {
           eventId: 'evt_002',
           eventType: 'service.updated',
           source: 'PYXIS',
-          data: { externalServiceCode: 'PYX_ES_HVAC_002' },
+          data: {
+            externalServiceCode: 'PYX_ES_HVAC_002',
+            countryCode: 'ES',
+            businessUnit: 'LM_ES',
+            type: 'installation',
+            category: 'hvac',
+            name: 'HVAC Installation',
+            description: 'Standard HVAC installation',
+            scopeIncluded: ['Install', 'Test'],
+            scopeExcluded: ['Wall work'],
+            worksiteRequirements: ['Power outlet'],
+            productPrerequisites: ['Unit delivered'],
+            estimatedDurationMinutes: 180,
+            requiresPreServiceContract: true,
+            requiresPostServiceWCF: true,
+          },
         },
       },
     ];
@@ -360,6 +392,13 @@ describe('SyncService', () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalog.findMany.mockResolvedValue([]);
       mockServiceCatalogService.create.mockResolvedValue({});
+      mockServiceCatalogService.findByExternalCode.mockResolvedValue({
+        id: 'existing-service-2',
+        syncChecksum: 'old-checksum',
+      });
+      mockServiceCatalogService.detectBreakingChanges.mockReturnValue(false);
+      mockServiceCatalogService.computeChecksum.mockReturnValue('new-checksum');
+      mockPrismaService.serviceCatalog.update.mockResolvedValue({});
 
       const retriedCount = await service.retryFailedEvents(3);
 
@@ -382,7 +421,22 @@ describe('SyncService', () => {
           eventId: 'evt_001',
           eventType: 'service.created',
           source: 'PYXIS',
-          data: { externalServiceCode: 'PYX_ES_HVAC_001' },
+          data: {
+            externalServiceCode: 'PYX_ES_HVAC_001',
+            countryCode: 'ES',
+            businessUnit: 'LM_ES',
+            type: 'installation',
+            category: 'hvac',
+            name: 'HVAC Installation',
+            description: 'Standard HVAC installation',
+            scopeIncluded: ['Install', 'Test'],
+            scopeExcluded: ['Wall work'],
+            worksiteRequirements: ['Power outlet'],
+            productPrerequisites: ['Unit delivered'],
+            estimatedDurationMinutes: 180,
+            requiresPreServiceContract: true,
+            requiresPostServiceWCF: true,
+          },
         },
       };
 

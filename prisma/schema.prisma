@@ -714,6 +714,8 @@ model ContractTemplate {
   code            String   @unique @db.VarChar(50) // INSTALL_STD_V1, TV_QUOTE_V2
   name            String   @db.VarChar(255)
   description     String?  @db.Text
+  bodyTemplate    String?  @map("body_template") @db.Text // HTML/Markdown template with placeholders
+  defaultPayload  Json?    @map("default_payload")
 
   // Multi-tenancy
   countryCode     String   @map("country_code") @db.VarChar(3)
@@ -730,6 +732,7 @@ model ContractTemplate {
 
   // Relations
   services        ServiceCatalog[]
+  contracts       Contract[]
 
   // Audit
   createdAt       DateTime @default(now()) @map("created_at")
@@ -744,6 +747,127 @@ model ContractTemplate {
 enum ContractProvider {
   ADOBE_SIGN
   DOCUSIGN
+}
+
+enum ContractStatus {
+  DRAFT
+  GENERATED
+  SENT
+  SIGNED
+  EXPIRED
+  CANCELLED
+}
+
+enum ContractSignerType {
+  CUSTOMER
+  SERVICE_PROVIDER
+  TECHNICIAN
+}
+
+enum SignatureMethod {
+  TYPED
+  DRAWN
+  UPLOADED
+}
+
+enum SignatureStatus {
+  REQUESTED
+  SIGNED
+  DECLINED
+  EXPIRED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+model Contract {
+  id             String         @id @default(uuid())
+  contractNumber String         @unique @map("contract_number") @db.VarChar(30)
+  serviceOrderId String         @map("service_order_id")
+  templateId     String?        @map("template_id")
+
+  // Multi-tenancy snapshot
+  countryCode    String         @map("country_code") @db.VarChar(3)
+  businessUnit   String         @map("business_unit") @db.VarChar(50)
+
+  status         ContractStatus @default(DRAFT)
+  payload        Json           // Merged template data for auditing
+  documentBody   String?        @map("document_body") @db.Text
+
+  customerEmail  String?        @map("customer_email")
+  customerPhone  String?        @map("customer_phone")
+  sentAt         DateTime?      @map("sent_at")
+  signedAt       DateTime?      @map("signed_at")
+  expiresAt      DateTime?      @map("expires_at")
+  signatureCode  String?        @map("signature_code") @db.VarChar(20)
+
+  // Relations
+  serviceOrder   ServiceOrder   @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  template       ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  signatures     ContractSignature[]
+  notifications  ContractNotification[]
+
+  // Audit
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([serviceOrderId])
+  @@index([status])
+  @@map("contracts")
+}
+
+model ContractSignature {
+  id              String           @id @default(uuid())
+  contractId      String           @map("contract_id")
+  signerType      ContractSignerType @map("signer_type")
+  signerName      String           @map("signer_name") @db.VarChar(255)
+  signerEmail     String?          @map("signer_email")
+  signerPhone     String?          @map("signer_phone")
+  signatureMethod SignatureMethod  @map("signature_method")
+  status          SignatureStatus  @default(REQUESTED)
+  signedAt        DateTime?        @map("signed_at")
+  verificationCode String?         @map("verification_code") @db.VarChar(20)
+  ipAddress       String?          @map("ip_address")
+  userAgent       String?          @map("user_agent")
+  evidence        Json?            @map("evidence")
+
+  // Relations
+  contract        Contract         @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  // Audit
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@index([contractId])
+  @@map("contract_signatures")
+}
+
+model ContractNotification {
+  id           String             @id @default(uuid())
+  contractId   String             @map("contract_id")
+  channel      NotificationChannel
+  destination  String             @db.VarChar(255)
+  status       NotificationStatus @default(QUEUED)
+  payload      Json?
+  errorMessage String?            @map("error_message") @db.Text
+  sentAt       DateTime?          @map("sent_at")
+
+  // Relations
+  contract     Contract           @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime           @default(now()) @map("created_at")
+
+  @@index([contractId])
+  @@index([channel])
+  @@map("contract_notifications")
 }
 
 // ----------------------------------------------------------------------------
@@ -954,6 +1078,7 @@ model ServiceOrder {
   assignments             Assignment[]
   bookings                Booking[]
   riskFactors             ServiceOrderRiskFactor[]
+  contracts               Contract[]
 
   // Audit
   createdAt               DateTime @default(now()) @map("created_at")
