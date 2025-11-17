@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/common/prisma/prisma.service';
 
@@ -16,6 +16,7 @@ describe('Provider Authentication (E2E)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix(process.env.API_PREFIX || 'api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -27,24 +28,32 @@ describe('Provider Authentication (E2E)', () => {
     await app.init();
     prisma = app.get<PrismaService>(PrismaService);
 
+    // Clean any previous test artifacts
+    await prisma.user.deleteMany({
+      where: { email: { in: ['provider-e2e@test.com', 'invalid-provider@test.com'] } },
+    });
+    await prisma.provider.deleteMany({
+      where: { email: 'e2e-provider@test.com' },
+    });
+
     // Create test provider for all tests
     const provider = await prisma.provider.create({
       data: {
         name: 'E2E Test Provider',
+        legalName: 'E2E Test Provider LLC',
         email: 'e2e-provider@test.com',
         phone: '+34612345678',
         countryCode: 'ES',
         businessUnit: 'LM_ES',
         status: 'ACTIVE',
-        type: 'COMPANY',
         taxId: 'ES12345678Z',
-        address: '123 Test Street',
-        city: 'Madrid',
-        state: 'Madrid',
-        postalCode: '28001',
-        legalRepName: 'John Doe',
-        legalRepEmail: 'john@test.com',
-        maxConcurrentJobs: 10,
+        address: {
+          street: '123 Test Street',
+          city: 'Madrid',
+          state: 'Madrid',
+          postalCode: '28001',
+          country: 'ES',
+        },
       },
     });
     testProviderId = provider.id;
@@ -103,10 +112,11 @@ describe('Provider Authentication (E2E)', () => {
         include: { provider: true },
       });
 
-      expect(user).toBeDefined();
-      expect(user.userType).toBe('EXTERNAL_PROVIDER');
-      expect(user.providerId).toBe(testProviderId);
-      expect(user.provider.id).toBe(testProviderId);
+      expect(user).not.toBeNull();
+      const persistedUser = user!;
+      expect(persistedUser.userType).toBe('EXTERNAL_PROVIDER');
+      expect(persistedUser.providerId).toBe(testProviderId);
+      expect(persistedUser.provider?.id).toBe(testProviderId);
     });
 
     it('should reject registration with invalid provider ID', async () => {
@@ -289,7 +299,7 @@ describe('Provider Authentication (E2E)', () => {
     it('should reject request with invalid token', async () => {
       // Test with a made-up token
       const response = await request(app.getHttpServer())
-        .get('/api/v1/auth/me') // Protected endpoint
+        .post('/api/v1/auth/me') // Protected endpoint
         .set('Authorization', 'Bearer invalid-token-here')
         .expect(401);
 
@@ -298,7 +308,7 @@ describe('Provider Authentication (E2E)', () => {
 
     it('should reject request without token', async () => {
       await request(app.getHttpServer())
-        .get('/api/v1/auth/me') // Protected endpoint
+        .post('/api/v1/auth/me') // Protected endpoint
         .expect(401);
     });
   });

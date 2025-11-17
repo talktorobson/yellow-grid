@@ -43,6 +43,11 @@
 **Blockers**: None
 **Risks**: None
 
+### Latest Verification (2025-11-17)
+- Ran unit suite (`npm test -- --runInBand`) and full auth E2E suite (`npm run test:e2e -- --runInBand`) successfully.
+- Executed `npm run build` after fixes to ensure compilation remains clean.
+- Hardened auth flows (null-safe password checks) and aligned pricing result typing to unblock tests; refreshed E2E fixtures to match current Prisma schema.
+
 ---
 
 ## Phase 1: Foundation (Weeks 1-4) 🟢 Complete
@@ -509,13 +514,50 @@
 
 ---
 
-## Phase 2: Scheduling & Assignment (Weeks 5-10) ⚪ Pending
+## Phase 2: Scheduling & Assignment (Weeks 5-10) 🟡 In Progress
 
-**Team**: 10 engineers (ramp up +2)
+**Team**: 1 engineer (Solo development with AI assistance)
 **Goal**: Core business logic - slot calculation and provider assignment
-**Status**: Pending (0%)
+**Status**: In Progress (5% - Schema Complete)
+**Started**: 2025-11-17
 
 ### Deliverables
+
+#### Database Schema (Week 5 - Day 1) ✅ **COMPLETE**
+- [x] **Project model** (with Pilote du Chantier/project ownership)
+- [x] **ServiceOrder model** (39 columns, complete lifecycle)
+- [x] **ServiceOrderDependency model** (dependency management)
+- [x] **ServiceOrderBuffer model** (buffer tracking)
+- [x] **ServiceOrderRiskFactor model** (risk assessment)
+- [x] **Assignment model** (assignment lifecycle)
+- [x] **AssignmentFunnelExecution model** (transparency audit)
+- [x] **Booking model** (calendar slot management)
+- [x] **BufferConfig model** (buffer configuration)
+- [x] **Holiday model** (holiday calendar)
+- [x] **All relations configured** (Provider, WorkTeam, ServiceCatalog, User)
+- [x] **Migration applied** (20251117154259_add_phase_2_modules)
+- [x] **Prisma Client generated**
+
+**Owner**: Solo Developer
+**Progress**: 13/13 complete (100%) ✅
+**Completion Date**: 2025-11-17
+
+**Database Verification**:
+```
+10 tables created with correct schema:
+- projects (20 columns)
+- service_orders (39 columns)
+- service_order_dependencies (6 columns)
+- service_order_buffers (8 columns)
+- service_order_risk_factors (7 columns)
+- assignments (21 columns)
+- assignment_funnel_executions (10 columns)
+- bookings (18 columns)
+- buffer_configs (16 columns)
+- holidays (7 columns)
+```
+
+---
 
 #### Service Order Management
 - [ ] **Service Order CRUD** (create, read, update, archive)
@@ -524,8 +566,9 @@
 - [ ] **Service Order validation** (business rules enforcement)
 - [ ] **API**: `/api/v1/service-orders/*`
 
-**Owner**: [Backend Team A]
+**Owner**: Solo Developer
 **Progress**: 0/4 complete
+**Status**: Ready to start (schema complete)
 
 ---
 
@@ -543,17 +586,22 @@
 ---
 
 #### Calendar Pre-Booking (CRITICAL)
-- [ ] **Redis bitmap service** (15-min slot granularity, 96 slots/day)
-- [ ] **Slot calculator** (time → slot index conversions)
-- [ ] **HasStart algorithm** (check if job can start in shift)
-- [ ] **Atomic placement** (Lua scripts for race-free booking)
-- [ ] **Pre-booking manager** (48h TTL, hold limits per customer)
-- [ ] **Booking lifecycle** (PRE_BOOKED → CONFIRMED → EXPIRED → CANCELLED)
-- [ ] **Idempotency service** (prevent duplicate bookings)
-- [ ] **API**: `/api/v1/calendar/availability/*`, `/api/v1/calendar/bookings/*`
+- [x] **Redis bitmap service** (15-min slot granularity, 96 slots/day)
+- [x] **Slot calculator** (time → slot index conversions)
+- [x] **HasStart algorithm** (check if job can start in shift) with working-day/shift validation
+- [x] **Atomic placement** (Lua scripts for race-free booking)
+- [x] **Pre-booking manager** (48h TTL, holdReference idempotency, per-SO hold cap)
+- [x] **Booking lifecycle** (PRE_BOOKED → CONFIRMED → EXPIRED → CANCELLED flows wired)
+- [x] **Idempotency service** (prevent duplicate bookings)
+- [x] **API**: `/api/v1/calendar/availability/*`, `/api/v1/calendar/bookings/*`
 
 **Owner**: [Backend Team C + D]
-**Progress**: 0/8 complete
+**Progress**: 8/8 complete (monitor/global hold caps across customers as follow-up)
+
+**Latest Validation (2025-11-17)**:
+- Unit suites passing (`npm test -- --runInBand`) covering slot math, booking lifecycle, buffer window enforcement.
+- E2E auth suites passing (`npm run test:e2e -- --runInBand`) against Postgres/Redis.
+- Prisma schema synced (`npx prisma migrate deploy`) and client generated.
 
 ---
 

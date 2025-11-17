@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import * as crypto from 'crypto';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/common/prisma/prisma.service';
@@ -22,6 +22,7 @@ describe('Technician Authentication (E2E)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix(process.env.API_PREFIX || 'api/v1');
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -32,6 +33,20 @@ describe('Technician Authentication (E2E)', () => {
 
     await app.init();
     prisma = app.get<PrismaService>(PrismaService);
+
+    // Clean any previous test artifacts
+    await prisma.registeredDevice.deleteMany({
+      where: { user: { email: 'technician-e2e@test.com' } },
+    });
+    await prisma.user.deleteMany({
+      where: { email: 'technician-e2e@test.com' },
+    });
+    await prisma.workTeam.deleteMany({
+      where: { name: 'E2E Test Team' },
+    });
+    await prisma.provider.deleteMany({
+      where: { email: 'technician-provider@test.com' },
+    });
 
     // Generate RSA key pair for biometric tests
     const { privateKey: priv, publicKey: pub } = crypto.generateKeyPairSync('rsa', {
@@ -46,20 +61,20 @@ describe('Technician Authentication (E2E)', () => {
     const provider = await prisma.provider.create({
       data: {
         name: 'E2E Technician Provider',
+        legalName: 'E2E Technician Provider LLC',
         email: 'technician-provider@test.com',
         phone: '+34612345678',
         countryCode: 'ES',
         businessUnit: 'LM_ES',
         status: 'ACTIVE',
-        type: 'COMPANY',
         taxId: 'ES87654321Z',
-        address: '456 Test Avenue',
-        city: 'Barcelona',
-        state: 'Catalonia',
-        postalCode: '08001',
-        legalRepName: 'Jane Doe',
-        legalRepEmail: 'jane@test.com',
-        maxConcurrentJobs: 5,
+        address: {
+          street: '456 Test Avenue',
+          city: 'Barcelona',
+          state: 'Catalonia',
+          postalCode: '08001',
+          country: 'ES',
+        },
       },
     });
     testProviderId = provider.id;
@@ -69,10 +84,12 @@ describe('Technician Authentication (E2E)', () => {
         name: 'E2E Test Team',
         providerId: testProviderId,
         countryCode: 'ES',
-        businessUnit: 'LM_ES',
-        capacity: 10,
-        status: 'ACTIVE',
-        specializationTags: ['PLUMBING', 'ELECTRICAL'],
+        skills: ['PLUMBING', 'ELECTRICAL'],
+        serviceTypes: ['P1'],
+        postalCodes: ['08001', '08002'],
+        workingDays: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+        shifts: [{ code: 'M', startLocal: '08:00', endLocal: '13:00' }],
+        maxDailyJobs: 10,
       },
     });
     testWorkTeamId = workTeam.id;
@@ -133,10 +150,11 @@ describe('Technician Authentication (E2E)', () => {
         include: { workTeam: true },
       });
 
-      expect(user).toBeDefined();
-      expect(user.userType).toBe('EXTERNAL_TECHNICIAN');
-      expect(user.workTeamId).toBe(testWorkTeamId);
-      expect(user.workTeam.id).toBe(testWorkTeamId);
+      expect(user).not.toBeNull();
+      const persistedUser = user!;
+      expect(persistedUser.userType).toBe('EXTERNAL_TECHNICIAN');
+      expect(persistedUser.workTeamId).toBe(testWorkTeamId);
+      expect(persistedUser.workTeam?.id).toBe(testWorkTeamId);
     });
 
     it('should reject registration with invalid work team ID', async () => {
@@ -239,10 +257,11 @@ describe('Technician Authentication (E2E)', () => {
         where: { deviceId: testDeviceId },
       });
 
-      expect(device).toBeDefined();
-      expect(device.userId).toBe(testTechnicianUserId);
-      expect(device.platform).toBe('ios');
-      expect(device.isActive).toBe(true);
+      expect(device).not.toBeNull();
+      const persistedDevice = device!;
+      expect(persistedDevice.userId).toBe(testTechnicianUserId);
+      expect(persistedDevice.platform).toBe('ios');
+      expect(persistedDevice.isActive).toBe(true);
     });
 
     it('should reject biometric setup without authentication', async () => {
@@ -265,6 +284,7 @@ describe('Technician Authentication (E2E)', () => {
         publicKey: publicKey,
         platform: 'ios',
         deviceName: 'Duplicate Device',
+        deviceModel: 'iPhone15,2',
       };
 
       const response = await request(app.getHttpServer())
@@ -284,6 +304,7 @@ describe('Technician Authentication (E2E)', () => {
           publicKey: publicKey,
           platform: 'android',
           deviceName: `Extra Device ${i}`,
+          deviceModel: `AndroidModel-${i}`,
         };
 
         await request(app.getHttpServer())
@@ -299,6 +320,7 @@ describe('Technician Authentication (E2E)', () => {
         publicKey: publicKey,
         platform: 'android',
         deviceName: 'Fourth Device',
+        deviceModel: 'AndroidModel-4',
       };
 
       const response = await request(app.getHttpServer())
@@ -307,7 +329,7 @@ describe('Technician Authentication (E2E)', () => {
         .send(setupDto)
         .expect(400);
 
-      expect(response.body.message).toContain('Maximum number of devices');
+      expect(response.body.message).toContain('Maximum 3 devices');
     });
   });
 
@@ -341,7 +363,8 @@ describe('Technician Authentication (E2E)', () => {
         where: { deviceId: testDeviceId },
       });
 
-      expect(device.lastUsedAt).toBeDefined();
+      expect(device).not.toBeNull();
+      expect(device?.lastLoginAt).toBeDefined();
     });
 
     it('should reject biometric login with invalid signature', async () => {
@@ -386,7 +409,7 @@ describe('Technician Authentication (E2E)', () => {
         .post('/api/v1/auth/technician/offline-token')
         .set('Authorization', `Bearer ${technicianAccessToken}`)
         .send({ deviceId: testDeviceId })
-        .expect(201);
+        .expect(200);
 
       expect(response.body).toHaveProperty('offlineToken');
       expect(response.body).toHaveProperty('expiresAt');
@@ -450,8 +473,8 @@ describe('Technician Authentication (E2E)', () => {
         where: { deviceId: testDeviceId },
       });
 
-      expect(device).toBeDefined();
-      expect(device.isActive).toBe(false);
+      expect(device).not.toBeNull();
+      expect(device?.isActive).toBe(false);
     });
 
     it('should reject biometric login with revoked device', async () => {

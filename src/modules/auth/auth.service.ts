@@ -87,6 +87,10 @@ export class AuthService {
       throw new UnauthorizedException('User account is disabled');
     }
 
+    if (!user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
@@ -189,6 +193,10 @@ export class AuthService {
     });
 
     if (!user || !user.isActive) {
+      return null;
+    }
+
+    if (!user.password) {
       return null;
     }
 
