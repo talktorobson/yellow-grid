@@ -131,9 +131,9 @@ export class PricingService {
       finalRate,
       totalCost,
       pricingLevel: pricing.postalCodeId ? 'POSTAL_CODE' : 'COUNTRY_DEFAULT',
-      postalCodeId: pricing.postalCodeId,
+      postalCodeId: pricing.postalCodeId || undefined,
       validFrom: pricing.validFrom,
-      validUntil: pricing.validUntil,
+      validUntil: pricing.validUntil || undefined,
     };
   }
 
