@@ -86,7 +86,7 @@ export class TechnicianAuthController {
     description: 'Conflict - device already registered',
   })
   async setupBiometric(
-    @Request() req,
+    @Request() req: any,
     @Body() dto: BiometricSetupDto,
   ): Promise<{ deviceId: string; message: string }> {
     return this.technicianAuthService.setupBiometric(req.user.userId, dto);
@@ -144,7 +144,7 @@ export class TechnicianAuthController {
     description: 'Unauthorized - device not found or not authorized',
   })
   async generateOfflineToken(
-    @Request() req,
+    @Request() req: any,
     @Body('deviceId') deviceId: string,
   ): Promise<{ offlineToken: string; expiresAt: Date }> {
     return this.technicianAuthService.generateOfflineToken(req.user.userId, deviceId);
@@ -181,7 +181,7 @@ export class TechnicianAuthController {
     status: 401,
     description: 'Unauthorized - invalid or missing token',
   })
-  async getDevices(@Request() req): Promise<any[]> {
+  async getDevices(@Request() req: any): Promise<any[]> {
     return this.technicianAuthService.getDevices(req.user.userId);
   }
 
