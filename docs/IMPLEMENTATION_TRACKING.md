@@ -203,6 +203,61 @@
 
 ---
 
+## 🐛 Known Issues & Bugs (Phase 1)
+
+### Critical Issues
+1. **BUG-001: Admin User Credentials Mismatch** (CRITICAL)
+   - **Status**: Open
+   - **Severity**: Critical - Blocks all testing
+   - **Description**: The seed script created admin user with password "Admin123!" but login fails with "Invalid credentials"
+   - **Impact**: Cannot test any protected endpoints
+   - **Reproduction**: POST /api/v1/auth/login with email: "admin@adeo.com", password: "Admin123!"
+   - **Expected**: Login success with access token
+   - **Actual**: 401 Unauthorized "Invalid credentials"
+   - **Location**: prisma/seed.ts or src/modules/auth/auth.service.ts:93
+   - **Fix Required**: Check if seed password hash matches or if admin user exists
+
+### High Priority
+2. **BUG-002: Missing Unit Tests** (HIGH)
+   - **Status**: Open
+   - **Severity**: High - No test coverage
+   - **Description**: No unit test files (.spec.ts) exist for any module
+   - **Impact**: Zero test coverage, no regression protection
+   - **Current State**: `npm run test` returns "No tests found"
+   - **Required**: Create .spec.ts files for all services and controllers
+   - **Target Coverage**: 80% overall, 90% for critical paths
+
+### Medium Priority
+3. **BUG-003: Config Module Not in App Module** (MEDIUM)
+   - **Status**: To Verify
+   - **Severity**: Medium - Config module may not be properly wired
+   - **Description**: Config module exists but needs verification it's imported in AppModule
+   - **Impact**: Config endpoints may not be accessible
+   - **Location**: src/app.module.ts
+   - **Fix Required**: Verify ConfigModuleApp is in AppModule imports
+
+### Low Priority
+4. **BUG-004: Docker Compose Version Warning** (LOW)
+   - **Status**: Open
+   - **Severity**: Low - Cosmetic warning
+   - **Description**: Docker compose warns "attribute `version` is obsolete"
+   - **Impact**: Warning message in logs (no functional impact)
+   - **Location**: docker-compose.yml:1
+   - **Fix Required**: Remove version attribute from docker-compose.yml
+
+### Testing Gaps
+5. **GAP-001: No Integration Tests** (MEDIUM)
+   - **Description**: No end-to-end or integration tests for API endpoints
+   - **Impact**: Manual testing required for all functionality
+   - **Required**: Jest supertest integration tests
+
+6. **GAP-002: No E2E Tests** (LOW)
+   - **Description**: No E2E tests for complete user workflows
+   - **Impact**: Cannot verify full user journeys
+   - **Required**: E2E test framework setup
+
+---
+
 ## Phase 2: Scheduling & Assignment (Weeks 5-10) ⚪ Pending
 
 **Team**: 10 engineers (ramp up +2)
