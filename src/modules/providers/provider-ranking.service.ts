@@ -9,6 +9,10 @@ export interface CandidateFilterInput {
   postalCode?: string;
   requiredDurationMinutes: number;
   limit?: number;
+  serviceOrderId?: string;
+  requestedDate?: Date;
+  requestedSlot?: string;
+  executedBy?: string;
 }
 
 export interface CandidateScore {
@@ -44,9 +48,21 @@ export class ProviderRankingService {
    * Scoring: weighted by capacity utilization, distance, historical quality.
    */
   async rankCandidates(input: CandidateFilterInput): Promise<RankingResult> {
-    const { serviceId, countryCode, businessUnit, postalCode, requiredDurationMinutes, limit = 10 } = input;
+    const {
+      serviceId,
+      countryCode,
+      businessUnit,
+      postalCode,
+      requiredDurationMinutes,
+      limit = 10,
+      serviceOrderId,
+      requestedDate,
+      requestedSlot,
+      executedBy = 'system',
+    } = input;
 
     const funnel: FunnelAuditEntry[] = [];
+    const startedAt = Date.now();
 
     // 1) Fetch required specialties for the service
     const requiredSpecialties = await this.prisma.serviceSkillRequirement.findMany({
@@ -154,6 +170,23 @@ export class ProviderRankingService {
     const rankings = scored
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
+
+    // Persist funnel execution if serviceOrderId provided
+    if (serviceOrderId) {
+      const executionTimeMs = Date.now() - startedAt;
+      await this.prisma.assignmentFunnelExecution.create({
+        data: {
+          serviceOrderId,
+          requestedDate: requestedDate ?? new Date(),
+          requestedSlot: requestedSlot ?? null,
+          totalProvidersEvaluated: candidates.length,
+          eligibleProviders: rankings.length,
+          funnelSteps: funnel as unknown as any,
+          executionTimeMs,
+          executedBy,
+        },
+      });
+    }
 
     return { rankings, funnel };
   }

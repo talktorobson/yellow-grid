@@ -738,11 +738,11 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 - [x] **Eligibility filter** (skills, service types, capacity) — implemented via provider ranking service with required specialties + active work team checks
 - [x] **Geographic filter** (postal code proximity) — current exact postal code coverage check; distance calc pending
 - [x] **Scoring algorithm** (capacity weight, distance weight placeholder, history/quality) — weighted composite score
-- [ ] **Assignment transparency** (funnel audit trail) — TODO: persist reasons/funnel entries
+- [x] **Assignment transparency** (funnel audit trail) — funnel entries returned from ranking; persistence into `assignment_funnel_executions` implemented for ranked runs
 - [x] **Candidate ranking service** — ranks work teams/providers for a service
 
 **Owner**: [Backend Team E]
-**Progress**: 4/5 complete (transparency logging next)
+**Progress**: 5/5 complete
 
 ---
 

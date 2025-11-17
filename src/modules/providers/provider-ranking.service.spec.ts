@@ -9,6 +9,9 @@ describe('ProviderRankingService', () => {
     workTeam: {
       findMany: jest.fn(),
     },
+    assignmentFunnelExecution: {
+      create: jest.fn(),
+    },
   };
 
   let service: ProviderRankingService;
@@ -60,11 +63,14 @@ describe('ProviderRankingService', () => {
       businessUnit: 'LM_ES',
       postalCode: '28001',
       requiredDurationMinutes: 60,
+      serviceOrderId: 'so-1',
+      executedBy: 'tester',
     });
 
     expect(rankings).toHaveLength(1);
     expect(rankings[0].workTeamId).toBe('wt1');
     expect(rankings[0].score).toBeGreaterThan(0);
     expect(funnel.some((step) => step.workTeamId === 'wt1' && step.passed)).toBe(true);
+    expect(mockPrisma.assignmentFunnelExecution.create).toHaveBeenCalled();
   });
 });
