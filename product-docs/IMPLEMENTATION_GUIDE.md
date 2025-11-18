@@ -203,7 +203,7 @@ The following documentation categories have template structures in place. Each c
 **Deliverables**:
 - Mobile APIs complete
 - Check-in/out working
-- Media storage to S3
+- Media storage to GCS
 - Offline sync spec
 
 #### Weeks 11-12: Contracts & Documents
@@ -465,7 +465,7 @@ Add as needed:
 ### Security
 
 - [ ] PingID SSO integration
-- [ ] AWS Secrets Manager / Azure Key Vault
+- [ ] HashiCorp Vault / GCP Secret Manager
 - [ ] TLS certificates
 - [ ] SAST tool (SonarQube / Snyk)
 - [ ] DAST tool (OWASP ZAP)
@@ -488,7 +488,7 @@ Add as needed:
 | **Provider adoption resistance** | Medium | High | Pilot with friendly providers, gather feedback early |
 | **Performance at scale** | Medium | High | Load test early and often, optimize database queries |
 | **Mobile offline sync bugs** | High | Medium | Extensive testing, simple conflict resolution (server wins) |
-| **Kafka operational overhead** | Medium | Medium | Use managed service (Confluent/MSK) |
+| **Kafka operational overhead** | Medium | Medium | Use Strimzi operator on GKE for simplified management |
 | **GDPR compliance gaps** | Low | High | Privacy by design, legal review before production |
 
 ## Success Metrics

@@ -750,8 +750,8 @@ If future requirements dictate (>5000 providers, compliance, or advanced feature
 | Inactive user account | 2 years | Soft delete |
 | Deleted user account | 30 days | Hard delete |
 | Refresh tokens | 30 days | Auto-expire |
-| Auth logs | 90 days | Archive to S3 |
-| Security events | 1 year | Archive to S3 |
+| Auth logs | 90 days | Archive to GCS |
+| Security events | 1 year | Archive to GCS |
 
 ---
 
