@@ -2,9 +2,25 @@
  * Test setup file for Vitest
  */
 
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, beforeAll, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { server } from './mocks/server';
+
+// Start MSW server before all tests
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'warn' });
+});
+
+// Reset handlers after each test
+afterEach(() => {
+  server.resetHandlers();
+});
+
+// Stop MSW server after all tests
+afterAll(() => {
+  server.close();
+});
 
 // Cleanup after each test case (e.g., clearing jsdom)
 afterEach(() => {
@@ -27,12 +43,22 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock localStorage
-const localStorageMock = {
-  getItem: (key: string) => null,
-  setItem: (key: string, value: string) => {},
-  removeItem: (key: string) => {},
-  clear: () => {},
-};
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
