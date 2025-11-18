@@ -244,9 +244,10 @@ This document has been **thoroughly audited** and updated to reflect **actual co
 **Status**: ✅/⚠️ **75% Complete** (Core scheduling done, assignment transparency incomplete)
 **Started**: 2025-11-17
 
-### Deliverables
+### Phase 2 Deliverables
 
 #### Database Schema (Week 5 - Day 1) ✅ **COMPLETE**
+
 - [x] **Project model** (with Pilote du Chantier/project ownership)
 - [x] **ServiceOrder model** (39 columns, complete lifecycle)
 - [x] **ServiceOrderDependency model** (dependency management)
