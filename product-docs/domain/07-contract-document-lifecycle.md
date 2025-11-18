@@ -899,8 +899,8 @@ interface DocumentStorage {
   storagePath: string;
   storageRegion?: string;
   url?: string;
-  s3Bucket?: string;
-  s3Key?: string;
+  gcsBucket?: string;
+  gcsObjectPath?: string;
   checksum: string;
   checksumAlgorithm: 'MD5' | 'SHA256' | 'SHA512';
   compressed: boolean;
@@ -909,9 +909,7 @@ interface DocumentStorage {
 
 enum StorageType {
   LOCAL = 'LOCAL',
-  S3 = 'S3',
-  AZURE_BLOB = 'AZURE_BLOB',
-  GOOGLE_CLOUD = 'GOOGLE_CLOUD',
+  GCS = 'GCS',  // Google Cloud Storage
   DATABASE = 'DATABASE'
 }
 
