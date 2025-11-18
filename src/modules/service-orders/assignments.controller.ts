@@ -1,7 +1,8 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AssignmentsService } from './assignments.service';
 import { AssignmentMode } from '@prisma/client';
+import { AssignmentFunnelResponseDto } from './dto/funnel-response.dto';
 
 class CreateAssignmentDto {
   serviceOrderId: string;
@@ -74,5 +75,17 @@ export class AssignmentsController {
   @ApiOperation({ summary: 'Provider declines assignment' })
   async decline(@Param('id') id: string, @Body('reason') reason?: string) {
     return this.assignmentsService.declineAssignment(id, reason);
+  }
+
+  @Get(':id/funnel')
+  @ApiOperation({ summary: 'Get assignment funnel transparency data' })
+  @ApiResponse({
+    status: 200,
+    type: AssignmentFunnelResponseDto,
+    description: 'Returns detailed funnel execution data showing how providers were filtered and scored'
+  })
+  @ApiResponse({ status: 404, description: 'Assignment or funnel data not found' })
+  async getFunnel(@Param('id') id: string): Promise<AssignmentFunnelResponseDto> {
+    return this.assignmentsService.getAssignmentFunnel(id);
   }
 }
