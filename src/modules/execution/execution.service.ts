@@ -1,9 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { StatusUpdateDto } from './dto/status-update.dto';
 import { ServiceOrderState } from '@prisma/client';
+import { validateGeofence, type GeoLocation } from './utils/geofence.util';
 
 @Injectable()
 export class ExecutionService {
@@ -16,8 +17,51 @@ export class ExecutionService {
     const serviceOrder = await this.prisma.serviceOrder.findUnique({ where: { id: dto.serviceOrderId } });
     if (!serviceOrder) throw new NotFoundException('Service order not found');
 
-    // Basic geofence placeholder: ensure service order postal code matches check-in country/BU (simplified)
-    // In production, plug in geofence polygon validation here.
+    // Geofence validation (product-docs/domain/06-execution-field-operations.md:883-888)
+    // Extract service location from serviceAddress JSON field
+    const serviceAddress = serviceOrder.serviceAddress as any;
+    if (!serviceAddress?.lat || !serviceAddress?.lng) {
+      this.logger.warn(`Service order ${dto.serviceOrderId} missing location data, skipping geofence validation`);
+    } else {
+      const checkInLocation: GeoLocation = { lat: dto.lat, lng: dto.lng };
+      const serviceLocation: GeoLocation = { lat: serviceAddress.lat, lng: serviceAddress.lng };
+
+      const geofenceResult = validateGeofence(
+        checkInLocation,
+        serviceLocation,
+        dto.accuracy,
+        {
+          radiusMeters: 100, // Default radius from API spec
+          minAccuracyMeters: 50, // Per domain spec
+          supervisorApprovalThresholdMeters: 500, // Per domain spec
+        },
+      );
+
+      if (!geofenceResult.valid) {
+        if (geofenceResult.requiresSupervisorApproval) {
+          // Distance >500m requires supervisor approval
+          this.logger.error(
+            `Check-in rejected for service order ${dto.serviceOrderId}: ${geofenceResult.message}`,
+          );
+          throw new ForbiddenException(
+            `Check-in location requires supervisor approval. ${geofenceResult.message}`,
+          );
+        } else {
+          // Within 100m-500m range, requires manual check-in with justification
+          this.logger.warn(
+            `Check-in warning for service order ${dto.serviceOrderId}: ${geofenceResult.message}`,
+          );
+          // Note: Could add a 'requiresJustification' flag in DTO to allow manual override
+          throw new BadRequestException(
+            `Check-in outside geofence radius. ${geofenceResult.message}`,
+          );
+        }
+      }
+
+      this.logger.log(
+        `Geofence validation passed for service order ${dto.serviceOrderId}: ${geofenceResult.message}`,
+      );
+    }
 
     const record = await prismaAny.serviceOrderCheckIn.create({
       data: {
