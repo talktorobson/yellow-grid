@@ -660,15 +660,16 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 ---
 
 #### Technical Visit (TV) Flow
-- [ ] **TV service order creation**
-- [ ] **TV outcome capture** (YES / YES-BUT / NO)
-- [ ] **Installation order blocking** (if TV = NO or YES-BUT)
-- [ ] **Scope change workflow** (if YES-BUT → sales)
-- [ ] **TV-to-Installation linking**
-- [ ] **API**: `/api/v1/technical-visits/*`
+- [x] **TV service order creation** (using existing ServiceOrder with CONFIRMATION_TV / QUOTATION_TV types)
+- [x] **TV outcome capture** (YES / YES-BUT / NO)
+- [x] **Installation order blocking** (if TV = NO or YES-BUT)
+- [ ] **Scope change workflow** (if YES-BUT → sales) - Kafka event publishing TODO
+- [x] **TV-to-Installation linking**
+- [x] **API**: `/api/v1/technical-visits/*`
 
 **Owner**: [Backend Team D]
-**Progress**: 0/6 complete
+**Progress**: 5/6 complete
+**Notes**: Added Prisma `TechnicalVisitOutcome` model with YES/YES-BUT/NO outcomes; implemented `TechnicalVisitsModule` with service and controller; added dependency blocking/unblocking logic using `ServiceOrderDependency` with new `TV_OUTCOME` type; created REST API endpoints for recording outcomes, linking installations, and approving scope changes; added comprehensive unit tests (12 test cases covering all scenarios). Kafka event publishing for sales integration remains TODO.
 
 ---
 

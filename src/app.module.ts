@@ -17,6 +17,7 @@ import { ServiceOrdersModule } from './modules/service-orders/service-orders.mod
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { ExecutionModule } from './modules/execution/execution.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
+import { TechnicalVisitsModule } from './modules/technical-visits/technical-visits.module';
 
 // Controllers
 import { AppController } from './app.controller';
@@ -58,6 +59,7 @@ import { AppController } from './app.controller';
     // Feature modules (Phase 3)
     ExecutionModule,
     ContractsModule,
+    TechnicalVisitsModule,
   ],
   controllers: [AppController],
 })

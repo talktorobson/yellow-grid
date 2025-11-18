@@ -1157,6 +1157,7 @@ model ServiceOrderDependency {
 enum DependencyType {
   REQUIRES_COMPLETION  // Must finish first
   REQUIRES_VALIDATION  // Must be validated first
+  TV_OUTCOME          // Installation blocked by Technical Visit outcome
 }
 
 model ServiceOrderBuffer {
@@ -1433,4 +1434,56 @@ model Holiday {
   @@unique([countryCode, date])
   @@index([countryCode, date])
   @@map("holidays")
+}
+
+// ============================================================================
+// TECHNICAL VISIT (TV) FLOW MODULE (Phase 3)
+// ============================================================================
+
+model TechnicalVisitOutcome {
+  id                        String   @id @default(uuid())
+
+  // TV Service Order (CONFIRMATION_TV or QUOTATION_TV type)
+  tvServiceOrderId          String   @unique @map("tv_service_order_id")
+
+  // Linked Installation Order (if any)
+  linkedInstallationOrderId String?  @map("linked_installation_order_id")
+
+  // Outcome (YES / YES-BUT / NO)
+  outcome                   TvOutcome
+
+  // Modifications (required for YES-BUT, optional for others)
+  modifications             Json?    // Array of {description: string, extraDurationMin?: number, reason?: string}
+
+  // Technician notes
+  technicianNotes           String?  @map("technician_notes") @db.Text
+
+  // Sales scope change tracking (for YES-BUT outcomes)
+  scopeChangeRequested      Boolean  @default(false) @map("scope_change_requested")
+  scopeChangeRequestedAt    DateTime? @map("scope_change_requested_at")
+  scopeChangeApproved       Boolean? @map("scope_change_approved")
+  scopeChangeApprovedAt     DateTime? @map("scope_change_approved_at")
+  scopeChangeApprovedBy     String?  @map("scope_change_approved_by") @db.VarChar(100)
+
+  // Installation blocking status
+  installationBlocked       Boolean  @default(false) @map("installation_blocked")
+  installationUnblockedAt   DateTime? @map("installation_unblocked_at")
+
+  // Audit
+  recordedAt                DateTime @default(now()) @map("recorded_at")
+  recordedBy                String   @map("recorded_by") @db.VarChar(100) // Technician user ID or email
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@index([tvServiceOrderId])
+  @@index([linkedInstallationOrderId])
+  @@index([outcome])
+  @@index([installationBlocked])
+  @@map("technical_visit_outcomes")
+}
+
+enum TvOutcome {
+  YES      // Installation can proceed as planned
+  YES_BUT  // Installation can proceed with modifications (scope change)
+  NO       // Installation cannot proceed (cancel or major scope change)
 }
