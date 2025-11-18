@@ -531,7 +531,7 @@ schema_config:
   configs:
     - from: 2024-01-01
       store: boltdb-shipper
-      object_store: s3
+      object_store: gcs
       schema: v11
       index:
         prefix: loki_index_
@@ -541,11 +541,11 @@ storage_config:
   boltdb_shipper:
     active_index_directory: /loki/index
     cache_location: /loki/cache
-    shared_store: s3
+    shared_store: gcs
 
-  aws:
-    s3: s3://us-east-1/loki-storage
-    s3forcepathstyle: true
+  gcs:
+    bucket_name: fsm-loki-storage
+    # Uses Workload Identity for authentication (no credentials needed)
 
 limits_config:
   enforce_metric_name: false
@@ -697,10 +697,10 @@ retention:
     storage: hdd
     compression: gzip
 
-  # Cold tier: S3 archive
+  # Cold tier: GCS archive
   cold:
     duration: 60d
-    storage: s3
+    storage: gcs
     compression: zstd
 
   # Delete after 90 days
