@@ -10,6 +10,8 @@ export interface CreateAssignmentInput {
   requestedDate?: Date;
   requestedSlot?: string;
   executedBy?: string;
+  funnelExecutionId?: string;
+  providerScores?: Record<string, { score: number; scoreBreakdown: any }>;
 }
 
 @Injectable()
@@ -19,7 +21,17 @@ export class AssignmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createAssignments(input: CreateAssignmentInput) {
-    const { serviceOrderId, providerIds, workTeamId, mode, requestedDate, requestedSlot, executedBy = 'system' } = input;
+    const {
+      serviceOrderId,
+      providerIds,
+      workTeamId,
+      mode,
+      requestedDate,
+      requestedSlot,
+      executedBy = 'system',
+      funnelExecutionId,
+      providerScores,
+    } = input;
 
     if (!providerIds.length) {
       throw new BadRequestException('At least one providerId is required');
@@ -35,6 +47,7 @@ export class AssignmentsService {
 
     const assignments = [];
     for (const [index, providerId] of providerIds.entries()) {
+      const scoreData = providerScores?.[providerId];
       const assignment = await this.prisma.assignment.create({
         data: {
           serviceOrderId,
@@ -43,6 +56,9 @@ export class AssignmentsService {
           assignmentMode: mode,
           assignmentMethod: mode,
           providerRank: index + 1,
+          funnelExecutionId: funnelExecutionId ?? null,
+          providerScore: scoreData?.score ?? null,
+          scoreBreakdown: scoreData?.scoreBreakdown ?? null,
           state: isAutoAcceptMode || mode === AssignmentMode.DIRECT ? AssignmentState.ACCEPTED : AssignmentState.OFFERED,
           acceptedAt: isAutoAcceptMode || mode === AssignmentMode.DIRECT ? new Date() : null,
           stateChangedAt: new Date(),
@@ -126,5 +142,30 @@ export class AssignmentsService {
     });
 
     return updated;
+  }
+
+  async getAssignmentFunnel(assignmentId: string) {
+    const assignment = await this.prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      select: { funnelExecutionId: true, serviceOrderId: true },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Assignment not found');
+    }
+
+    if (!assignment.funnelExecutionId) {
+      throw new NotFoundException('No funnel execution data available for this assignment');
+    }
+
+    const funnelExecution = await this.prisma.assignmentFunnelExecution.findUnique({
+      where: { id: assignment.funnelExecutionId },
+    });
+
+    if (!funnelExecution) {
+      throw new NotFoundException('Funnel execution not found');
+    }
+
+    return funnelExecution;
   }
 }

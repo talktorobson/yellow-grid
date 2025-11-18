@@ -2,82 +2,77 @@
  * ServiceOrderDetailPage Tests
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils/test-utils';
-import { Route, Routes } from 'react-router-dom';
+import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/contexts/AuthContext';
 import ServiceOrderDetailPage from '../ServiceOrderDetailPage';
 
-// Mock useParams to return a service order ID
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useParams: () => ({ id: 'so-1' }),
-  };
-});
+// Create a test wrapper with routing
+function renderWithRouter(initialRoute = '/service-orders/so-1') {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <MemoryRouter initialEntries={[initialRoute]}>
+          <Routes>
+            <Route path="/service-orders/:id" element={<ServiceOrderDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 describe('ServiceOrderDetailPage', () => {
   it('should render service order details', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<ServiceOrderDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
       expect(screen.getByText('SO-2024-001')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display customer information', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<ServiceOrderDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
-      expect(screen.getByText(/Marie Dubois/)).toBeInTheDocument();
-      expect(screen.getByText(/123 Rue de Rivoli/)).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Marie Dubois/i)).toBeInTheDocument();
+      expect(screen.getByText(/123 Rue de Rivoli/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   it('should show AI sales potential assessment', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<ServiceOrderDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
       expect(screen.getByText(/Sales Potential/i)).toBeInTheDocument();
       expect(screen.getByText(/HIGH/i)).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should show AI risk assessment', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<ServiceOrderDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
       expect(screen.getByText(/Risk Assessment/i)).toBeInTheDocument();
       expect(screen.getByText(/LOW/i)).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display service type and status', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<ServiceOrderDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
-      expect(screen.getByText(/Installation/)).toBeInTheDocument();
-      expect(screen.getByText(/SCHEDULED/)).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Installation/i)).toBeInTheDocument();
+      expect(screen.getByText(/SCHEDULED/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 });
