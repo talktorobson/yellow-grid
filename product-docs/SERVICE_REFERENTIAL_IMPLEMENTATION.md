@@ -75,7 +75,7 @@ The **Service & Provider Referential** module implements a comprehensive system 
          │ Kafka Events                     │ Flat File Export
          ▼                                   ▼
 ┌──────────────────────┐         ┌─────────────────────────┐
-│ Kafka Topic:         │         │ S3/Blob Storage:        │
+│ Kafka Topic:         │         │ GCS Bucket:             │
 │ service-catalog      │         │ services_ES_YYYYMMDD.csv│
 │                      │         │ services_FR_YYYYMMDD.csv│
 │ Events:              │         └──────────┬──────────────┘
@@ -302,9 +302,9 @@ KAFKA_SASL_MECHANISM=PLAIN
 KAFKA_SASL_USERNAME=yellow-grid-fsm
 KAFKA_SASL_PASSWORD=<secret>
 
-# S3/Blob Storage (for reconciliation)
-AWS_REGION=eu-west-1
-SERVICE_CATALOG_BUCKET=yellow-grid-service-catalog
+# Google Cloud Storage (for reconciliation)
+GCS_BUCKET=yellow-grid-service-catalog
+GCS_PROJECT_ID=yellow-grid-prod
 
 # Sync Configuration
 SERVICE_CATALOG_SYNC_ENABLED=true
@@ -392,7 +392,7 @@ SERVICE_CATALOG_DRIFT_ALERT_THRESHOLD=0.05  # 5%
 
 **Must Provide:**
 - Kafka topic `service-catalog` with events
-- Daily CSV export to S3/Blob (format specified)
+- Daily CSV export to GCS bucket (format specified)
 
 ### Downstream Dependencies
 
