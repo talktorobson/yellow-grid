@@ -669,15 +669,16 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 
 #### Technical Visit (TV) Flow
 
-- [ ] **TV service order creation**
-- [ ] **TV outcome capture** (YES / YES-BUT / NO)
-- [ ] **Installation order blocking** (if TV = NO or YES-BUT)
-- [ ] **Scope change workflow** (if YES-BUT → sales)
-- [ ] **TV-to-Installation linking**
-- [ ] **API**: `/api/v1/technical-visits/*`
+- [x] **TV service order creation** (using existing ServiceOrder with CONFIRMATION_TV / QUOTATION_TV types)
+- [x] **TV outcome capture** (YES / YES-BUT / NO)
+- [x] **Installation order blocking** (if TV = NO or YES-BUT)
+- [x] **Scope change workflow** (if YES-BUT → sales) via Kafka events
+- [x] **TV-to-Installation linking**
+- [x] **API**: `/api/v1/technical-visits/*`
 
 **Owner**: [Backend Team D]
-**Progress**: 0/6 complete
+**Progress**: 6/6 complete ✅
+**Notes**: Added Prisma `TechnicalVisitOutcome` model with YES/YES-BUT/NO outcomes; implemented `TechnicalVisitsModule` with service and controller; added dependency blocking/unblocking logic using `ServiceOrderDependency` with new `TV_OUTCOME` type; created REST API endpoints for recording outcomes, linking installations, and approving scope changes; implemented Kafka event publishing (`projects.tv_outcome.recorded`) for sales integration and orchestration; created global `KafkaModule` with producer service; added comprehensive unit tests (14 test cases including Kafka event verification).
 
 ---
 
@@ -695,11 +696,11 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 
 ---
 
-## Phase 4: Integration & Web UI (Weeks 17-20) ⚪ Pending
+## Phase 4: Integration & Web UI (Weeks 17-20) 🟡 In Progress
 
 **Team**: 10 engineers (ramp down -2)
 **Goal**: External integrations + operator web app
-**Status**: Pending (0%)
+**Status**: In Progress (26% - 6/23 deliverables complete)
 
 ### Deliverables
 
@@ -742,15 +743,15 @@ This implementation was **completely refactored** on 2025-11-17 to align with **
 ---
 
 #### Task Management
-- [ ] **Task creation** (manual + automated)
-- [ ] **Task assignment** (to operators)
-- [ ] **SLA tracking** (due dates, overdue alerts)
-- [ ] **Task escalation** (auto-escalate if overdue)
-- [ ] **Task completion workflow**
-- [ ] **API**: `/api/v1/tasks/*`
+- [x] **Task creation** (manual + automated)
+- [x] **Task assignment** (to operators)
+- [x] **SLA tracking** (due dates, overdue alerts)
+- [x] **Task escalation** (auto-escalate if overdue)
+- [x] **Task completion workflow**
+- [x] **API**: `/api/v1/tasks/*`
 
 **Owner**: [Backend Team C]
-**Progress**: 0/6 complete
+**Progress**: 6/6 complete ✅
 
 ---
 

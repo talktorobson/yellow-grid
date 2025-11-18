@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 // Common modules
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { KafkaModule } from './common/kafka/kafka.module';
 
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -17,6 +18,8 @@ import { ServiceOrdersModule } from './modules/service-orders/service-orders.mod
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { ExecutionModule } from './modules/execution/execution.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
+import { TechnicalVisitsModule } from './modules/technical-visits/technical-visits.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 // Controllers
 import { AppController } from './app.controller';
@@ -43,6 +46,7 @@ import { AppController } from './app.controller';
     // Common modules
     PrismaModule,
     RedisModule,
+    KafkaModule,
 
     // Feature modules (Phase 1)
     AuthModule,
@@ -58,6 +62,10 @@ import { AppController } from './app.controller';
     // Feature modules (Phase 3)
     ExecutionModule,
     ContractsModule,
+    TechnicalVisitsModule,
+
+    // Feature modules (Phase 4)
+    TasksModule,
   ],
   controllers: [AppController],
 })

@@ -1079,6 +1079,7 @@ model ServiceOrder {
   bookings                Booking[]
   riskFactors             ServiceOrderRiskFactor[]
   contracts               Contract[]
+  tasks                   Task[]
 
   // Audit
   createdAt               DateTime @default(now()) @map("created_at")
@@ -1157,6 +1158,7 @@ model ServiceOrderDependency {
 enum DependencyType {
   REQUIRES_COMPLETION  // Must finish first
   REQUIRES_VALIDATION  // Must be validated first
+  TV_OUTCOME          // Installation blocked by Technical Visit outcome
 }
 
 model ServiceOrderBuffer {
@@ -1433,4 +1435,166 @@ model Holiday {
   @@unique([countryCode, date])
   @@index([countryCode, date])
   @@map("holidays")
+}
+
+// ============================================================================
+// TECHNICAL VISIT (TV) FLOW MODULE (Phase 3)
+// ============================================================================
+
+model TechnicalVisitOutcome {
+  id                        String   @id @default(uuid())
+
+  // TV Service Order (CONFIRMATION_TV or QUOTATION_TV type)
+  tvServiceOrderId          String   @unique @map("tv_service_order_id")
+
+  // Linked Installation Order (if any)
+  linkedInstallationOrderId String?  @map("linked_installation_order_id")
+
+  // Outcome (YES / YES-BUT / NO)
+  outcome                   TvOutcome
+
+  // Modifications (required for YES-BUT, optional for others)
+  modifications             Json?    // Array of {description: string, extraDurationMin?: number, reason?: string}
+
+  // Technician notes
+  technicianNotes           String?  @map("technician_notes") @db.Text
+
+  // Sales scope change tracking (for YES-BUT outcomes)
+  scopeChangeRequested      Boolean  @default(false) @map("scope_change_requested")
+  scopeChangeRequestedAt    DateTime? @map("scope_change_requested_at")
+  scopeChangeApproved       Boolean? @map("scope_change_approved")
+  scopeChangeApprovedAt     DateTime? @map("scope_change_approved_at")
+  scopeChangeApprovedBy     String?  @map("scope_change_approved_by") @db.VarChar(100)
+
+  // Installation blocking status
+  installationBlocked       Boolean  @default(false) @map("installation_blocked")
+  installationUnblockedAt   DateTime? @map("installation_unblocked_at")
+
+  // Audit
+  recordedAt                DateTime @default(now()) @map("recorded_at")
+  recordedBy                String   @map("recorded_by") @db.VarChar(100) // Technician user ID or email
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  @@index([tvServiceOrderId])
+  @@index([linkedInstallationOrderId])
+  @@index([outcome])
+  @@index([installationBlocked])
+  @@map("technical_visit_outcomes")
+}
+
+enum TvOutcome {
+  YES      // Installation can proceed as planned
+  YES_BUT  // Installation can proceed with modifications (scope change)
+  NO       // Installation cannot proceed (cancel or major scope change)
+}
+
+// ============================================================================
+// TASK MANAGEMENT MODULE (Phase 4)
+// ============================================================================
+
+model Task {
+  id                  String        @id @default(uuid())
+  taskType            TaskType      @map("task_type")
+  priority            TaskPriority
+  status              TaskStatus    @default(OPEN)
+  serviceOrderId      String        @map("service_order_id")
+  context             Json          // Task-type-specific context data
+
+  // Assignment
+  assignedTo          String?       @map("assigned_to")
+  assignedBy          String?       @map("assigned_by") // User ID or 'SYSTEM'
+  assignedAt          DateTime?     @map("assigned_at")
+
+  // SLA Tracking
+  createdAt           DateTime      @default(now()) @map("created_at")
+  slaDeadline         DateTime      @map("sla_deadline")
+  slaPaused           Boolean       @default(false) @map("sla_paused")
+  slaPausedAt         DateTime?     @map("sla_paused_at")
+  slaPauseReason      String?       @map("sla_pause_reason") @db.Text
+  totalPausedMinutes  Int           @default(0) @map("total_paused_minutes")
+
+  // Escalation
+  escalationLevel     Int           @default(0) @map("escalation_level")
+  escalatedAt         DateTime?     @map("escalated_at")
+
+  // Completion
+  startedAt           DateTime?     @map("started_at")
+  completedAt         DateTime?     @map("completed_at")
+  completedBy         String?       @map("completed_by")
+  resolutionNotes     String?       @map("resolution_notes") @db.Text
+  resolutionTime      Int?          @map("resolution_time") // Minutes
+  withinSLA           Boolean?      @map("within_sla")
+
+  // Cancellation
+  cancelledAt         DateTime?     @map("cancelled_at")
+  cancelledBy         String?       @map("cancelled_by")
+  cancellationReason  String?       @map("cancellation_reason") @db.Text
+
+  // Metadata
+  countryCode         String        @map("country_code") @db.VarChar(3)
+  businessUnit        String        @map("business_unit") @db.VarChar(50)
+
+  // Relations
+  serviceOrder        ServiceOrder  @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  auditLogs           TaskAuditLog[]
+
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  @@index([serviceOrderId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([priority])
+  @@index([slaDeadline])
+  @@index([countryCode])
+  @@index([taskType, status])
+  @@index([status, priority, slaDeadline, assignedTo])
+  @@map("tasks")
+}
+
+enum TaskType {
+  PRE_FLIGHT_FAILURE
+  RESOLVE_WCF_RESERVES
+  WCF_NOT_SIGNED
+  INVOICE_CONTESTED
+  INCOMPLETE_JOB
+  UNASSIGNED_JOB
+  CONTRACT_NOT_SIGNED
+  PAYMENT_FAILED
+  DOCUMENT_REVIEW
+  QUALITY_ALERT
+  SERVICE_ORDER_RISK_REVIEW
+}
+
+enum TaskPriority {
+  CRITICAL  // 2 hours SLA
+  URGENT    // 4 hours SLA
+  HIGH      // 8 hours SLA
+  MEDIUM    // 16 hours SLA
+  LOW       // 40 hours SLA
+}
+
+enum TaskStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model TaskAuditLog {
+  id          String   @id @default(uuid())
+  taskId      String   @map("task_id")
+  action      String   @db.VarChar(50) // CREATED, ASSIGNED, STARTED, UPDATED, COMPLETED, CANCELLED, ESCALATED
+  performedBy String   @map("performed_by") @db.VarChar(100) // User ID or 'SYSTEM'
+  performedAt DateTime @default(now()) @map("performed_at")
+  changes     Json?    // Before/after state
+  notes       String?  @db.Text
+
+  // Relations
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([performedAt])
+  @@map("task_audit_logs")
 }
