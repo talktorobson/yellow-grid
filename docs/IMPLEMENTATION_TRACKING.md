@@ -1,11 +1,8 @@
 # Yellow Grid Platform - Implementation Tracking
 
-**Last Updated**: 2025-11-18 (E-Signature Integration Complete)
+**Last Updated**: 2025-11-18 (Assignment Funnel Transparency API Complete)
 **Current Phase**: Phase 3 - Mobile Execution
-**Overall Progress**: 53% (24 weeks total, ~13 weeks completed/underway)
-**Last Updated**: 2025-11-18 (Media Storage Implementation Complete)
-**Current Phase**: Phase 3 - Mobile Execution
-**Overall Progress**: 52% (24 weeks total, ~12.5 weeks completed/underway)
+**Overall Progress**: 54% (24 weeks total, ~13 weeks completed/underway)
 **Team Size**: 1 engineer (Solo development with AI assistance)
 
 ---
@@ -15,9 +12,9 @@
 This document has been **thoroughly audited twice** and updated to reflect **actual codebase implementation**.
 
 ### Second Audit Corrections (2025-11-18):
-- **Phase 2 Progress**: Corrected from 75% → **85%** (Assignment transparency persistence EXISTS)
+- **Phase 2 Progress**: Corrected from 75% → 85% → **90%** (Transparency API complete)
 - **Phase 3 Progress**: Corrected from 23% → **25%** (Mobile app offsets backend stubs)
-- **Overall Progress**: Corrected from 47% → **50%** (verified accuracy)
+- **Overall Progress**: Corrected from 47% → 50% → **54%** (verified accuracy)
 
 ### First Audit Changes (2025-11-18):
 - **Phase 2 Progress**: Updated from 100% → 75% (Assignment transparency incomplete)
@@ -41,7 +38,7 @@ This document has been **thoroughly audited twice** and updated to reflect **act
 | Phase | Duration | Status | Progress | Weeks |
 |-------|----------|--------|----------|-------|
 | **Phase 1**: Foundation | 4 weeks | 🟢 Complete | 95% | Weeks 1-4 |
-| **Phase 2**: Scheduling & Assignment | 6 weeks | 🟢 Nearly Complete | **85%** | Weeks 5-10 |
+| **Phase 2**: Scheduling & Assignment | 6 weeks | 🟢 Nearly Complete | **90%** | Weeks 5-10 |
 | **Phase 3**: Mobile Execution | 6 weeks | 🟡 In Progress | **35%** | Weeks 11-16 |
 | **Phase 4**: Integration & Web UI | 4 weeks | 🟡 Partial | **28%** | Weeks 17-20 |
 | **Phase 5**: Production Hardening | 4 weeks | ⚪ Pending | 0% | Weeks 21-24 |
@@ -80,13 +77,17 @@ This document has been **thoroughly audited twice** and updated to reflect **act
 
 ### **MEDIUM PRIORITY** (Quality/Completeness)
 
-4. **Assignment Funnel Transparency API** (Phase 2) 🟠
-   - **Status**: Persistence layer EXISTS, **NO API endpoints to retrieve funnel data**
-   - **Evidence**: provider-ranking.service.ts:174-189 persists to `assignmentFunnelExecution` table
-   - **What's Done**: ✅ Data model, ✅ Persistence logic (lines 177-189), ✅ Tests
-   - **What's Missing**: ❌ GET /assignments/{id}/funnel endpoint, ❌ Integration into assignment flow
-   - **Required**: Add controller endpoint + integrate into assignments.service.ts
-   - **Effort**: 1 day
+4. ~~**Assignment Funnel Transparency API** (Phase 2)~~ ✅ **COMPLETED (2025-11-18)**
+   - **Status**: ✅ Production-ready funnel transparency API
+   - **Implemented**: GET /assignments/{id}/funnel endpoint + full integration into assignment flow
+   - **Features**:
+     - Retrieves complete funnel execution audit trail
+     - Shows provider filtering steps (eligibility checks, postal code validation)
+     - Provider scoring breakdown (capacity, quality, distance scores)
+     - Execution metadata (time, operator, total providers evaluated)
+   - **Files**: funnel-response.dto.ts (47 lines), assignments.service.ts (+24 lines), assignments.controller.ts (+13 lines)
+   - **Tests**: 4 comprehensive tests (success + error cases)
+   - **Commit**: `8611bd6` on branch claude/add-funnel-api-endpoint-01CASH5YLw2LkqzLD74e7ySX
 
 5. **Provider Geographic Filtering** (Phase 2)
    - **Status**: Only exact postal code matching, **NO distance calculations**
@@ -256,7 +257,7 @@ This document has been **thoroughly audited twice** and updated to reflect **act
 
 **Team**: 1 engineer (Solo development with AI assistance)
 **Goal**: Core business logic - slot calculation and provider assignment
-**Status**: ✅ **85% Complete** (Core complete, only API endpoints pending)
+**Status**: ✅ **90% Complete** (Core complete, only distance calculations pending)
 **Started**: 2025-11-17
 
 ### Phase 2 Deliverables
@@ -344,28 +345,35 @@ This document has been **thoroughly audited twice** and updated to reflect **act
 
 ---
 
-#### Provider Filtering & Scoring ✅ **70% COMPLETE**
+#### Provider Filtering & Scoring ✅ **90% COMPLETE**
 - [x] **Eligibility filter** (skills, service types, capacity) ✅
 - [x] **Geographic filter** (postal code proximity) ⚠️ **PARTIAL - Exact match only, NO distance calc**
 - [x] **Scoring algorithm** (capacity weight, distance weight placeholder, history/quality) ✅
 - [x] **Candidate ranking service** ✅
 - [x] **Assignment transparency persistence** (funnel audit trail) ✅ **PERSISTENCE IMPLEMENTED**
+- [x] **Assignment transparency API** ✅ **API ENDPOINTS IMPLEMENTED (2025-11-18)**
 
 **Files**:
 - provider-ranking.service.ts: **193 lines** (includes funnel persistence lines 174-189)
 - provider-ranking.service.spec.ts (includes test for funnel persistence)
+- funnel-response.dto.ts: **47 lines** (DTO for API responses)
+- assignments.service.ts: **155 lines** (+24 lines for funnel retrieval)
+- assignments.controller.ts: **91 lines** (+13 lines for GET endpoint)
+- assignments.service.spec.ts: **177 lines** (+4 tests for funnel API)
 
 **Implementation Status**:
 - ✅ FunnelAuditEntry interface defined (lines 28-34)
 - ✅ Funnel data collected throughout ranking (lines 64-189)
 - ✅ **Persists to AssignmentFunnelExecution table** (lines 177-189)
 - ✅ Tests verify persistence (provider-ranking.service.spec.ts:74)
-- ❌ **NO API endpoints** to retrieve funnel data (controller missing)
-- ❌ **NOT integrated** into assignments.service.ts yet
+- ✅ **API endpoint implemented**: GET /assignments/{id}/funnel
+- ✅ **Integrated** into assignments.service.ts with getAssignmentFunnel()
+- ✅ **Enhanced createAssignments()** to accept funnelExecutionId and providerScores
+- ✅ **Comprehensive tests** (4 tests covering success + error cases)
 
-**Owner**: Solo Developer
-**Progress**: 4/5 complete (80%)
-**Required Work**: Add GET /assignments/{id}/funnel endpoint + integrate into assignment flow
+**Owner**: Solo Developer (AI-assisted)
+**Progress**: 5/5 complete (90% - only distance calculations pending)
+**Commit**: `8611bd6` on branch claude/add-funnel-api-endpoint-01CASH5YLw2LkqzLD74e7ySX
 
 ---
 
@@ -390,12 +398,12 @@ This document has been **thoroughly audited twice** and updated to reflect **act
 - ✅ Can search available time slots with buffers applied correctly
 - ✅ Can pre-book slots (prevents double-booking)
 - ✅ Can assign service orders to providers via all modes (direct, offer, broadcast)
-- ✅ Assignment funnel persists why providers passed/failed filters (**API endpoints pending**)
+- ✅ Assignment funnel persists why providers passed/failed filters ✅ **API COMPLETE (2025-11-18)**
 - ✅ Country-specific rules working (ES/IT auto-accept)
 - ✅ Buffer logic validated for complex scenarios (holidays, linked SOs)
 
 **Target Completion**: Week 10
-**Actual Completion**: **85% Complete** (Core features done, only API endpoints pending)
+**Actual Completion**: **90% Complete** (Core features done, only distance calculations pending)
 
 ---
 
@@ -834,7 +842,7 @@ Run: `npx prisma migrate dev --name add_provider_envelope_id`
 | ~~**Media storage blocking mobile app**~~ | ~~HIGH~~ | ~~HIGH~~ | ✅ **RESOLVED (2025-11-18) - GCS integration complete** |
 | **WCF persistence missing** | **HIGH** | **MEDIUM** | **Implement DB+GCS storage (2 days)** |
 | ~~**E-signature integration delays**~~ | ~~MEDIUM~~ | ~~HIGH~~ | ✅ **COMPLETE** (2025-11-18, commit a50a661) |
-| **Assignment transparency API incomplete** | **MEDIUM** | **MEDIUM** | **Add API endpoints (1 day) - Persistence done ✅** |
+| ~~**Assignment transparency API incomplete**~~ | ~~MEDIUM~~ | ~~MEDIUM~~ | ✅ **RESOLVED (2025-11-18) - API endpoints complete (commit 8611bd6)** |
 | **Mobile offline sync edge cases** | **MEDIUM** | **HIGH** | Extensive field testing, simple conflict resolution (server wins) |
 | **Calendar pre-booking complexity** | **LOW** | **MEDIUM** | Already implemented and tested ✅ |
 | **Sales integration delays** | **MEDIUM** | **HIGH** | Start API contract definition now, parallel work |
@@ -927,11 +935,13 @@ Run: `npx prisma migrate dev --name add_provider_envelope_id`
    - Verify webhook signature validation
    - Test provider switching (change ESIGNATURE_PROVIDER env var)
 
-5. [ ] **Add assignment transparency API endpoints** (1 day)
-   - Add GET /assignments/{id}/funnel endpoint to retrieve persisted funnel data
-   - Integrate provider-ranking.service.ts into assignments.service.ts
-   - Write integration tests
-   - **Note**: Persistence already implemented (lines 177-189)
+5. [x] ~~**Add assignment transparency API endpoints**~~ ✅ **COMPLETED (2025-11-18)**
+   - ✅ Added GET /assignments/{id}/funnel endpoint to retrieve persisted funnel data
+   - ✅ Integrated provider-ranking.service.ts into assignments.service.ts
+   - ✅ Enhanced createAssignments() to accept funnelExecutionId and providerScores
+   - ✅ Wrote comprehensive tests (4 tests covering success + error cases)
+   - ✅ Created AssignmentFunnelResponseDto with full OpenAPI documentation
+   - **Commit**: `8611bd6` on branch claude/add-funnel-api-endpoint-01CASH5YLw2LkqzLD74e7ySX
 
 6. [ ] **Complete provider geographic filtering** (1-2 days)
    - Implement Haversine distance calculation
