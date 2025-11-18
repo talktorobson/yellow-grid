@@ -54,6 +54,9 @@ model User {
   // Notification preferences
   notificationPreference NotificationPreference?
 
+  // Offline sync (Phase 3)
+  deviceSyncs   DeviceSync[]
+
   // Project ownership (Phase 2)
   pilotedProjects Project[] @relation("ProjectPilot")
 
@@ -1089,6 +1092,10 @@ model ServiceOrder {
   contracts               Contract[]
   tasks                   Task[]
   workCompletionForms     WorkCompletionForm[]
+
+  // Offline sync (v2.0 - Phase 3)
+  version                 Int      @default(1) // For optimistic locking and conflict detection
+  lastModifiedBy          String?  @map("last_modified_by") @db.VarChar(100)
 
   // Audit
   createdAt               DateTime @default(now()) @map("created_at")
@@ -2157,4 +2164,125 @@ enum NotificationPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+// ============================================================================
+// OFFLINE SYNC MODULE (Phase 3)
+// ============================================================================
+
+// Track sync state per device for offline mobile app synchronization
+model DeviceSync {
+  id                  String   @id @default(uuid())
+
+  // Device identification
+  deviceId            String   @unique @map("device_id") @db.VarChar(100)
+  devicePlatform      String?  @map("device_platform") @db.VarChar(20) // iOS, Android
+  deviceModel         String?  @map("device_model") @db.VarChar(100)
+  appVersion          String?  @map("app_version") @db.VarChar(20)
+
+  // User association
+  userId              String   @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Sync state
+  syncToken           String   @unique @map("sync_token") @db.VarChar(100) // JWT-based token
+  lastSyncAt          DateTime @map("last_sync_at")
+  lastSuccessfulSyncAt DateTime @map("last_successful_sync_at")
+  consecutiveFailures Int      @default(0) @map("consecutive_failures")
+
+  // Sync statistics
+  totalSyncOperations Int      @default(0) @map("total_sync_operations")
+  totalConflicts      Int      @default(0) @map("total_conflicts")
+  pendingUploadCount  Int      @default(0) @map("pending_upload_count")
+  pendingUploadBytes  BigInt   @default(0) @map("pending_upload_bytes")
+
+  // Multi-tenancy
+  countryCode         String   @map("country_code") @db.VarChar(3)
+  businessUnit        String   @map("business_unit") @db.VarChar(50)
+
+  // Device status
+  isActive            Boolean  @default(true) @map("is_active")
+  lastActivityAt      DateTime @default(now()) @map("last_activity_at")
+
+  // Relations
+  syncOperations      SyncOperation[]
+
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([syncToken])
+  @@index([lastSyncAt])
+  @@index([countryCode, businessUnit])
+  @@map("device_syncs")
+}
+
+// Audit log for all sync operations (create, update, conflict resolution)
+model SyncOperation {
+  id                  String   @id @default(uuid())
+
+  // Device sync reference
+  deviceSyncId        String   @map("device_sync_id")
+  deviceSync          DeviceSync @relation(fields: [deviceSyncId], references: [id], onDelete: Cascade)
+
+  // Operation details
+  operationType       SyncOperationType @map("operation_type")
+  entityType          String   @map("entity_type") @db.VarChar(50) // service_order, check_in, check_out, media
+  entityId            String?  @map("entity_id") @db.VarChar(100)
+
+  // Operation data
+  clientVersion       Int?     @map("client_version")
+  serverVersion       Int?     @map("server_version")
+  operation           String   @db.VarChar(20) // create, update, delete
+  changedFields       Json?    @map("changed_fields") // Array of field names
+
+  // Conflict resolution
+  conflictDetected    Boolean  @default(false) @map("conflict_detected")
+  conflictResolution  ConflictResolution? @map("conflict_resolution")
+  conflictDetails     Json?    @map("conflict_details")
+
+  // Sync metadata
+  syncToken           String   @map("sync_token") @db.VarChar(100)
+  processingTimeMs    Int?     @map("processing_time_ms")
+
+  // Result
+  status              SyncOperationStatus
+  errorMessage        String?  @map("error_message") @db.Text
+
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([deviceSyncId])
+  @@index([operationType])
+  @@index([entityType, entityId])
+  @@index([syncToken])
+  @@index([status])
+  @@index([conflictDetected])
+  @@index([createdAt])
+  @@map("sync_operations")
+}
+
+enum SyncOperationType {
+  DELTA_SYNC          // Regular delta synchronization
+  INITIAL_SYNC        // First-time sync for new device
+  FULL_SYNC           // Complete resync (after long offline)
+  BATCH_UPLOAD        // Batch media upload
+  CONFLICT_RESOLUTION // Manual conflict resolution
+}
+
+enum SyncOperationStatus {
+  PENDING             // Queued for processing
+  PROCESSING          // Currently being processed
+  SUCCESS             // Completed successfully
+  FAILED              // Failed with error
+  CONFLICT            // Conflict detected, needs resolution
+  PARTIAL             // Partially successful (some ops failed)
+}
+
+enum ConflictResolution {
+  SERVER_WINS         // Server data kept, client discarded
+  CLIENT_WINS         // Client data applied, server overwritten
+  MERGED              // Fields merged intelligently
+  LAST_WRITE_WINS     // Timestamp-based resolution
+  MANUAL              // Requires manual intervention
 }
