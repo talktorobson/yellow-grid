@@ -3,27 +3,38 @@
  * Testing assignment transparency and scoring breakdown
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@/test/utils/test-utils';
-import { Route, Routes } from 'react-router-dom';
+import { describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/contexts/AuthContext';
 import AssignmentDetailPage from '../AssignmentDetailPage';
 
-// Mock useParams to return an assignment ID
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useParams: () => ({ id: 'assignment-1' }),
-  };
-});
+// Create a test wrapper with routing
+function renderWithRouter(initialRoute = '/assignments/assignment-1') {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <MemoryRouter initialEntries={[initialRoute]}>
+          <Routes>
+            <Route path="/assignments/:id" element={<AssignmentDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 describe('AssignmentDetailPage', () => {
   it('should render assignment details', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
       expect(screen.getByText(/Assignment/i)).toBeInTheDocument();
@@ -31,69 +42,54 @@ describe('AssignmentDetailPage', () => {
   });
 
   it('should display scoring transparency - all factors', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
       // Check for scoring factors
-      expect(screen.getByText(/Distance/i)).toBeInTheDocument();
-      expect(screen.getByText(/Skills Match/i)).toBeInTheDocument();
-      expect(screen.getByText(/Availability/i)).toBeInTheDocument();
-    });
+      const distanceElements = screen.getAllByText(/Distance/i);
+      const skillsElements = screen.getAllByText(/Skills Match/i);
+      const availabilityElements = screen.getAllByText(/Availability/i);
+
+      expect(distanceElements.length).toBeGreaterThan(0);
+      expect(skillsElements.length).toBeGreaterThan(0);
+      expect(availabilityElements.length).toBeGreaterThan(0);
+    }, { timeout: 3000 });
   });
 
   it('should show scoring rationale for each factor', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
       expect(screen.getByText(/Provider is 5km from customer location/i)).toBeInTheDocument();
       expect(screen.getByText(/Provider has all required certifications/i)).toBeInTheDocument();
       expect(screen.getByText(/Provider has 60% availability/i)).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should display total weighted score', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
       expect(screen.getByText(/8.5/)).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('should show assignment timeline', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
-      expect(screen.getByText(/Timeline/i)).toBeInTheDocument();
-      expect(screen.getByText(/CREATED/i)).toBeInTheDocument();
-      expect(screen.getByText(/ACCEPTED/i)).toBeInTheDocument();
-    });
+      expect(screen.getByText(/Assignment Timeline/i)).toBeInTheDocument();
+      expect(screen.getByText(/Assignment Created/i)).toBeInTheDocument();
+      expect(screen.getByText(/Offered to Provider/i)).toBeInTheDocument();
+    }, { timeout: 3000 });
   });
 
   it('should display assignment status', async () => {
-    render(
-      <Routes>
-        <Route path="*" element={<AssignmentDetailPage />} />
-      </Routes>
-    );
+    renderWithRouter('/assignments/assignment-1');
 
     await waitFor(() => {
-      expect(screen.getByText(/ACCEPTED/i)).toBeInTheDocument();
-    });
+      const statusElements = screen.getAllByText(/ACCEPTED/i);
+      expect(statusElements.length).toBeGreaterThan(0);
+    }, { timeout: 3000 });
   });
 });

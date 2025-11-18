@@ -104,10 +104,10 @@ export const handlers = [
 
     return HttpResponse.json({
       data: filtered,
-      meta: {
+      pagination: {
         total: filtered.length,
         page: 1,
-        pageSize: 20,
+        limit: 20,
         totalPages: 1,
       },
     });
@@ -146,10 +146,10 @@ export const handlers = [
   http.get(`${API_BASE_URL}/providers`, () => {
     return HttpResponse.json({
       data: mockProviders,
-      meta: {
+      pagination: {
         total: mockProviders.length,
         page: 1,
-        pageSize: 20,
+        limit: 20,
         totalPages: 1,
       },
     });
@@ -189,7 +189,7 @@ export const handlers = [
           createdAt: '2024-01-15T11:00:00Z',
         },
       ],
-      meta: { total: 1, page: 1, pageSize: 20, totalPages: 1 },
+      pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
     });
   }),
 
@@ -201,7 +201,9 @@ export const handlers = [
       status: 'ACCEPTED',
       mode: 'DIRECT',
       createdAt: '2024-01-15T11:00:00Z',
-      scoring: {
+      offeredAt: '2024-01-15T11:05:00Z',
+      acceptedAt: '2024-01-15T11:30:00Z',
+      scoringResult: {
         totalScore: 8.5,
         factors: [
           {
@@ -224,18 +226,14 @@ export const handlers = [
           },
         ],
       },
-      timeline: [
-        {
-          event: 'CREATED',
-          timestamp: '2024-01-15T11:00:00Z',
-          actor: 'System',
-        },
-        {
-          event: 'ACCEPTED',
-          timestamp: '2024-01-15T11:30:00Z',
-          actor: 'Provider',
-        },
-      ],
+      provider: {
+        id: 'provider-1',
+        name: 'TechPro Services',
+      },
+      serviceOrder: {
+        id: 'so-1',
+        externalId: 'SO-2024-001',
+      },
     });
   }),
 

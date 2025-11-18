@@ -23,9 +23,9 @@ describe('ProviderService', () => {
     it('should return paginated results', async () => {
       const result = await providerService.getAll({});
 
-      expect(result.meta).toBeDefined();
-      expect(result.meta.total).toBeGreaterThan(0);
-      expect(result.meta.page).toBe(1);
+      expect(result.pagination).toBeDefined();
+      expect(result.pagination.total).toBeGreaterThan(0);
+      expect(result.pagination.page).toBe(1);
     });
   });
 

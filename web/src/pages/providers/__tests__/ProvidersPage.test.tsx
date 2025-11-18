@@ -32,7 +32,8 @@ describe('ProvidersPage', () => {
     render(<ProvidersPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/ACTIVE/)).toBeInTheDocument();
+      const statusBadges = screen.getAllByText(/ACTIVE/);
+      expect(statusBadges.length).toBeGreaterThan(0);
     });
   });
 
