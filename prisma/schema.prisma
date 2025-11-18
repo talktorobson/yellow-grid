@@ -814,6 +814,7 @@ model Contract {
   template       ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   signatures     ContractSignature[]
   notifications  ContractNotification[]
+  workCompletionForms WorkCompletionForm[]
 
   // Audit
   createdAt      DateTime       @default(now()) @map("created_at")
@@ -1080,6 +1081,7 @@ model ServiceOrder {
   riskFactors             ServiceOrderRiskFactor[]
   contracts               Contract[]
   tasks                   Task[]
+  workCompletionForms     WorkCompletionForm[]
 
   // Audit
   createdAt               DateTime @default(now()) @map("created_at")
@@ -1597,4 +1599,337 @@ model TaskAuditLog {
   @@index([taskId])
   @@index([performedAt])
   @@map("task_audit_logs")
+}
+
+// ============================================================================
+// WORK COMPLETION FORMS (WCF) MODULE
+// ============================================================================
+
+model WorkCompletionForm {
+  id              String   @id @default(uuid())
+  wcfNumber       String   @unique @map("wcf_number") @db.VarChar(30)
+  version         Int      @default(1)
+
+  // Relations
+  serviceOrderId  String   @map("service_order_id")
+  contractId      String?  @map("contract_id")
+
+  // Multi-tenancy
+  countryCode     String   @map("country_code") @db.VarChar(3)
+  businessUnit    String   @map("business_unit") @db.VarChar(50)
+
+  // Parties (simplified as JSON for v1)
+  customerInfo    Json     @map("customer_info")    // {id, name, email, phone, address}
+  technicianInfo  Json     @map("technician_info")  // {id, name, license, certifications}
+  providerInfo    Json     @map("provider_info")    // {id, name, license}
+
+  // Service execution details
+  serviceDate     DateTime @map("service_date")
+  serviceLocation Json     @map("service_location") // Address object
+
+  // Work performed (core fields + JSON for details)
+  workSummary     String   @map("work_summary") @db.Text
+  workDetails     Json     @map("work_details")     // {description, tasksCompleted, issuesFound, issuesResolved}
+
+  // Totals (for quick access)
+  totalLaborHours Decimal  @map("total_labor_hours") @db.Decimal(6, 2)
+  totalMaterials  Int      @default(0) @map("total_materials")
+  totalEquipment  Int      @default(0) @map("total_equipment")
+
+  // Pricing summary
+  pricingSummary  Json?    @map("pricing_summary")  // {laborCost, materialsCost, equipmentCost, subtotal, tax, total, etc.}
+
+  // Customer acceptance
+  customerAccepted       Boolean?  @map("customer_accepted")
+  customerAcceptedAt     DateTime? @map("customer_accepted_at")
+  customerSatisfactionRating Int?  @map("customer_satisfaction_rating") // 1-5
+  customerFeedback       String?   @map("customer_feedback") @db.Text
+  customerConcerns       Json?     @map("customer_concerns") // Array of concerns
+  disputedItems          Json?     @map("disputed_items")    // Array of disputed items
+  refusalReason          String?   @map("refusal_reason") @db.Text
+
+  // PDF document storage (GCS URLs)
+  pdfUrl          String?  @map("pdf_url") @db.VarChar(500)
+  pdfGcsPath      String?  @map("pdf_gcs_path") @db.VarChar(500)
+  thumbnailUrl    String?  @map("thumbnail_url") @db.VarChar(500)
+
+  // Warranty & follow-up
+  warrantyInfo    Json?    @map("warranty_info")    // {period, terms, coverage}
+  followUpRequired Boolean @default(false) @map("follow_up_required")
+  followUpActions Json?    @map("follow_up_actions") // Array of follow-up actions
+
+  // Status tracking
+  status          WcfStatus @default(DRAFT)
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  approvedBy      String?   @map("approved_by") @db.VarChar(100)
+
+  // Relations
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  contract        Contract?    @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  materials       WcfMaterial[]
+  equipment       WcfEquipment[]
+  labor           WcfLabor[]
+  photos          WcfPhoto[]
+  qualityChecks   WcfQualityCheck[]
+  signatures      WcfSignature[]
+
+  // Audit
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdBy       String?  @map("created_by") @db.VarChar(100)
+  updatedBy       String?  @map("updated_by") @db.VarChar(100)
+
+  @@index([serviceOrderId])
+  @@index([contractId])
+  @@index([status])
+  @@index([countryCode, businessUnit])
+  @@index([serviceDate])
+  @@index([customerAccepted])
+  @@map("work_completion_forms")
+}
+
+enum WcfStatus {
+  DRAFT           // Being created/edited
+  PENDING_SIGNATURE // Awaiting customer signature
+  SIGNED          // Customer has signed
+  APPROVED        // Approved by back-office
+  REJECTED        // Rejected (with disputes)
+  FINALIZED       // Final version, immutable
+}
+
+model WcfMaterial {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+
+  // Material details
+  materialCode    String?  @map("material_code") @db.VarChar(50)
+  description     String   @db.VarChar(500)
+  category        String   @db.VarChar(100)
+  quantity        Decimal  @db.Decimal(10, 2)
+  unit            String   @db.VarChar(20)
+
+  // Pricing
+  unitPrice       Decimal  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice      Decimal  @map("total_price") @db.Decimal(10, 2)
+  currency        String   @default("EUR") @db.VarChar(3)
+
+  // Additional info
+  serialNumbers   Json?    @map("serial_numbers") // Array of serial numbers
+  warrantyMonths  Int?     @map("warranty_months")
+  suppliedBy      String   @map("supplied_by") @db.VarChar(50) // CUSTOMER, SERVICE_PROVIDER, THIRD_PARTY
+  billable        Boolean  @default(true)
+  approved        Boolean  @default(false)
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([wcfId])
+  @@map("wcf_materials")
+}
+
+model WcfEquipment {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+
+  // Equipment details
+  equipmentType   String   @map("equipment_type") @db.VarChar(100)
+  make            String   @db.VarChar(100)
+  model           String   @db.VarChar(100)
+  serialNumber    String   @map("serial_number") @db.VarChar(100)
+  description     String   @db.VarChar(500)
+  location        String   @db.VarChar(255)
+  condition       EquipmentCondition
+
+  // Dates
+  installationDate DateTime? @map("installation_date")
+  removalDate     DateTime? @map("removal_date")
+
+  // Pricing
+  unitPrice       Decimal?  @map("unit_price") @db.Decimal(10, 2)
+  totalPrice      Decimal?  @map("total_price") @db.Decimal(10, 2)
+  currency        String    @default("EUR") @db.VarChar(3)
+  billable        Boolean   @default(true)
+
+  // Warranty
+  warrantyInfo    Json?     @map("warranty_info")
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+  photos          WcfPhoto[] @relation("EquipmentPhotos")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([wcfId])
+  @@map("wcf_equipment")
+}
+
+enum EquipmentCondition {
+  NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  DEFECTIVE
+  BEYOND_REPAIR
+}
+
+model WcfLabor {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+
+  // Technician
+  technicianId    String   @map("technician_id")
+  technicianName  String   @map("technician_name") @db.VarChar(255)
+  role            String   @db.VarChar(100)
+
+  // Time tracking
+  startTime       DateTime @map("start_time")
+  endTime         DateTime @map("end_time")
+  breakMinutes    Int?     @map("break_minutes")
+  totalMinutes    Int      @map("total_minutes")
+  netMinutes      Int      @map("net_minutes")
+
+  // Pricing
+  hourlyRate      Decimal? @map("hourly_rate") @db.Decimal(10, 2)
+  totalCost       Decimal? @map("total_cost") @db.Decimal(10, 2)
+  overtimeHours   Decimal? @map("overtime_hours") @db.Decimal(6, 2)
+  overtimeRate    Decimal? @map("overtime_rate") @db.Decimal(10, 2)
+  currency        String   @default("EUR") @db.VarChar(3)
+  billable        Boolean  @default(true)
+  approved        Boolean  @default(false)
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([wcfId])
+  @@index([technicianId])
+  @@map("wcf_labor")
+}
+
+model WcfPhoto {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+  equipmentId     String?  @map("equipment_id")
+
+  // Photo metadata
+  photoType       WcfPhotoType @map("photo_type")
+  caption         String?  @db.VarChar(500)
+  sequence        Int      // Order in the gallery
+
+  // GCS storage
+  photoUrl        String   @map("photo_url") @db.VarChar(500)
+  photoGcsPath    String   @map("photo_gcs_path") @db.VarChar(500)
+  thumbnailUrl    String?  @map("thumbnail_url") @db.VarChar(500)
+
+  // File metadata
+  originalFilename String? @map("original_filename") @db.VarChar(255)
+  contentType     String   @map("content_type") @db.VarChar(100)
+  fileSize        Int      @map("file_size") // bytes
+
+  // Capture metadata
+  capturedAt      DateTime @map("captured_at")
+  capturedBy      String?  @map("captured_by") @db.VarChar(100)
+  location        Json?    // {lat, lng, address}
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+  equipment       WcfEquipment?      @relation("EquipmentPhotos", fields: [equipmentId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([wcfId])
+  @@index([equipmentId])
+  @@index([photoType])
+  @@map("wcf_photos")
+}
+
+enum WcfPhotoType {
+  BEFORE_WORK
+  DURING_WORK
+  AFTER_WORK
+  ISSUE_FOUND
+  EQUIPMENT_INSTALLED
+  EQUIPMENT_REMOVED
+  DEFECT
+  QUALITY_CHECK
+  OTHER
+}
+
+model WcfQualityCheck {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+
+  // Check details
+  checkType       String   @map("check_type") @db.VarChar(100)
+  description     String   @db.VarChar(500)
+  passed          Boolean
+
+  // Measurements
+  measuredValue   String?  @map("measured_value") @db.VarChar(255)
+  expectedValue   String?  @map("expected_value") @db.VarChar(255)
+  unit            String?  @db.VarChar(50)
+
+  // Execution
+  performedBy     String   @map("performed_by") @db.VarChar(100)
+  performedAt     DateTime @map("performed_at")
+  notes           String?  @db.Text
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([wcfId])
+  @@map("wcf_quality_checks")
+}
+
+model WcfSignature {
+  id              String   @id @default(uuid())
+  wcfId           String   @map("wcf_id")
+
+  // Signer details
+  signerType      WcfSignerType @map("signer_type")
+  signerName      String   @map("signer_name") @db.VarChar(255)
+  signerEmail     String?  @map("signer_email")
+  signerPhone     String?  @map("signer_phone")
+  signerRole      String?  @map("signer_role") @db.VarChar(100)
+
+  // Signature data
+  signatureMethod SignatureMethod @map("signature_method")
+  signatureDataUrl String? @map("signature_data_url") @db.Text // Base64 for simple signatures
+  signatureGcsPath String? @map("signature_gcs_path") @db.VarChar(500) // GCS path for large signatures
+
+  // E-signature integration
+  eSignatureProvider String? @map("e_signature_provider") @db.VarChar(50) // DOCUSIGN, ADOBE_SIGN, etc.
+  eSignatureId       String? @map("e_signature_id") @db.VarChar(255)
+
+  // Verification
+  status          SignatureStatus @default(REQUESTED)
+  signedAt        DateTime? @map("signed_at")
+  ipAddress       String?   @map("ip_address") @db.VarChar(45)
+  userAgent       String?   @map("user_agent") @db.VarChar(500)
+  evidence        Json?     // Additional verification data
+
+  // Relations
+  wcf             WorkCompletionForm @relation(fields: [wcfId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([wcfId])
+  @@index([signerType])
+  @@index([status])
+  @@map("wcf_signatures")
+}
+
+enum WcfSignerType {
+  CUSTOMER
+  TECHNICIAN
+  PROVIDER_MANAGER
+  QUALITY_INSPECTOR
 }
