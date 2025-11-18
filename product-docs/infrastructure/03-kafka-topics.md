@@ -19,169 +19,282 @@ This document outlines the comprehensive Kafka topic architecture, including top
 
 ## Kafka Cluster Architecture
 
-### AWS MSK (Managed Streaming for Kafka) Configuration
+### Strimzi (Kafka on GKE) Configuration
+
+**Strategy**: Self-hosted Apache Kafka using Strimzi operator on Google Kubernetes Engine (GKE) for cost efficiency (~70% savings vs Confluent Cloud) with no vendor lock-in.
+
+#### Install Strimzi Operator
+
+```bash
+# Install Strimzi operator via Helm
+helm repo add strimzi https://strimzi.io/charts/
+helm repo update
+
+helm install strimzi-kafka-operator strimzi/strimzi-kafka-operator \
+  --namespace kafka \
+  --create-namespace \
+  --set watchNamespaces="{kafka}" \
+  --version 0.39.0
+```
+
+#### Kafka Cluster Custom Resource
+
+```yaml
+# kafka-cluster.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: production-kafka
+  namespace: kafka
+spec:
+  kafka:
+    version: 3.6.0
+    replicas: 6 # 3 brokers per zone, 2 zones minimum
+
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+
+    config:
+      # Broker settings
+      num.network.threads: 8
+      num.io.threads: 16
+      socket.send.buffer.bytes: 1048576
+      socket.receive.buffer.bytes: 1048576
+      socket.request.max.bytes: 104857600
+
+      # Log settings
+      log.retention.hours: 168 # 7 days
+      log.segment.bytes: 1073741824 # 1GB
+      log.retention.check.interval.ms: 300000
+
+      # Replication settings
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      replica.lag.time.max.ms: 30000
+      num.replica.fetchers: 4
+
+      # Leader election
+      unclean.leader.election.enable: false
+      auto.leader.rebalance.enable: true
+      leader.imbalance.check.interval.seconds: 300
+
+      # Compression
+      compression.type: lz4
+
+      # Consumer group settings
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+
+      # Partition settings
+      num.partitions: 12
+      auto.create.topics.enable: false
+
+      # Performance tuning
+      message.max.bytes: 10485760 # 10MB
+      replica.fetch.max.bytes: 10485760
+      fetch.message.max.bytes: 10485760
+
+      # Connection limits
+      max.connections.per.ip: 1000
+
+    storage:
+      type: persistent-claim
+      size: 1000Gi # 1TB per broker
+      class: pd-ssd # GCP Persistent Disk SSD
+      deleteClaim: false
+
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: "4"
+      limits:
+        memory: 16Gi
+        cpu: "8"
+
+    jvmOptions:
+      -Xms: 4096m
+      -Xmx: 8192m
+
+    # Rack awareness for zone distribution
+    rack:
+      topologyKey: topology.kubernetes.io/zone
+
+    # Metrics for Prometheus
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
+
+  zookeeper:
+    replicas: 3 # Odd number for quorum
+
+    storage:
+      type: persistent-claim
+      size: 100Gi
+      class: pd-ssd
+      deleteClaim: false
+
+    resources:
+      requests:
+        memory: 2Gi
+        cpu: "1"
+      limits:
+        memory: 4Gi
+        cpu: "2"
+
+    jvmOptions:
+      -Xms: 1024m
+      -Xmx: 2048m
+
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: zookeeper-metrics-config.yml
+
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "0.5"
+        limits:
+          memory: 1Gi
+          cpu: "1"
+
+    userOperator:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "0.5"
+        limits:
+          memory: 1Gi
+          cpu: "1"
+
+  kafkaExporter:
+    topicRegex: ".*"
+    groupRegex: ".*"
+```
+
+#### Prometheus Metrics ConfigMap
+
+```yaml
+# kafka-metrics-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics
+  namespace: kafka
+data:
+  kafka-metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+       clientId: "$3"
+       topic: "$4"
+       partition: "$5"
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+       clientId: "$3"
+       broker: "$4:$5"
+
+  zookeeper-metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+    - pattern: "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+)><>(\\w+)"
+      name: "zookeeper_$2"
+      type: GAUGE
+```
+
+#### Logging to Google Cloud Logging
+
+```yaml
+# kafka-logging.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-logging
+  namespace: kafka
+data:
+  log4j.properties: |
+    log4j.rootLogger=INFO, CONSOLE, GCS
+
+    # Console appender
+    log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+    log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+    log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %c: %m%n
+
+    # Cloud Logging appender (via fluentd sidecar)
+    log4j.appender.GCS=org.apache.log4j.FileAppender
+    log4j.appender.GCS.File=/var/log/kafka/server.log
+    log4j.appender.GCS.layout=org.apache.log4j.PatternLayout
+    log4j.appender.GCS.layout.ConversionPattern=%d{ISO8601} %p %c: %m%n
+```
+
+#### GCS Bucket for Kafka Logs (Optional)
 
 ```hcl
-# modules/kafka/msk-cluster/main.tf
-resource "aws_msk_cluster" "main" {
-  cluster_name           = "${var.environment}-kafka-cluster"
-  kafka_version          = "3.5.1"
-  number_of_broker_nodes = 6 # 2 per AZ
+# terraform/modules/kafka/gcs-logs.tf
+resource "google_storage_bucket" "kafka_logs" {
+  name          = "${var.project_id}-${var.environment}-kafka-logs"
+  location      = var.region
+  storage_class = "STANDARD"
+  force_destroy = false
 
-  broker_node_group_info {
-    instance_type   = "kafka.m5.2xlarge"
-    client_subnets  = var.private_subnet_ids
-    security_groups = [var.kafka_security_group_id]
-
-    storage_info {
-      ebs_storage_info {
-        volume_size            = 1000 # 1 TB per broker
-        provisioned_throughput {
-          enabled           = true
-          volume_throughput = 250
-        }
-      }
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
     }
   }
 
-  encryption_info {
-    encryption_in_transit {
-      client_broker = "TLS"
-      in_cluster    = true
+  lifecycle_rule {
+    condition {
+      age = 90
     }
-
-    encryption_at_rest_kms_key_arn = var.kms_key_arn
-  }
-
-  configuration_info {
-    arn      = aws_msk_configuration.main.arn
-    revision = aws_msk_configuration.main.latest_revision
-  }
-
-  open_monitoring {
-    prometheus {
-      jmx_exporter {
-        enabled_in_broker = true
-      }
-      node_exporter {
-        enabled_in_broker = true
-      }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "COLDLINE"
     }
   }
 
-  logging_info {
-    broker_logs {
-      cloudwatch_logs {
-        enabled   = true
-        log_group = aws_cloudwatch_log_group.kafka.name
-      }
-      s3 {
-        enabled = true
-        bucket  = aws_s3_bucket.kafka_logs.id
-        prefix  = "broker-logs/"
-      }
+  lifecycle_rule {
+    condition {
+      age = 365
+    }
+    action {
+      type = "Delete"
     }
   }
 
-  tags = {
-    Name        = "${var.environment}-kafka-cluster"
-    Environment = var.environment
+  uniform_bucket_level_access {
+    enabled = true
   }
-}
 
-# Kafka Configuration
-resource "aws_msk_configuration" "main" {
-  name = "${var.environment}-kafka-config"
-
-  kafka_versions = ["3.5.1"]
-
-  server_properties = <<PROPERTIES
-# Broker settings
-num.network.threads=8
-num.io.threads=16
-socket.send.buffer.bytes=1048576
-socket.receive.buffer.bytes=1048576
-socket.request.max.bytes=104857600
-
-# Log settings
-log.retention.hours=168
-log.segment.bytes=1073741824
-log.retention.check.interval.ms=300000
-
-# Replication settings
-default.replication.factor=3
-min.insync.replicas=2
-replica.lag.time.max.ms=30000
-num.replica.fetchers=4
-
-# Leader election
-unclean.leader.election.enable=false
-auto.leader.rebalance.enable=true
-leader.imbalance.check.interval.seconds=300
-
-# Compression
-compression.type=lz4
-
-# Consumer group settings
-offsets.topic.replication.factor=3
-transaction.state.log.replication.factor=3
-transaction.state.log.min.isr=2
-
-# Partition settings
-num.partitions=12
-auto.create.topics.enable=false
-
-# Performance tuning
-message.max.bytes=10485760
-replica.fetch.max.bytes=10485760
-fetch.message.max.bytes=10485760
-
-# JVM settings
-max.connections.per.ip=1000
-PROPERTIES
-}
-
-# CloudWatch Log Group
-resource "aws_cloudwatch_log_group" "kafka" {
-  name              = "/aws/msk/${var.environment}-kafka-cluster"
-  retention_in_days = 30
-
-  tags = {
-    Name        = "${var.environment}-kafka-logs"
-    Environment = var.environment
-  }
-}
-
-# S3 Bucket for Kafka Logs
-resource "aws_s3_bucket" "kafka_logs" {
-  bucket = "${var.environment}-kafka-logs-${data.aws_caller_identity.current.account_id}"
-
-  tags = {
-    Name        = "${var.environment}-kafka-logs"
-    Environment = var.environment
-  }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "kafka_logs" {
-  bucket = aws_s3_bucket.kafka_logs.id
-
-  rule {
-    id     = "transition-old-logs"
-    status = "Enabled"
-
-    transition {
-      days          = 30
-      storage_class = "STANDARD_IA"
-    }
-
-    transition {
-      days          = 90
-      storage_class = "GLACIER"
-    }
-
-    expiration {
-      days = 365
-    }
+  labels = {
+    environment = var.environment
+    component   = "kafka"
   }
 }
 ```

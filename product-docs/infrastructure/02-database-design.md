@@ -19,201 +19,184 @@ This document provides comprehensive database architecture, schema design, index
 
 ## Database Architecture
 
-### RDS PostgreSQL Configuration
+### Cloud SQL PostgreSQL Configuration
 
 ```hcl
-# modules/database/rds-postgres/main.tf
-resource "aws_db_parameter_group" "postgres" {
-  name   = "${var.environment}-postgres-params"
-  family = "postgres15"
+# modules/database/cloud-sql-postgres/main.tf
+resource "google_sql_database_instance" "postgres" {
+  name             = "${var.environment}-postgres"
+  database_version = "POSTGRES_15"
+  region           = var.region
 
-  # Connection and Authentication
-  parameter {
-    name  = "max_connections"
-    value = "500"
+  settings {
+    # Instance tier (db-custom-8-32768 = 8 vCPU, 32GB RAM for production)
+    tier              = var.instance_tier
+    availability_type = "REGIONAL" # Multi-zone HA
+    disk_type         = "PD_SSD"
+    disk_size         = 100  # Initial 100 GB
+    disk_autoresize       = true
+    disk_autoresize_limit = 1000 # Auto-scale to 1 TB
+
+    # Database flags (PostgreSQL configuration)
+    database_flags {
+      name  = "max_connections"
+      value = "500"
+    }
+
+    database_flags {
+      name  = "shared_buffers"
+      value = "8388608" # 8GB (25% of 32GB RAM) in 8KB blocks
+    }
+
+    database_flags {
+      name  = "effective_cache_size"
+      value = "25165824" # 24GB (75% of 32GB RAM) in 8KB blocks
+    }
+
+    database_flags {
+      name  = "maintenance_work_mem"
+      value = "2097152" # 2GB in KB
+    }
+
+    database_flags {
+      name  = "work_mem"
+      value = "16384" # 16MB in KB
+    }
+
+    database_flags {
+      name  = "wal_buffers"
+      value = "2048" # 16MB in 8KB blocks
+    }
+
+    database_flags {
+      name  = "checkpoint_timeout"
+      value = "900" # 15 minutes
+    }
+
+    database_flags {
+      name  = "checkpoint_completion_target"
+      value = "0.9"
+    }
+
+    database_flags {
+      name  = "random_page_cost"
+      value = "1.1" # SSD optimized
+    }
+
+    database_flags {
+      name  = "effective_io_concurrency"
+      value = "200" # For SSD
+    }
+
+    database_flags {
+      name  = "log_min_duration_statement"
+      value = "1000" # Log queries > 1 second
+    }
+
+    database_flags {
+      name  = "log_connections"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "log_disconnections"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "log_lock_waits"
+      value = "on"
+    }
+
+    database_flags {
+      name  = "autovacuum_max_workers"
+      value = "4"
+    }
+
+    database_flags {
+      name  = "autovacuum_naptime"
+      value = "30" # 30 seconds
+    }
+
+    database_flags {
+      name  = "max_wal_senders"
+      value = "10"
+    }
+
+    database_flags {
+      name  = "wal_keep_size"
+      value = "1024" # 1GB in MB
+    }
+
+    # Backup configuration
+    backup_configuration {
+      enabled                        = true
+      start_time                     = "03:00" # 3 AM UTC
+      point_in_time_recovery_enabled = true
+      transaction_log_retention_days = 7
+      backup_retention_settings {
+        retained_backups = 30
+        retention_unit   = "COUNT"
+      }
+    }
+
+    # Maintenance window
+    maintenance_window {
+      day          = 7 # Sunday
+      hour         = 4 # 4 AM UTC
+      update_track = "stable"
+    }
+
+    # IP configuration (Private IP only)
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = var.network_id
+      require_ssl     = true
+    }
+
+    # Insights and monitoring
+    insights_config {
+      query_insights_enabled  = true
+      query_string_length     = 1024
+      record_application_tags = true
+      record_client_address   = true
+    }
   }
 
-  # Memory Configuration
-  parameter {
-    name  = "shared_buffers"
-    value = "{DBInstanceClassMemory/4096}" # 25% of instance memory
-  }
-
-  parameter {
-    name  = "effective_cache_size"
-    value = "{DBInstanceClassMemory*3/4096}" # 75% of instance memory
-  }
-
-  parameter {
-    name  = "maintenance_work_mem"
-    value = "2097152" # 2GB in KB
-  }
-
-  parameter {
-    name  = "work_mem"
-    value = "16384" # 16MB in KB
-  }
-
-  # Write Ahead Log
-  parameter {
-    name  = "wal_buffers"
-    value = "16384" # 16MB in 8KB blocks
-  }
-
-  parameter {
-    name  = "checkpoint_timeout"
-    value = "900" # 15 minutes
-  }
-
-  parameter {
-    name  = "checkpoint_completion_target"
-    value = "0.9"
-  }
-
-  # Query Planner
-  parameter {
-    name  = "random_page_cost"
-    value = "1.1" # SSD optimized
-  }
-
-  parameter {
-    name  = "effective_io_concurrency"
-    value = "200" # For SSD
-  }
-
-  # Logging
-  parameter {
-    name  = "log_min_duration_statement"
-    value = "1000" # Log queries > 1 second
-  }
-
-  parameter {
-    name  = "log_connections"
-    value = "1"
-  }
-
-  parameter {
-    name  = "log_disconnections"
-    value = "1"
-  }
-
-  parameter {
-    name  = "log_lock_waits"
-    value = "1"
-  }
-
-  # Auto Vacuum
-  parameter {
-    name  = "autovacuum_max_workers"
-    value = "4"
-  }
-
-  parameter {
-    name  = "autovacuum_naptime"
-    value = "30" # 30 seconds
-  }
-
-  # Replication
-  parameter {
-    name  = "max_wal_senders"
-    value = "10"
-  }
-
-  parameter {
-    name  = "wal_keep_size"
-    value = "1024" # 1GB in MB
-  }
-
-  tags = {
-    Name        = "${var.environment}-postgres-params"
-    Environment = var.environment
-  }
-}
-
-resource "aws_db_instance" "postgres" {
-  identifier     = "${var.environment}-postgres"
-  engine         = "postgres"
-  engine_version = "15.4"
-
-  # Instance Configuration
-  instance_class = var.instance_class # db.r6g.2xlarge for production
-
-  # Storage Configuration
-  allocated_storage     = 100  # Initial 100 GB
-  max_allocated_storage = 1000 # Auto-scale to 1 TB
-  storage_type          = "gp3"
-  iops                  = 12000
-  storage_throughput    = 500
-  storage_encrypted     = true
-  kms_key_id           = var.kms_key_id
-
-  # Database Configuration
-  db_name  = var.database_name
-  username = var.master_username
-  password = var.master_password # Use AWS Secrets Manager
-  port     = 5432
-
-  # Parameter and Option Groups
-  parameter_group_name = aws_db_parameter_group.postgres.name
-
-  # Network Configuration
-  multi_az               = true
-  db_subnet_group_name   = aws_db_subnet_group.postgres.name
-  vpc_security_group_ids = [var.security_group_id]
-  publicly_accessible    = false
-
-  # Backup Configuration
-  backup_retention_period   = 30
-  backup_window            = "03:00-04:00"
-  maintenance_window       = "sun:04:00-sun:05:00"
-  copy_tags_to_snapshot    = true
-  delete_automated_backups = false
-
-  # Monitoring
-  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
-  monitoring_interval            = 60
-  monitoring_role_arn           = var.monitoring_role_arn
-  performance_insights_enabled   = true
-  performance_insights_retention_period = 7
-
-  # High Availability
-  auto_minor_version_upgrade = true
-  deletion_protection       = var.environment == "production"
-  skip_final_snapshot      = var.environment != "production"
-  final_snapshot_identifier = var.environment == "production" ? "${var.environment}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}" : null
-
-  tags = {
-    Name        = "${var.environment}-postgres"
-    Environment = var.environment
-  }
+  # Deletion protection
+  deletion_protection = var.environment == "production" ? true : false
 }
 
 # Read Replicas
-resource "aws_db_instance" "postgres_replica" {
-  count              = var.read_replica_count
-  identifier         = "${var.environment}-postgres-replica-${count.index + 1}"
-  replicate_source_db = aws_db_instance.postgres.identifier
+resource "google_sql_database_instance" "postgres_replica" {
+  count                = var.read_replica_count
+  name                 = "${var.environment}-postgres-replica-${count.index + 1}"
+  database_version     = "POSTGRES_15"
+  region               = var.replica_region
+  master_instance_name = google_sql_database_instance.postgres.name
 
-  instance_class = var.replica_instance_class
-
-  # Performance Insights
-  performance_insights_enabled          = true
-  performance_insights_retention_period = 7
-
-  # Monitoring
-  monitoring_interval = 60
-  monitoring_role_arn = var.monitoring_role_arn
-
-  # No backups for replicas
-  backup_retention_period = 0
-
-  auto_minor_version_upgrade = true
-
-  tags = {
-    Name        = "${var.environment}-postgres-replica-${count.index + 1}"
-    Environment = var.environment
-    Role        = "ReadReplica"
+  replica_configuration {
+    failover_target = false
   }
+
+  settings {
+    tier              = var.replica_instance_tier
+    availability_type = "ZONAL" # Replicas don't need HA
+    disk_type         = "PD_SSD"
+    disk_autoresize   = true
+
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = var.network_id
+      require_ssl     = true
+    }
+
+    insights_config {
+      query_insights_enabled = true
+    }
+  }
+
+  deletion_protection = false
 }
 ```
 
@@ -444,7 +427,7 @@ CREATE TABLE app.attachments (
     file_size BIGINT NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     storage_path TEXT NOT NULL,
-    storage_provider VARCHAR(50) DEFAULT 's3',
+    storage_provider VARCHAR(50) DEFAULT 'gcs',
     checksum VARCHAR(64),
     metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -1207,40 +1190,56 @@ CREATE POLICY notifications_update_policy ON app.notifications
 
 ```hcl
 # Terraform configuration for read replicas
-resource "aws_db_instance" "postgres_read_replica" {
+resource "google_sql_database_instance" "postgres_read_replica" {
   count = 3
 
-  identifier          = "${var.environment}-postgres-replica-${count.index + 1}"
-  replicate_source_db = aws_db_instance.postgres.identifier
+  name                 = "${var.environment}-postgres-replica-${count.index + 1}"
+  database_version     = "POSTGRES_15"
+  region               = var.replica_regions[count.index] # Distribute across regions
+  master_instance_name = google_sql_database_instance.postgres.name
 
-  # Use smaller instance class for read replicas
-  instance_class = "db.r6g.xlarge"
+  replica_configuration {
+    failover_target = false
+  }
 
-  # Enable Performance Insights
-  performance_insights_enabled          = true
-  performance_insights_retention_period = 7
+  settings {
+    # Use smaller instance tier for read replicas
+    tier              = "db-custom-4-16384" # 4 vCPU, 16GB RAM
+    availability_type = "ZONAL" # Replicas don't need HA
+    disk_type         = "PD_SSD"
+    disk_autoresize   = true
 
-  # Enhanced Monitoring
-  monitoring_interval = 60
-  monitoring_role_arn = var.monitoring_role_arn
+    # IP configuration (Private IP only)
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = var.network_id
+      require_ssl     = true
+    }
 
-  # Auto minor version upgrade
-  auto_minor_version_upgrade = true
+    # Query Insights enabled
+    insights_config {
+      query_insights_enabled  = true
+      query_string_length     = 1024
+      record_application_tags = true
+    }
+  }
 
-  # Place in different AZs for HA
-  availability_zone = element(var.availability_zones, count.index)
+  deletion_protection = false
 
-  tags = {
-    Name        = "${var.environment}-postgres-replica-${count.index + 1}"
-    Environment = var.environment
-    Role        = "ReadReplica"
-    AZ          = element(var.availability_zones, count.index)
+  labels = {
+    environment = var.environment
+    role        = "read-replica"
+    zone        = var.replica_regions[count.index]
   }
 }
 
 # Application-side read replica routing
-output "read_replica_endpoints" {
-  value = aws_db_instance.postgres_read_replica[*].endpoint
+output "read_replica_private_ips" {
+  value = google_sql_database_instance.postgres_read_replica[*].private_ip_address
+}
+
+output "read_replica_connection_names" {
+  value = google_sql_database_instance.postgres_read_replica[*].connection_name
 }
 ```
 
@@ -1249,8 +1248,8 @@ output "read_replica_endpoints" {
 ```ini
 ; pgbouncer.ini
 [databases]
-production = host=postgres-primary.abc123.us-east-1.rds.amazonaws.com port=5432 dbname=production
-production_ro = host=postgres-replica-1.abc123.us-east-1.rds.amazonaws.com port=5432 dbname=production
+production = host=10.2.0.3 port=5432 dbname=production
+production_ro = host=10.2.0.4 port=5432 dbname=production
 
 [pgbouncer]
 listen_addr = 0.0.0.0
@@ -1378,87 +1377,148 @@ REINDEX TABLE CONCURRENTLY app.tasks;
 
 ```bash
 #!/bin/bash
-# backup-postgres.sh
+# backup-postgres.sh - GCS version
 
 set -e
 
 # Configuration
 BACKUP_DIR="/var/backups/postgres"
 RETENTION_DAYS=30
-DB_HOST="postgres-primary.abc123.us-east-1.rds.amazonaws.com"
-DB_PORT="5432"
+CLOUD_SQL_INSTANCE="production-postgres"
+PROJECT_ID="your-gcp-project-id"
 DB_NAME="production"
 DB_USER="backup_user"
-S3_BUCKET="s3://prod-db-backups"
+GCS_BUCKET="gs://prod-db-backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Create backup directory
 mkdir -p ${BACKUP_DIR}
 
+# Option 1: Export from Cloud SQL to GCS (serverless, recommended)
+echo "Starting Cloud SQL export at $(date)"
+gcloud sql export sql ${CLOUD_SQL_INSTANCE} \
+    ${GCS_BUCKET}/daily/backup_${TIMESTAMP}.sql.gz \
+    --database=${DB_NAME} \
+    --project=${PROJECT_ID} \
+    --offload
+
+echo "Cloud SQL export completed at $(date)"
+
+# Option 2: Manual pg_dump (if you need more control)
+# Get Cloud SQL Proxy connection
+# cloud_sql_proxy -instances=${PROJECT_ID}:europe-west1:${CLOUD_SQL_INSTANCE}=tcp:5432 &
+# PROXY_PID=$!
+# sleep 3
+
 # Dump database
-echo "Starting backup at $(date)"
-pg_dump -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USER} -d ${DB_NAME} \
-    -F custom -b -v -f ${BACKUP_DIR}/backup_${TIMESTAMP}.dump
+# echo "Starting manual backup at $(date)"
+# pg_dump -h 127.0.0.1 -p 5432 -U ${DB_USER} -d ${DB_NAME} \
+#     -F custom -b -v -f ${BACKUP_DIR}/backup_${TIMESTAMP}.dump
 
 # Compress backup
-echo "Compressing backup..."
-pigz -9 ${BACKUP_DIR}/backup_${TIMESTAMP}.dump
+# echo "Compressing backup..."
+# pigz -9 ${BACKUP_DIR}/backup_${TIMESTAMP}.dump
 
-# Upload to S3
-echo "Uploading to S3..."
-aws s3 cp ${BACKUP_DIR}/backup_${TIMESTAMP}.dump.gz \
-    ${S3_BUCKET}/daily/backup_${TIMESTAMP}.dump.gz \
-    --storage-class STANDARD_IA
+# Upload to GCS
+# echo "Uploading to GCS..."
+# gsutil -o "GSUtil:parallel_composite_upload_threshold=150M" \
+#     cp ${BACKUP_DIR}/backup_${TIMESTAMP}.dump.gz \
+#     ${GCS_BUCKET}/daily/backup_${TIMESTAMP}.dump.gz
+
+# Set storage class to NEARLINE for cost savings
+# gsutil rewrite -s NEARLINE ${GCS_BUCKET}/daily/backup_${TIMESTAMP}.dump.gz
 
 # Remove local backup
-rm ${BACKUP_DIR}/backup_${TIMESTAMP}.dump.gz
+# rm ${BACKUP_DIR}/backup_${TIMESTAMP}.dump.gz
 
-# Clean up old backups
-echo "Cleaning up old backups..."
+# Kill Cloud SQL Proxy
+# kill $PROXY_PID
+
+# Clean up old backups (manual backups only)
+echo "Cleaning up old local backups..."
 find ${BACKUP_DIR} -name "*.dump.gz" -mtime +${RETENTION_DAYS} -delete
 
-# Clean up old S3 backups
-aws s3 ls ${S3_BUCKET}/daily/ | while read -r line; do
-    createDate=$(echo $line | awk {'print $1" "$2'})
-    createDate=$(date -d "$createDate" +%s)
-    olderThan=$(date -d "-${RETENTION_DAYS} days" +%s)
-    if [[ $createDate -lt $olderThan ]]; then
-        fileName=$(echo $line | awk {'print $4'})
-        if [[ $fileName != "" ]]; then
-            aws s3 rm ${S3_BUCKET}/daily/$fileName
+# Clean up old GCS backups using lifecycle policy (recommended)
+# Or manually with gsutil:
+echo "Listing old GCS backups..."
+gsutil ls -l ${GCS_BUCKET}/daily/ | awk '{print $2, $3}' | while read -r createDate fileName; do
+    if [[ -n "$createDate" ]]; then
+        createEpoch=$(date -d "$createDate" +%s 2>/dev/null || echo 0)
+        olderThan=$(date -d "-${RETENTION_DAYS} days" +%s)
+        if [[ $createEpoch -lt $olderThan && -n "$fileName" ]]; then
+            echo "Deleting old backup: $fileName"
+            gsutil rm "$fileName"
         fi
     fi
 done
 
 echo "Backup completed at $(date)"
+
+# Recommended: Use GCS lifecycle policy instead of manual cleanup
+# gsutil lifecycle set lifecycle.json ${GCS_BUCKET}
+# Where lifecycle.json contains:
+# {
+#   "lifecycle": {
+#     "rule": [{
+#       "action": {"type": "Delete"},
+#       "condition": {"age": 30}
+#     }, {
+#       "action": {"type": "SetStorageClass", "storageClass": "NEARLINE"},
+#       "condition": {"age": 7}
+#     }]
+#   }
+# }
 ```
 
 ### Point-in-Time Recovery (PITR)
 
 ```bash
 #!/bin/bash
-# restore-postgres-pitr.sh
+# restore-postgres-pitr.sh - GCP Cloud SQL version
 
 set -e
 
 # Configuration
-RESTORE_TIME="2024-01-15 14:30:00 UTC"
-DB_INSTANCE_ID="production-postgres"
-SNAPSHOT_ID="automated-snapshot-2024-01-15"
-RESTORED_INSTANCE_ID="production-postgres-restored-$(date +%Y%m%d%H%M%S)"
+RESTORE_TIME="2024-01-15T14:30:00.000Z"
+SOURCE_INSTANCE="production-postgres"
+RESTORED_INSTANCE="production-postgres-restored-$(date +%Y%m%d%H%M%S)"
+PROJECT_ID="your-gcp-project-id"
+REGION="europe-west1"
 
-# Restore to point in time
-aws rds restore-db-instance-to-point-in-time \
-    --source-db-instance-identifier ${DB_INSTANCE_ID} \
-    --target-db-instance-identifier ${RESTORED_INSTANCE_ID} \
-    --restore-time "${RESTORE_TIME}" \
-    --db-instance-class db.r6g.2xlarge \
-    --multi-az \
-    --vpc-security-group-ids sg-0123456789abcdef \
-    --db-subnet-group-name production-db-subnet-group
+# Cloud SQL PITR uses automated backups + transaction logs
+# Restore to specific point in time (within transaction log retention period)
+echo "Starting Point-in-Time Recovery..."
+echo "Source: ${SOURCE_INSTANCE}"
+echo "Target: ${RESTORED_INSTANCE}"
+echo "Restore time: ${RESTORE_TIME}"
 
-echo "Restore initiated. Instance ID: ${RESTORED_INSTANCE_ID}"
-echo "Monitor progress with: aws rds describe-db-instances --db-instance-identifier ${RESTORED_INSTANCE_ID}"
+# Clone instance to a new instance at specific point in time
+gcloud sql instances clone ${SOURCE_INSTANCE} ${RESTORED_INSTANCE} \
+    --point-in-time="${RESTORE_TIME}" \
+    --project=${PROJECT_ID} \
+    --async
+
+echo "PITR initiated. New instance: ${RESTORED_INSTANCE}"
+echo ""
+echo "Monitor progress with:"
+echo "  gcloud sql operations list --instance=${RESTORED_INSTANCE} --project=${PROJECT_ID}"
+echo ""
+echo "Check instance status with:"
+echo "  gcloud sql instances describe ${RESTORED_INSTANCE} --project=${PROJECT_ID}"
+echo ""
+echo "Once ready, get connection info:"
+echo "  gcloud sql instances describe ${RESTORED_INSTANCE} --project=${PROJECT_ID} --format='value(connectionName)'"
+echo ""
+echo "To connect via Cloud SQL Proxy:"
+echo "  cloud_sql_proxy -instances=${PROJECT_ID}:${REGION}:${RESTORED_INSTANCE}=tcp:5433"
+
+# Alternative: Restore from specific backup
+# LIST_BACKUPS="gcloud sql backups list --instance=${SOURCE_INSTANCE} --project=${PROJECT_ID}"
+# BACKUP_ID="<backup-id-from-list>"
+# gcloud sql backups restore ${BACKUP_ID} \
+#     --backup-instance=${SOURCE_INSTANCE} \
+#     --backup-id=${BACKUP_ID} \
+#     --project=${PROJECT_ID}
 ```
 
 ---
