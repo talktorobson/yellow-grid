@@ -16,5 +16,8 @@
     "!../src/main.ts"
   ],
   "coverageDirectory": "../coverage-e2e",
-  "testTimeout": 30000
+  "testTimeout": 60000,
+  "globalSetup": "<rootDir>/utils/global-setup.ts",
+  "globalTeardown": "<rootDir>/utils/global-teardown.ts",
+  "maxWorkers": 1
 }
