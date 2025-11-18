@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 // Common modules
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
+import { KafkaModule } from './common/kafka/kafka.module';
 
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -44,6 +45,7 @@ import { AppController } from './app.controller';
     // Common modules
     PrismaModule,
     RedisModule,
+    KafkaModule,
 
     // Feature modules (Phase 1)
     AuthModule,

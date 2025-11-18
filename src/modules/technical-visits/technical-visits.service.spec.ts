@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { TechnicalVisitsService } from './technical-visits.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { KafkaProducerService } from '../../common/kafka/kafka-producer.service';
 import {
   TvOutcome,
   ServiceType,
@@ -13,6 +14,7 @@ import { RecordTvOutcomeDto } from './dto';
 describe('TechnicalVisitsService', () => {
   let service: TechnicalVisitsService;
   let prismaService: PrismaService;
+  let kafkaProducer: KafkaProducerService;
 
   const mockPrismaService = {
     serviceOrder: {
@@ -30,6 +32,11 @@ describe('TechnicalVisitsService', () => {
     },
   };
 
+  const mockKafkaProducerService = {
+    sendEvent: jest.fn().mockResolvedValue([{ partition: 0, offset: '123' }]),
+    isProducerConnected: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -38,11 +45,16 @@ describe('TechnicalVisitsService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: KafkaProducerService,
+          useValue: mockKafkaProducerService,
+        },
       ],
     }).compile();
 
     service = module.get<TechnicalVisitsService>(TechnicalVisitsService);
     prismaService = module.get<PrismaService>(PrismaService);
+    kafkaProducer = module.get<KafkaProducerService>(KafkaProducerService);
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -130,6 +142,16 @@ describe('TechnicalVisitsService', () => {
 
       // Should NOT create dependency for YES outcome
       expect(mockPrismaService.serviceOrderDependency.create).not.toHaveBeenCalled();
+
+      // Should publish Kafka event
+      expect(mockKafkaProducerService.sendEvent).toHaveBeenCalledWith(
+        'projects.tv_outcome.recorded',
+        expect.objectContaining({
+          tv_service_order_id: tvServiceOrderId,
+          outcome: 'YES',
+        }),
+        expect.any(String), // correlation ID
+      );
     });
 
     it('should record YES_BUT outcome and block installation', async () => {
@@ -195,6 +217,21 @@ describe('TechnicalVisitsService', () => {
           staticBufferDays: 0,
         },
       });
+
+      // Should publish Kafka event with modifications
+      expect(mockKafkaProducerService.sendEvent).toHaveBeenCalledWith(
+        'projects.tv_outcome.recorded',
+        expect.objectContaining({
+          tv_service_order_id: tvServiceOrderId,
+          outcome: 'YES_BUT',
+          modifications: expect.arrayContaining([
+            expect.objectContaining({
+              description: 'Additional electrical work required',
+            }),
+          ]),
+        }),
+        expect.any(String),
+      );
     });
 
     it('should record NO outcome and block installation', async () => {

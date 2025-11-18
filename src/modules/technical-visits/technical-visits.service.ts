@@ -5,10 +5,13 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { KafkaProducerService } from '../../common/kafka/kafka-producer.service';
 import {
   RecordTvOutcomeDto,
   LinkInstallationDto,
   TvOutcomeResponseDto,
+  TvOutcomeRecordedEvent,
+  TvOutcomeEnum,
 } from './dto';
 import {
   TvOutcome,
@@ -21,7 +24,10 @@ import {
 export class TechnicalVisitsService {
   private readonly logger = new Logger(TechnicalVisitsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly kafkaProducer: KafkaProducerService,
+  ) {}
 
   /**
    * Record a Technical Visit outcome (YES / YES-BUT / NO)
@@ -148,9 +154,9 @@ export class TechnicalVisitsService {
       );
     }
 
-    // TODO: Publish Kafka event `projects.tv_outcome.recorded` for:
-    // - Sales integration (YES_BUT -> scope change, NO -> cancellation)
-    // - Orchestration service (unblock installation if YES)
+    // Publish Kafka event for downstream consumers
+    await this.publishTvOutcomeRecordedEvent(tvOutcome, tvServiceOrder);
+
     this.logger.log(
       `TV outcome recorded: ${tvOutcome.id} (outcome: ${recordDto.outcome}, blocked: ${shouldBlockInstallation})`,
     );
@@ -376,6 +382,81 @@ export class TechnicalVisitsService {
       this.logger.log(
         `Installation ${installationServiceOrderId} unblocked (TV outcome: ${tvOutcomeId})`,
       );
+    }
+  }
+
+  /**
+   * Publish TV outcome recorded event to Kafka
+   *
+   * Event: projects.tv_outcome.recorded
+   * Topic: fsm.projects
+   * Partition key: {country_code}_{tv_service_order_id}
+   *
+   * Consumers:
+   * - Orchestration Service: Unblock/cancel installation orders
+   * - Sales Adapter: Send modifications for repricing (YES_BUT) or cancellation (NO)
+   * - Assignment Service: Re-assign installation if needed
+   */
+  private async publishTvOutcomeRecordedEvent(
+    tvOutcome: any,
+    tvServiceOrder: any,
+  ): Promise<void> {
+    try {
+      // Map Prisma TvOutcome enum to event TvOutcomeEnum
+      const outcomeMap: Record<TvOutcome, TvOutcomeEnum> = {
+        [TvOutcome.YES]: TvOutcomeEnum.YES,
+        [TvOutcome.YES_BUT]: TvOutcomeEnum.YES_BUT,
+        [TvOutcome.NO]: TvOutcomeEnum.NO,
+      };
+
+      // Build event payload
+      const eventPayload: Omit<
+        TvOutcomeRecordedEvent,
+        'event_id' | 'event_name' | 'event_timestamp'
+      > = {
+        tv_service_order_id: tvOutcome.tvServiceOrderId,
+        linked_installation_order_id: tvOutcome.linkedInstallationOrderId,
+        outcome: outcomeMap[tvOutcome.outcome],
+        modifications: tvOutcome.modifications
+          ? tvOutcome.modifications.map((mod: any) => ({
+              description: mod.description,
+              extra_duration_min: mod.extraDurationMin,
+            }))
+          : null,
+        recorded_by: tvOutcome.recordedBy,
+        country_code: tvServiceOrder.countryCode,
+        business_unit: tvServiceOrder.businessUnit,
+        project_id: tvServiceOrder.projectId,
+        external_sales_order_id: tvServiceOrder.externalSalesOrderId,
+        external_project_id: tvServiceOrder.externalProjectId,
+        sales_system_source: tvServiceOrder.externalSystemSource,
+        technician_notes: tvOutcome.technicianNotes,
+      };
+
+      // Publish to Kafka
+      // Partition key ensures all events for same country/TV order go to same partition
+      const partitionKey = `${tvServiceOrder.countryCode}_${tvOutcome.tvServiceOrderId}`;
+
+      await this.kafkaProducer.sendEvent(
+        'projects.tv_outcome.recorded',
+        eventPayload,
+        tvOutcome.id, // Use outcome ID as correlation ID
+      );
+
+      this.logger.log(
+        `📤 Published TV outcome event: ${tvOutcome.outcome} | TV SO: ${tvOutcome.tvServiceOrderId} | Key: ${partitionKey}`,
+      );
+    } catch (error) {
+      // Log error but don't fail the request
+      // Event publishing is asynchronous and should not block the main flow
+      this.logger.error(
+        `❌ Failed to publish TV outcome event for ${tvOutcome.tvServiceOrderId}:`,
+        error,
+      );
+      // TODO: In production, consider:
+      // 1. Retry logic with exponential backoff
+      // 2. Dead letter queue for failed events
+      // 3. Event outbox pattern for guaranteed delivery
     }
   }
 
