@@ -65,9 +65,9 @@ This document defines the event-driven architecture for the AHS Field Service Ex
 ### Cluster Setup
 
 **Infrastructure**:
-- **Managed Kafka**: AWS MSK or Confluent Cloud
-- **Brokers**: 3+ brokers across availability zones
-- **Zookeeper**: Managed (MSK) or KRaft mode (Kafka 3.x+)
+- **Self-Hosted Kafka**: Strimzi Operator on GKE
+- **Brokers**: 6 brokers (3 per zone, 2 zones minimum) across availability zones
+- **Coordination**: KRaft mode (Kafka 3.6+, no Zookeeper)
 
 **Key settings**:
 

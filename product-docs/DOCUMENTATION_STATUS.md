@@ -144,7 +144,7 @@
 **5. Complete ML Infrastructure**
 - Model serving (FastAPI)
 - Feature store (Redis)
-- Model registry (S3)
+- Model registry (GCS)
 - Training pipelines (Airflow)
 - Monitoring & observability
 

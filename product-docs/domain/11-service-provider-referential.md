@@ -55,7 +55,7 @@ We implement a **Service & Provider Referential** system with:
 
 **Sync Strategy:**
 - **Real-time**: Kafka events (`service.created`, `service.updated`, `service.deprecated`)
-- **Daily reconciliation**: Flat file import from S3/Blob storage for drift detection
+- **Daily reconciliation**: Flat file import from GCS bucket for drift detection
 - **Idempotency**: Event ID deduplication prevents duplicate processing
 
 **Multi-Tenancy:**
@@ -988,7 +988,7 @@ class ServiceCatalogReconciliation extends Entity<ServiceCatalogReconciliationId
 
   // ===== SOURCE =====
   private _sourceSystem: string;              // PYXIS, TEMPO, SAP
-  private _sourceFileUrl?: string;            // S3/Blob URL
+  private _sourceFileUrl?: string;            // GCS URL (gs://)
 
   // ===== ERROR TRACKING =====
   private _errorMessage?: string;

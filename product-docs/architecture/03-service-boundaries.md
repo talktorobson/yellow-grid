@@ -529,8 +529,8 @@ contracts.wcf.ready                    # "Review work closing form"
 **Database Schema**: `communications`
 
 **Dependencies**:
-- **SMS Gateway**: Twilio / AWS SNS
-- **Email Provider**: SendGrid / AWS SES
+- **SMS Gateway**: Twilio / Enterprise SMS Service
+- **Email Provider**: SendGrid / Enterprise Email Service
 - **Push Notifications**: Firebase Cloud Messaging
 - **Configuration**: For templates and contact rules
 
@@ -619,7 +619,7 @@ execution.checkout.completed           # Auto-create WCF
 
 **Dependencies**:
 - **E-Signature Provider**: DocuSign / Adobe Sign
-- **Object Storage**: S3 / Azure Blob
+- **Object Storage**: Google Cloud Storage (GCS)
 - **Configuration**: For contract/WCF templates
 
 ---

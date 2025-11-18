@@ -70,10 +70,10 @@ The following documentation categories have template structures in place. Each c
 
 #### Week 1: Infrastructure Setup
 1. **Cloud Account Setup**
-   - AWS/Azure subscription
-   - VPC/VNet configuration
-   - PostgreSQL RDS/Azure DB (dev instance)
-   - S3/Blob storage buckets
+   - GCP project with billing
+   - VPC network configuration
+   - PostgreSQL Cloud SQL (dev instance)
+   - Google Cloud Storage buckets
 
 2. **Development Environment**
    - Create monorepo structure
@@ -122,7 +122,7 @@ The following documentation categories have template structures in place. Each c
 #### Week 4: Event Infrastructure
 
 1. **Kafka Setup**
-   - Confluent Cloud or AWS MSK setup
+   - Strimzi on GKE deployment
    - Topic creation strategy
    - Schema registry configuration
    - Basic producer/consumer patterns
@@ -203,7 +203,7 @@ The following documentation categories have template structures in place. Each c
 **Deliverables**:
 - Mobile APIs complete
 - Check-in/out working
-- Media storage to S3
+- Media storage to GCS
 - Offline sync spec
 
 #### Weeks 11-12: Contracts & Documents
@@ -437,14 +437,14 @@ Add as needed:
 
 ### Infrastructure
 
-- [ ] AWS/Azure account with billing alerts
-- [ ] Terraform for IaC
-- [ ] Kubernetes cluster (EKS/AKS)
-- [ ] PostgreSQL 15+ (RDS/Azure DB)
-- [ ] Redis 7+ (ElastiCache)
-- [ ] Kafka (Confluent Cloud / MSK)
-- [ ] S3/Blob storage
-- [ ] OpenSearch / Elasticsearch
+- [ ] GCP project with billing alerts
+- [ ] Terraform for IaC (GCP provider)
+- [ ] GKE Autopilot cluster
+- [ ] PostgreSQL 15+ (Cloud SQL or self-hosted on GKE)
+- [ ] Redis 7+ (Cloud Memorystore or self-hosted on GKE)
+- [ ] Kafka (Strimzi on GKE)
+- [ ] Google Cloud Storage (GCS)
+- [ ] OpenSearch (self-hosted on GKE)
 
 ### CI/CD
 
@@ -465,7 +465,7 @@ Add as needed:
 ### Security
 
 - [ ] PingID SSO integration
-- [ ] AWS Secrets Manager / Azure Key Vault
+- [ ] HashiCorp Vault / GCP Secret Manager
 - [ ] TLS certificates
 - [ ] SAST tool (SonarQube / Snyk)
 - [ ] DAST tool (OWASP ZAP)
@@ -488,7 +488,7 @@ Add as needed:
 | **Provider adoption resistance** | Medium | High | Pilot with friendly providers, gather feedback early |
 | **Performance at scale** | Medium | High | Load test early and often, optimize database queries |
 | **Mobile offline sync bugs** | High | Medium | Extensive testing, simple conflict resolution (server wins) |
-| **Kafka operational overhead** | Medium | Medium | Use managed service (Confluent/MSK) |
+| **Kafka operational overhead** | Medium | Medium | Use Strimzi operator on GKE for simplified management |
 | **GDPR compliance gaps** | Low | High | Privacy by design, legal review before production |
 
 ## Success Metrics

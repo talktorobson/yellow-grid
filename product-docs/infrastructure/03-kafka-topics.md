@@ -299,104 +299,87 @@ resource "google_storage_bucket" "kafka_logs" {
 }
 ```
 
-### Kafka Connect Configuration
+### Kafka Connect Configuration (Strimzi on GKE)
 
-```hcl
-# modules/kafka/kafka-connect/main.tf
-resource "aws_msk_connect_custom_plugin" "debezium_postgres" {
-  name         = "${var.environment}-debezium-postgres-plugin"
-  content_type = "ZIP"
+```yaml
+# Strimzi KafkaConnect cluster with Debezium
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: debezium-connect-cluster
+  namespace: kafka
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  version: 3.6.0
+  replicas: 3
+  bootstrapServers: production-kafka-bootstrap:9092
 
-  location {
-    s3 {
-      bucket_arn = var.plugins_bucket_arn
-      file_key   = "plugins/debezium-postgres-connector.zip"
-    }
-  }
-}
+  config:
+    group.id: debezium-connect-cluster
+    offset.storage.topic: connect-cluster-offsets
+    config.storage.topic: connect-cluster-configs
+    status.storage.topic: connect-cluster-status
+    config.storage.replication.factor: 3
+    offset.storage.replication.factor: 3
+    status.storage.replication.factor: 3
 
-resource "aws_mskconnect_connector" "postgres_cdc" {
-  name = "${var.environment}-postgres-cdc-connector"
+  build:
+    output:
+      type: docker
+      image: europe-west1-docker.pkg.dev/PROJECT_ID/kafka-connect/debezium-connect:latest
+    plugins:
+      - name: debezium-postgres-connector
+        artifacts:
+          - type: tgz
+            url: https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/2.4.0.Final/debezium-connector-postgres-2.4.0.Final-plugin.tar.gz
+            sha512sum: <checksum>
 
-  kafkaconnect_version = "2.7.1"
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 1000m
+    limits:
+      memory: 4Gi
+      cpu: 2000m
 
-  capacity {
-    autoscaling {
-      mcu_count        = 2
-      min_worker_count = 2
-      max_worker_count = 10
+---
+# Debezium PostgreSQL CDC connector
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: postgres-cdc-connector
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: debezium-connect-cluster
+spec:
+  class: io.debezium.connector.postgresql.PostgresConnector
+  tasksMax: 4
 
-      scale_in_policy {
-        cpu_utilization_percentage = 20
-      }
+  config:
+    database.hostname: "{{ .Values.database.host }}"
+    database.port: "5432"
+    database.user: "{{ .Values.database.user }}"
+    database.password: "{{ .Values.database.password }}"
+    database.dbname: "{{ .Values.database.name }}"
+    database.server.name: "production-postgres"
 
-      scale_out_policy {
-        cpu_utilization_percentage = 80
-      }
-    }
-  }
+    table.include.list: "app.tasks,app.projects,app.organizations"
+    plugin.name: "pgoutput"
+    slot.name: "debezium_slot"
+    publication.name: "debezium_publication"
+    topic.prefix: "cdc"
+    schema.include.list: "app"
 
-  connector_configuration = {
-    "connector.class"                       = "io.debezium.connector.postgresql.PostgresConnector"
-    "tasks.max"                            = "4"
-    "database.hostname"                    = var.db_host
-    "database.port"                        = "5432"
-    "database.user"                        = var.db_user
-    "database.password"                    = var.db_password
-    "database.dbname"                      = var.db_name
-    "database.server.name"                 = "${var.environment}-postgres"
-    "table.include.list"                   = "app.tasks,app.projects,app.organizations"
-    "plugin.name"                          = "pgoutput"
-    "slot.name"                            = "debezium_slot"
-    "publication.name"                     = "debezium_publication"
-    "topic.prefix"                         = "cdc"
-    "schema.include.list"                  = "app"
-    "time.precision.mode"                  = "adaptive"
-    "decimal.handling.mode"                = "precise"
-    "include.schema.changes"               = "false"
-    "transforms"                           = "route"
-    "transforms.route.type"                = "org.apache.kafka.connect.transforms.RegexRouter"
-    "transforms.route.regex"               = "([^.]+)\\.([^.]+)\\.([^.]+)"
-    "transforms.route.replacement"         = "$3-changes"
-  }
+    time.precision.mode: "adaptive"
+    decimal.handling.mode: "precise"
+    include.schema.changes: "false"
 
-  kafka_cluster {
-    apache_kafka_cluster {
-      bootstrap_servers = var.kafka_bootstrap_servers
-
-      vpc {
-        security_groups = [var.security_group_id]
-        subnets         = var.subnet_ids
-      }
-    }
-  }
-
-  kafka_cluster_client_authentication {
-    authentication_type = "NONE"
-  }
-
-  kafka_cluster_encryption_in_transit {
-    encryption_type = "TLS"
-  }
-
-  plugin {
-    custom_plugin {
-      arn      = aws_msk_connect_custom_plugin.debezium_postgres.arn
-      revision = aws_msk_connect_custom_plugin.debezium_postgres.latest_revision
-    }
-  }
-
-  service_execution_role_arn = var.kafka_connect_role_arn
-
-  log_delivery {
-    worker_log_delivery {
-      cloudwatch_logs {
-        enabled   = true
-        log_group = aws_cloudwatch_log_group.kafka_connect.name
-      }
-    }
-  }
-}
+    # Transform to route to simplified topic names
+    transforms: "route"
+    transforms.route.type: "org.apache.kafka.connect.transforms.RegexRouter"
+    transforms.route.regex: "([^.]+)\\.([^.]+)\\.([^.]+)"
+    transforms.route.replacement: "$3-changes"
 ```
 
 ---
@@ -1555,22 +1538,60 @@ consumer_groups:
 
 ## Schema Management
 
-### Avro Schema Registry Configuration
+### Avro Schema Registry Configuration (Strimzi on GKE)
 
-```hcl
-# modules/kafka/schema-registry/main.tf
-resource "aws_msk_configuration" "schema_registry" {
-  name = "${var.environment}-schema-registry-config"
+```yaml
+# Deploy Confluent Schema Registry on Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schema-registry
+  namespace: kafka
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: schema-registry
+  template:
+    metadata:
+      labels:
+        app: schema-registry
+    spec:
+      containers:
+        - name: schema-registry
+          image: confluentinc/cp-schema-registry:7.5.0
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SCHEMA_REGISTRY_HOST_NAME
+              value: "schema-registry"
+            - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+              value: "production-kafka-bootstrap:9092"
+            - name: SCHEMA_REGISTRY_LISTENERS
+              value: "http://0.0.0.0:8081"
+            - name: SCHEMA_REGISTRY_SCHEMA_REGISTRY_GROUP_ID
+              value: "schema-registry"
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 500m
+            limits:
+              memory: 2Gi
+              cpu: 1000m
 
-  kafka_versions = ["3.5.1"]
-
-  server_properties = <<PROPERTIES
-# Schema Registry settings
-schema.registry.url=https://schema-registry.${var.environment}.internal:8081
-auto.register.schemas=true
-use.latest.version=true
-PROPERTIES
-}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: schema-registry
+  namespace: kafka
+spec:
+  selector:
+    app: schema-registry
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP
 ```
 
 ### Example Avro Schemas

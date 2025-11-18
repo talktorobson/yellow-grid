@@ -324,28 +324,30 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
-      
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-      
-      - name: Update kubeconfig
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
         run: |
-          aws eks update-kubeconfig --name ahs-fsm-dev --region eu-west-1
-      
+          gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ahs-fsm-dev --region europe-west1
+
       - name: Deploy to Kubernetes
         run: |
           kubectl set image deployment/fsm-backend \
-            fsm-backend=${{ steps.login-ecr.outputs.registry }}/fsm-backend:${{ github.sha }} \
+            fsm-backend=europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/fsm/fsm-backend:${{ github.sha }} \
             -n ahs-fsm-dev
-          
+
           kubectl rollout status deployment/fsm-backend -n ahs-fsm-dev --timeout=5m
       
       - name: Run smoke tests
@@ -396,16 +398,18 @@ jobs:
             exit 1
           fi
       
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-west-1
-      
-      - name: Update kubeconfig
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
         run: |
-          aws eks update-kubeconfig --name ahs-fsm-prod --region eu-west-1
+          gcloud container clusters get-credentials ahs-fsm-prod --region europe-west1
       
       - name: Deploy with Canary
         run: |
@@ -587,8 +591,9 @@ kubectl rollout undo deployment/fsm-backend --to-revision=5 -n ahs-fsm-prod
 Required secrets in GitHub Actions:
 
 ```
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
+GCP_WORKLOAD_IDENTITY_PROVIDER  # Format: projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/POOL_ID/providers/PROVIDER_ID
+GCP_SERVICE_ACCOUNT             # Format: github-actions@PROJECT_ID.iam.gserviceaccount.com
+GCP_PROJECT_ID                  # GCP project ID
 SNYK_TOKEN
 SLACK_WEBHOOK
 DATABASE_URL (for CI)
@@ -596,7 +601,7 @@ DATABASE_URL (for CI)
 
 ### Kubernetes Secrets
 
-Secrets stored in AWS Secrets Manager, injected via External Secrets Operator:
+Secrets stored in GCP Secret Manager, injected via External Secrets Operator:
 
 ```yaml
 apiVersion: external-secrets.io/v1beta1
@@ -605,16 +610,16 @@ metadata:
   name: fsm-secrets
 spec:
   secretStoreRef:
-    name: aws-secretsmanager
+    name: gcpsm-secret-store
   target:
     name: fsm-secrets
   data:
     - secretKey: DATABASE_URL
       remoteRef:
-        key: ahs-fsm/database-url
+        key: ahs-fsm-database-url
     - secretKey: JWT_SECRET
       remoteRef:
-        key: ahs-fsm/jwt-secret
+        key: ahs-fsm-jwt-secret
 ```
 
 ## Performance Optimization

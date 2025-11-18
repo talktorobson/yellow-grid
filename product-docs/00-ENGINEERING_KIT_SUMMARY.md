@@ -99,11 +99,11 @@ product-docs/
 **Technology Stack**:
 - Backend: TypeScript + Node.js + NestJS
 - Frontend: React (web), React Native (mobile)
-- Database: PostgreSQL 15+ with partitioning
-- Messaging: Apache Kafka (Confluent Cloud / AWS MSK)
-- Search: OpenSearch
-- Cache: Redis/Valkey
-- Infrastructure: Kubernetes (AWS EKS / Azure AKS)
+- Database: PostgreSQL 15+ with partitioning (Cloud SQL / self-hosted on GKE)
+- Messaging: Apache Kafka (Strimzi on GKE)
+- Search: OpenSearch (self-hosted on GKE)
+- Cache: Redis/Valkey (Cloud Memorystore / self-hosted on GKE)
+- Infrastructure: Google Kubernetes Engine (GKE Autopilot)
 - Observability: OpenTelemetry + Grafana stack
 
 ### Domain Model
@@ -159,7 +159,7 @@ product-docs/
 ## 🚀 Implementation Roadmap
 
 ### Phase 1: Foundation (Weeks 1-4)
-- Infrastructure setup (AWS/Azure, Postgres, Kafka)
+- Infrastructure setup (GCP, Cloud SQL/Postgres, Kafka on GKE)
 - Core services (Identity, Configuration, Provider basics)
 - Event infrastructure
 - Observability foundation
@@ -231,7 +231,7 @@ product-docs/
 - ✅ RBAC with fine-grained permissions
 - ✅ Audit logging for all sensitive operations
 - ✅ API rate limiting
-- ✅ Secrets management (AWS Secrets Manager / Azure Key Vault)
+- ✅ Secrets management (HashiCorp Vault / GCP Secret Manager)
 
 ---
 

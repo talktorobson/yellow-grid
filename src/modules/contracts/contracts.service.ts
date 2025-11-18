@@ -15,6 +15,8 @@ import { SignContractDto } from './dto/sign-contract.dto';
 import { ContractQueryDto } from './dto/filter-contracts.dto';
 import { ContractListResponseDto, ContractResponseDto } from './dto/contract-response.dto';
 import { nanoid } from 'nanoid';
+import { ESignatureService } from './esignature/esignature.service';
+import { SignerRole, TabType } from './esignature/interfaces/esignature-provider.interface';
 
 const CONTRACT_RELATIONS = {
   signatures: true,
@@ -85,7 +87,10 @@ type JsonRecord = Record<string, unknown>;
 export class ContractsService {
   private readonly logger = new Logger(ContractsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eSignatureService: ESignatureService,
+  ) {}
 
   async generate(dto: GenerateContractDto): Promise<ContractResponseDto> {
     const serviceOrder = await this.prisma.serviceOrder.findUnique({
@@ -189,6 +194,132 @@ export class ContractsService {
   async send(contractId: string, dto: SendContractDto): Promise<ContractResponseDto> {
     const contract = await this.getContractOrFail(contractId);
 
+    // Validate email is provided (required for e-signature)
+    const customerEmail = dto.email ?? contract.customerEmail;
+    if (!customerEmail) {
+      throw new BadRequestException('Email is required to send contract for signature');
+    }
+
+    const customerPhone = dto.phone ?? contract.customerPhone;
+
+    try {
+      this.logger.log(`Sending contract ${contract.contractNumber} via e-signature provider`);
+
+      // Prepare document for e-signature (convert HTML to PDF if needed)
+      const documentContent = await this.prepareDocumentForSignature(contract);
+
+      // Create envelope with e-signature provider
+      const envelopeResponse = await this.eSignatureService.createEnvelope({
+        contractId: contract.id,
+        document: {
+          name: `Contract_${contract.contractNumber}.pdf`,
+          content: documentContent,
+          fileExtension: 'pdf',
+          documentId: contract.id,
+        },
+        signers: [
+          {
+            name: contract.signatures[0]?.signerName || 'Customer',
+            email: customerEmail,
+            role: SignerRole.SIGNER,
+            routingOrder: 1,
+            phoneNumber: customerPhone || undefined,
+            requireIdVerification: false,
+            tabs: [
+              {
+                type: TabType.SIGNATURE,
+                label: 'Customer Signature',
+                required: true,
+                pageNumber: 1,
+                xPosition: 100,
+                yPosition: 650,
+              },
+              {
+                type: TabType.DATE_SIGNED,
+                label: 'Date Signed',
+                required: true,
+                pageNumber: 1,
+                xPosition: 300,
+                yPosition: 650,
+              },
+            ],
+          },
+        ],
+        emailSubject: dto.message
+          ? `Contract ${contract.contractNumber}: ${dto.message}`
+          : `Please sign your contract ${contract.contractNumber}`,
+        emailMessage:
+          dto.message || 'Please review and sign the attached contract at your earliest convenience.',
+        expiresAt: this.computeExpiry(dto.expiresInHours ?? 48),
+        metadata: {
+          contractId: contract.id,
+          contractNumber: contract.contractNumber,
+        },
+      });
+
+      this.logger.log(
+        `E-signature envelope created: ${envelopeResponse.envelopeId} for contract ${contract.contractNumber}`,
+      );
+
+      // Send the envelope for signature
+      await this.eSignatureService.sendForSignature({
+        envelopeId: envelopeResponse.envelopeId,
+      });
+
+      this.logger.log(`E-signature envelope sent: ${envelopeResponse.envelopeId}`);
+
+      // Update contract with provider envelope ID
+      const updated = await this.prisma.contract.update({
+        where: { id: contractId },
+        data: {
+          status: ContractStatus.SENT,
+          sentAt: new Date(),
+          expiresAt: this.computeExpiry(dto.expiresInHours ?? 48),
+          customerEmail,
+          customerPhone,
+          providerEnvelopeId: envelopeResponse.envelopeId,
+          notifications: {
+            create: {
+              channel: NotificationChannel.EMAIL,
+              destination: customerEmail,
+              status: NotificationStatus.SENT,
+              payload: {
+                message: dto.message ?? 'Please review and sign your contract.',
+                envelopeId: envelopeResponse.envelopeId,
+              } as Prisma.InputJsonValue,
+              sentAt: new Date(),
+            },
+          },
+        },
+        include: CONTRACT_RELATIONS,
+      });
+
+      this.logger.log(
+        `Contract ${contract.contractNumber} sent for e-signature to ${customerEmail}`,
+      );
+
+      return this.mapToResponse(updated);
+    } catch (error) {
+      this.logger.error(
+        `Failed to send contract ${contract.contractNumber} via e-signature: ${error.message}`,
+        error.stack,
+      );
+
+      // Fall back to simple notification if e-signature fails
+      this.logger.warn(`Falling back to legacy notification mode for contract ${contractId}`);
+      return this.sendLegacyMode(contractId, dto, contract);
+    }
+  }
+
+  /**
+   * Legacy send mode (fallback when e-signature provider is unavailable)
+   * This is the original implementation
+   */
+  private async sendLegacyMode(
+    contractId: string,
+    dto: SendContractDto,
+    contract: ContractWithRelations,
+  ): Promise<ContractResponseDto> {
     const channels: NotificationChannel[] = [];
     const sendEmail = dto.sendEmail ?? true;
     const sendSms = dto.sendSms ?? false;
@@ -253,6 +384,80 @@ export class ContractsService {
     }
 
     return this.mapToResponse(updated);
+  }
+
+  /**
+   * Prepare document for e-signature
+   * Converts contract HTML body to PDF (base64 encoded)
+   */
+  private async prepareDocumentForSignature(contract: ContractWithRelations): Promise<string> {
+    // TODO: Implement HTML to PDF conversion
+    // For now, return a placeholder base64-encoded PDF
+    // In production, use a library like puppeteer or pdfkit to convert HTML to PDF
+
+    const placeholderPdf = Buffer.from(
+      `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Resources <<
+/Font <<
+/F1 <<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+>>
+>>
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 55
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Contract ${contract.contractNumber}) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000317 00000 n
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+422
+%%EOF`,
+      'utf-8',
+    );
+
+    return placeholderPdf.toString('base64');
   }
 
   async sign(contractId: string, dto: SignContractDto): Promise<ContractResponseDto> {

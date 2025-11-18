@@ -74,12 +74,11 @@ REDIS_URL="redis://localhost:6379"
 KAFKA_BROKERS="localhost:9092"
 KAFKA_CLIENT_ID="ahs-fsm-dev"
 
-# AWS (for local S3 via LocalStack)
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
-AWS_REGION=eu-west-1
-S3_ENDPOINT=http://localhost:4566
-S3_BUCKET=ahs-fsm-dev
+# GCP (for local GCS via fake-gcs-server)
+GCS_ENDPOINT=http://localhost:4443
+GCS_BUCKET=ahs-fsm-dev
+GCS_PROJECT_ID=local-dev
+STORAGE_EMULATOR_HOST=localhost:4443
 
 # Auth
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
@@ -94,7 +93,7 @@ ORACLE_API_URL=http://localhost:8081/mock
 ### 4. Start Infrastructure Services
 
 ```bash
-# Start PostgreSQL, Redis, Kafka, LocalStack (S3)
+# Start PostgreSQL, Redis, Kafka, fake-gcs-server (GCS emulator)
 docker-compose up -d
 
 # Verify services are running
@@ -105,7 +104,7 @@ docker-compose ps
 # - redis (port 6379)
 # - kafka (port 9092)
 # - zookeeper (port 2181)
-# - localstack (port 4566) - for S3 emulation
+# - fake-gcs-server (port 4443) - for GCS emulation
 ```
 
 **`docker-compose.yml`** (already in repo):
@@ -157,19 +156,17 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  localstack:
-    image: localstack/localstack:latest
+  fake-gcs-server:
+    image: fsouza/fake-gcs-server:latest
     ports:
-      - "4566:4566"
-    environment:
-      SERVICES: s3
-      DEFAULT_REGION: eu-west-1
+      - "4443:4443"
+    command: ["-scheme", "http", "-port", "4443", "-external-url", "http://localhost:4443"]
     volumes:
-      - localstack_data:/tmp/localstack
+      - gcs_data:/data
 
 volumes:
   postgres_data:
-  localstack_data:
+  gcs_data:
 ```
 
 ### 5. Run Database Migrations

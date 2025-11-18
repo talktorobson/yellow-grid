@@ -366,9 +366,8 @@ kubectl describe node <node-name>
 # Drain node
 kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
 
-# Replace node (cloud-specific)
-# AWS: Terminate instance, ASG will replace
-# GCP: gcloud compute instances delete <instance-name>
+# Replace node in GKE (GKE Autopilot auto-replaces, or manually delete):
+gcloud compute instances delete <instance-name> --zone=europe-west1-b
 ```
 
 ### Emergency Recovery
@@ -493,9 +492,8 @@ psql -h db-primary -U postgres -c "VACUUM FULL ANALYZE;"
 ssh db-primary "gzip /var/lib/postgresql/data/pg_log/*.log"
 ssh db-primary "find /var/lib/postgresql/data/pg_log -name '*.gz' -mtime +30 -delete"
 
-# Expand disk (cloud-specific)
-# AWS: Modify RDS instance storage
-# GCP: gcloud sql instances patch db-primary --storage-size=500
+# Expand disk in Cloud SQL:
+gcloud sql instances patch db-primary --storage-size=500
 ```
 
 #### Cause 4: Replication Lag

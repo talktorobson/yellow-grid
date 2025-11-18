@@ -35,7 +35,7 @@ The Service Catalog Sync system implements **dual-mode synchronization** between
          │ Kafka Events                     │ Flat File Export
          ▼                                   ▼
 ┌──────────────────────┐         ┌─────────────────────────┐
-│ Kafka Topic:         │         │ S3/Blob Storage:        │
+│ Kafka Topic:         │         │ GCS Bucket:             │
 │ service-catalog      │         │ services_ES_YYYYMMDD.csv│
 │                      │         │ services_FR_YYYYMMDD.csv│
 │ Events:              │         └──────────┬──────────────┘
@@ -49,7 +49,7 @@ The Service Catalog Sync system implements **dual-mode synchronization** between
 │ Kafka Event Consumer  │      │ Reconciliation Job         │
 │ (Real-time)           │      │ (Scheduled Cron)           │
 │                       │      │                            │
-│ 1. Receive event      │      │ 1. Download CSV from S3    │
+│ 1. Receive event      │      │ 1. Download CSV from GCS   │
 │ 2. Log to DB          │      │ 2. Parse services          │
 │ 3. Check idempotency  │      │ 3. Compare checksums       │
 │ 4. Process update     │      │ 4. Detect drift            │
@@ -594,7 +594,7 @@ PYX_ES_HVAC_00123,ES,LM_ES,installation,hvac,"Instalación AC","Installation AC"
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Storage } from '@google-cloud/storage';
 import * as csv from 'csv-parser';
 import { Readable } from 'stream';
 import * as crypto from 'crypto';
@@ -602,12 +602,12 @@ import * as crypto from 'crypto';
 @Injectable()
 export class ServiceCatalogReconciliationJob {
   private readonly logger = new Logger(ServiceCatalogReconciliationJob.name);
-  private s3Client: S3Client;
+  private storage: Storage;
+  private bucketName: string;
 
   constructor(private readonly prisma: PrismaService) {
-    this.s3Client = new S3Client({
-      region: process.env.AWS_REGION || 'eu-west-1',
-    });
+    this.storage = new Storage();  // Uses Workload Identity for authentication
+    this.bucketName = process.env.GCS_BUCKET || 'fsm-service-catalog';
   }
 
   @Cron('0 3 * * *') // Daily at 3 AM
@@ -695,13 +695,11 @@ export class ServiceCatalogReconciliationJob {
 
     this.logger.log(`📥 Downloading ${fileKey}`);
 
-    const command = new GetObjectCommand({
-      Bucket: process.env.SERVICE_CATALOG_BUCKET,
-      Key: fileKey,
-    });
+    const bucket = this.storage.bucket(this.bucketName);
+    const file = bucket.file(fileKey);
 
-    const response = await this.s3Client.send(command);
-    const services = await this.parseCSV(response.Body as Readable);
+    const [contents] = await file.download();
+    const services = await this.parseCSV(Readable.from(contents));
 
     let stats = { fetched: 0, matched: 0, drifted: 0, updated: 0, failed: 0 };
     stats.fetched = services.length;
