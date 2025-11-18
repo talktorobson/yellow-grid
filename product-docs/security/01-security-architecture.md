@@ -76,7 +76,7 @@ This document outlines the comprehensive security architecture implementing defe
 
 **Cloud Security Posture**
 - CIS benchmark compliance
-- AWS Security Hub / Azure Security Center integration
+- GCP Security Command Center integration
 - Configuration drift detection
 - Automated remediation workflows
 
@@ -554,7 +554,7 @@ See `/product-docs/security/03-data-privacy-gdpr.md` for details.
 **Forensic Data Collection**
 ```bash
 # Preserve logs
-aws s3 cp /var/log/application.log s3://incident-forensics/$(date +%Y%m%d)/
+gsutil cp /var/log/application.log gs://incident-forensics/$(date +%Y%m%d)/
 
 # Memory dump (if applicable)
 dd if=/dev/mem of=/forensics/memory.dump
