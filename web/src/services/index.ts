@@ -9,3 +9,4 @@ export * from './service-order-service';
 export * from './document-service';
 export * from './project-service';
 export * from './operator-service';
+export * from './assignment-service';

@@ -120,6 +120,46 @@ class AssignmentService {
     const response = await apiClient.get('/assignments/statistics');
     return response.data;
   }
+
+  /**
+   * Get assignment funnel for transparency
+   */
+  async getFunnel(serviceOrderId: string) {
+    const response = await apiClient.get(`/assignments/funnel/${serviceOrderId}`);
+    return response.data;
+  }
+
+  /**
+   * Get scoring breakdown for a provider
+   */
+  async getScoring(serviceOrderId: string, providerId: string) {
+    const response = await apiClient.get(`/assignments/scoring/${serviceOrderId}/${providerId}`);
+    return response.data;
+  }
+
+  /**
+   * Get assignment history for audit trail
+   */
+  async getHistory(serviceOrderId: string) {
+    const response = await apiClient.get(`/assignments/history/${serviceOrderId}`);
+    return response.data;
+  }
+
+  /**
+   * Accept assignment offer
+   */
+  async accept(id: string, data?: { notes?: string }) {
+    const response = await apiClient.post(`/assignments/${id}/accept`, data);
+    return response.data;
+  }
+
+  /**
+   * Reject assignment offer
+   */
+  async reject(id: string, data: { reason: string; notes?: string }) {
+    const response = await apiClient.post(`/assignments/${id}/reject`, data);
+    return response.data;
+  }
 }
 
 export const assignmentService = new AssignmentService();
