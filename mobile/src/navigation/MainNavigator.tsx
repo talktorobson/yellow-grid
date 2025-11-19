@@ -5,6 +5,7 @@ import type { MainTabParamList } from './types';
 import { ServiceOrdersNavigator } from './ServiceOrdersNavigator';
 import { ExecutionsNavigator } from './ExecutionsNavigator';
 import ProfileScreen from '@screens/profile/ProfileScreen';
+import ScheduleScreen from '@screens/schedule/ScheduleScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -17,6 +18,8 @@ export const MainNavigator = () => {
 
           if (route.name === 'ServiceOrders') {
             iconName = focused ? 'list' : 'list-outline';
+          } else if (route.name === 'Schedule') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Executions') {
             iconName = focused ? 'construct' : 'construct-outline';
           } else if (route.name === 'Profile') {
@@ -36,6 +39,11 @@ export const MainNavigator = () => {
         name="ServiceOrders"
         component={ServiceOrdersNavigator}
         options={{ title: 'Orders' }}
+      />
+      <Tab.Screen
+        name="Schedule"
+        component={ScheduleScreen}
+        options={{ title: 'Schedule' }}
       />
       <Tab.Screen
         name="Executions"

@@ -10,6 +10,7 @@ export type AuthStackParamList = {
 // Main Tab Navigator
 export type MainTabParamList = {
   ServiceOrders: undefined;
+  Schedule: undefined;
   Executions: undefined;
   Profile: undefined;
 };
