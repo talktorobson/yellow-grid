@@ -19,9 +19,11 @@ import {
 import clsx from 'clsx';
 import SearchButton from '@/components/search/SearchButton';
 import NotificationBadge from '@/components/notifications/NotificationBadge';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Service Orders', href: '/service-orders', icon: ClipboardList },
   { name: 'Assignments', href: '/assignments', icon: UserCheck },
   { name: 'Providers', href: '/providers', icon: Users },
@@ -110,6 +112,7 @@ export default function DashboardLayout() {
             <NotificationBadge />
 
             {/* User Role */}
+            <NotificationCenter />
             <span className={clsx('badge', {
               'badge-success': user?.role === 'OPERATOR',
               'badge-primary': user?.role === 'SUPER_ADMIN',
