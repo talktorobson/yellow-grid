@@ -14,6 +14,7 @@ import {
   CheckSquare,
   LogOut,
   User,
+  BarChart3,
 } from 'lucide-react';
 import clsx from 'clsx';
 import SearchButton from '@/components/search/SearchButton';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Assignments', href: '/assignments', icon: UserCheck },
   { name: 'Providers', href: '/providers', icon: Users },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
+  { name: 'Performance', href: '/performance', icon: BarChart3 },
   { name: 'Tasks & Alerts', href: '/tasks', icon: CheckSquare },
 ];
 

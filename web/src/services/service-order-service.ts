@@ -212,6 +212,81 @@ class ServiceOrderService {
     );
     return response.data;
   }
+
+  /**
+   * Bulk assign service orders
+   */
+  async bulkAssign(ids: string[]): Promise<{
+    successful: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const response = await apiClient.post('/service-orders/bulk/assign', {
+      serviceOrderIds: ids,
+    });
+    return response.data;
+  }
+
+  /**
+   * Bulk cancel service orders
+   */
+  async bulkCancel(ids: string[], reason: string): Promise<{
+    successful: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const response = await apiClient.post('/service-orders/bulk/cancel', {
+      serviceOrderIds: ids,
+      reason,
+    });
+    return response.data;
+  }
+
+  /**
+   * Bulk update status
+   */
+  async bulkUpdateStatus(ids: string[], status: string): Promise<{
+    successful: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const response = await apiClient.post('/service-orders/bulk/update-status', {
+      serviceOrderIds: ids,
+      status,
+    });
+    return response.data;
+  }
+
+  /**
+   * Bulk reschedule service orders
+   */
+  async bulkReschedule(ids: string[]): Promise<{
+    successful: number;
+    failed: number;
+    errors: Array<{ id: string; error: string }>;
+  }> {
+    const response = await apiClient.post('/service-orders/bulk/reschedule', {
+      serviceOrderIds: ids,
+    });
+    return response.data;
+  }
+
+  /**
+   * Bulk export service orders
+   */
+  async bulkExport(ids: string[], format: 'csv' | 'excel'): Promise<Blob> {
+    const response = await apiClient.post(
+      '/service-orders/bulk/export',
+      {
+        serviceOrderIds: ids,
+        format,
+      },
+      {
+        responseType: 'blob',
+      }
+    );
+    return response.data;
+  }
 }
 
 export const serviceOrderService = new ServiceOrderService();

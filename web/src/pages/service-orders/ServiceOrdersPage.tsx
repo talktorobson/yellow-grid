@@ -7,10 +7,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { serviceOrderService } from '@/services/service-order-service';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, CheckSquare, Square } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import { ServiceOrderStatus, SalesPotential, RiskLevel } from '@/types';
+import BulkActionBar from '@/components/service-orders/BulkActionBar';
 
 export default function ServiceOrdersPage() {
   const [filters, setFilters] = useState({
@@ -24,6 +25,7 @@ export default function ServiceOrdersPage() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['service-orders', filters],
@@ -68,6 +70,26 @@ export default function ServiceOrdersPage() {
     };
     return <span className={clsx('badge', colors[risk])}>{risk} RISK</span>;
   };
+
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === orders.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(orders.map((order) => order.id));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const isAllSelected = orders.length > 0 && selectedIds.length === orders.length;
 
   if (error) {
     return (
@@ -177,6 +199,19 @@ export default function ServiceOrdersPage() {
             <table className="table">
               <thead className="table-header">
                 <tr>
+                  <th className="px-6 py-3 text-left w-12">
+                    <button
+                      onClick={handleToggleSelectAll}
+                      className="p-1 hover:bg-gray-200 rounded"
+                      title={isAllSelected ? 'Deselect all' : 'Select all'}
+                    >
+                      {isAllSelected ? (
+                        <CheckSquare className="w-5 h-5 text-primary-600" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                  </th>
                   <th className="px-6 py-3 text-left">Order ID</th>
                   <th className="px-6 py-3 text-left">Customer</th>
                   <th className="px-6 py-3 text-left">Type / Priority</th>
@@ -188,8 +223,28 @@ export default function ServiceOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="table-row">
+                {orders.map((order) => {
+                  const isSelected = selectedIds.includes(order.id);
+                  return (
+                  <tr
+                    key={order.id}
+                    className={clsx(
+                      'table-row transition-colors',
+                      isSelected && 'bg-primary-50'
+                    )}
+                  >
+                    <td className="table-cell">
+                      <button
+                        onClick={() => handleToggleSelection(order.id)}
+                        className="p-1 hover:bg-gray-200 rounded"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5 text-primary-600" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                    </td>
                     <td className="table-cell">
                       <div className="text-sm font-medium text-gray-900">{order.externalId}</div>
                       <div className="text-xs text-gray-500">{order.countryCode}</div>
@@ -228,7 +283,8 @@ export default function ServiceOrdersPage() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
 
@@ -261,6 +317,15 @@ export default function ServiceOrdersPage() {
           </>
         )}
       </div>
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        onClearSelection={handleClearSelection}
+        onSuccess={() => {
+          // Optionally refetch or show success message
+        }}
+      />
     </div>
   );
 }

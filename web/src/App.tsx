@@ -13,6 +13,7 @@ import AssignmentDetailPage from './pages/assignments/AssignmentDetailPage';
 import ProvidersPage from './pages/providers/ProvidersPage';
 import CalendarPage from './pages/calendar/CalendarPage';
 import TasksPage from './pages/tasks/TasksPage';
+import PerformanceDashboardPage from './pages/performance/PerformanceDashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
           <Route path="providers" element={<ProvidersPage />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="tasks" element={<TasksPage />} />
+          <Route path="performance" element={<PerformanceDashboardPage />} />
         </Route>
 
         {/* 404 */}
