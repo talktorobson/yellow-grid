@@ -14,11 +14,14 @@ import {
   CheckSquare,
   LogOut,
   User,
+  BarChart3,
 } from 'lucide-react';
 import clsx from 'clsx';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Service Orders', href: '/service-orders', icon: ClipboardList },
   { name: 'Assignments', href: '/assignments', icon: UserCheck },
   { name: 'Providers', href: '/providers', icon: Users },
@@ -98,7 +101,8 @@ export default function DashboardLayout() {
               {user?.countryCode} • {user?.businessUnit}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <NotificationCenter />
             <span className={clsx('badge', {
               'badge-success': user?.role === 'OPERATOR',
               'badge-primary': user?.role === 'SUPER_ADMIN',
