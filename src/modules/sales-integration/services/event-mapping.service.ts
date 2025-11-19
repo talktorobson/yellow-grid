@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { KafkaService } from '../../../common/kafka/kafka.service';
+import { KafkaProducerService } from '../../../common/kafka/kafka-producer.service';
 import {
   OrderIntakeRequestDto,
   SalesSystem,
@@ -38,7 +38,7 @@ export interface FSMServiceOrderCreatedEvent {
 export class EventMappingService {
   private readonly logger = new Logger(EventMappingService.name);
 
-  constructor(private readonly kafkaService: KafkaService) {}
+  constructor(private readonly kafkaService: KafkaProducerService) {}
 
   /**
    * Map external sales system event to FSM internal event
@@ -92,20 +92,16 @@ export class EventMappingService {
     };
 
     // Publish to Kafka
-    await this.kafkaService.send({
-      topic: 'fsm.service_order.created',
-      messages: [
-        {
-          key: fsmOrderId,
-          value: JSON.stringify(fsmEvent),
-          headers: {
-            'correlation-id': correlationId,
-            'event-type': 'SERVICE_ORDER_CREATED',
-            'source-system': salesSystem,
-          },
-        },
-      ],
-    });
+    await this.kafkaService.send(
+      'fsm.service_order.created',
+      fsmEvent,
+      fsmOrderId,
+      {
+        'correlation-id': correlationId,
+        'event-type': 'SERVICE_ORDER_CREATED',
+        'source-system': salesSystem,
+      },
+    );
 
     this.logger.log(
       `Successfully mapped and published SERVICE_ORDER_CREATED event for ${fsmOrderId}`,
@@ -141,20 +137,16 @@ export class EventMappingService {
     };
 
     // Publish to Kafka topic for sales system integration
-    await this.kafkaService.send({
-      topic: `sales.${salesSystem.toLowerCase()}.status_update`,
-      messages: [
-        {
-          key: externalOrderId,
-          value: JSON.stringify(salesEvent),
-          headers: {
-            'correlation-id': correlationId,
-            'event-type': 'SERVICE_ORDER_STATUS_UPDATED',
-            'target-system': salesSystem,
-          },
-        },
-      ],
-    });
+    await this.kafkaService.send(
+      `sales.${salesSystem.toLowerCase()}.status_update`,
+      salesEvent,
+      externalOrderId,
+      {
+        'correlation-id': correlationId,
+        'event-type': 'SERVICE_ORDER_STATUS_UPDATED',
+        'target-system': salesSystem,
+      },
+    );
 
     this.logger.log(
       `Successfully published status update event to sales system ${salesSystem}`,

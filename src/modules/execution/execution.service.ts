@@ -193,7 +193,7 @@ export class ExecutionService {
     });
 
     // Determine final state based on completion status
-    let finalState = ServiceOrderState.COMPLETED;
+    let finalState: ServiceOrderState = ServiceOrderState.COMPLETED;
     if (dto.completionStatus === 'INCOMPLETE' || dto.completionStatus === 'PARTIALLY_COMPLETED') {
       finalState = ServiceOrderState.IN_PROGRESS; // Keep in progress if not fully complete
     } else if (dto.completionStatus === 'CANCELLED') {

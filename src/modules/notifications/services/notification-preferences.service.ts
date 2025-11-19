@@ -75,13 +75,18 @@ export class NotificationPreferencesService {
   async updatePreferences(data: NotificationPreferenceData) {
     const { userId, ...updateData } = data;
 
+    const dataToSave = {
+      ...updateData,
+      eventPreferences: updateData.eventPreferences as any,
+    };
+
     return this.prisma.notificationPreference.upsert({
       where: { userId },
       create: {
         userId,
-        ...updateData,
+        ...dataToSave,
       },
-      update: updateData,
+      update: dataToSave,
     });
   }
 

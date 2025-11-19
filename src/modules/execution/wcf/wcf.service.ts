@@ -94,7 +94,7 @@ export class WcfService {
         businessUnit: serviceOrder.businessUnit,
 
         // Party information from DTO and service order
-        customerInfo: serviceOrder.customerInfo,
+        customerInfo: serviceOrder.customerInfo as any,
         technicianInfo: {
           name: dto.technicianName || 'Unknown Technician',
         },
@@ -105,7 +105,7 @@ export class WcfService {
 
         // Service execution details
         serviceDate: new Date(),
-        serviceLocation: serviceOrder.serviceAddress,
+        serviceLocation: serviceOrder.serviceAddress as any,
 
         // Work performed - stub for now
         workSummary: 'Work completion pending customer acceptance',
@@ -177,7 +177,7 @@ export class WcfService {
           signerEmail: (existing.customerInfo as any)?.email,
           signatureMethod: SignatureMethod.DRAWN,
           signatureDataUrl: dto.signatureDataUrl,
-          status: SignatureStatus.COMPLETED,
+          status: SignatureStatus.SIGNED,
           signedAt: new Date(),
         },
       });

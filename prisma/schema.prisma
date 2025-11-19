@@ -1946,7 +1946,9 @@ enum WcfSignerType {
   TECHNICIAN
   PROVIDER_MANAGER
   QUALITY_INSPECTOR
-}// ============================================================================
+}
+
+// ============================================================================
 // NOTIFICATION & COMMUNICATION MODULE
 // ============================================================================
 
@@ -2248,7 +2250,7 @@ model SyncOperation {
 
   // Result
   status              SyncOperationStatus
-  errorMessage        String?  @map("error_message") @db.Text
+  errorMessage    String?  @map("error_message") @db.Text
 
   createdAt           DateTime @default(now()) @map("created_at")
 
@@ -2285,4 +2287,74 @@ enum ConflictResolution {
   MERGED              // Fields merged intelligently
   LAST_WRITE_WINS     // Timestamp-based resolution
   MANUAL              // Requires manual intervention
+}
+
+// ============================================================================
+// EXECUTION MODULE (Phase 3)
+// ============================================================================
+
+model ServiceOrderCheckIn {
+  id                String   @id @default(uuid())
+  serviceOrderId    String   @map("service_order_id")
+  providerId        String   @map("provider_id")
+  workTeamId        String?  @map("work_team_id")
+  technicianUserId  String   @map("technician_user_id")
+
+  // Location
+  lat               Float
+  lng               Float
+  accuracy          Float?
+
+  // Timing
+  occurredAt        DateTime @map("occurred_at")
+  notes             String?  @db.Text
+
+  // Relations
+  // serviceOrder      ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  // provider          Provider     @relation(fields: [providerId], references: [id])
+  // technician        User         @relation(fields: [technicianUserId], references: [id])
+
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([serviceOrderId])
+  @@index([technicianUserId])
+  @@map("service_order_check_ins")
+}
+
+model ServiceOrderCheckOut {
+  id                String   @id @default(uuid())
+  serviceOrderId    String   @map("service_order_id")
+  technicianUserId  String   @map("technician_user_id")
+
+  // Timing
+  occurredAt        DateTime @map("occurred_at")
+  durationMinutes   Int      @map("duration_minutes")
+  breakTimeMinutes  Int      @default(0) @map("break_time_minutes")
+  travelTimeMinutes Int      @default(0) @map("travel_time_minutes")
+
+  // Calculated metrics
+  totalHours        Decimal  @map("total_hours") @db.Decimal(10, 2)
+  billableHours     Decimal  @map("billable_hours") @db.Decimal(10, 2)
+  regularHours      Decimal  @map("regular_hours") @db.Decimal(10, 2)
+  overtimeHours     Decimal  @map("overtime_hours") @db.Decimal(10, 2)
+  isMultiDay        Boolean  @default(false) @map("is_multi_day")
+
+  // Completion details
+  completionStatus  String   @map("completion_status") @db.VarChar(50)
+  workSummary       Json?    @map("work_summary")
+  materialsUsed     Json?    @map("materials_used")
+  
+  // Signatures & Location
+  customerSignature Json?    @map("customer_signature")
+  technicianSignature Json?  @map("technician_signature")
+  location          Json?    @map("location")
+  
+  notes             String?  @db.Text
+  warnings          Json?    @map("warnings")
+
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([serviceOrderId])
+  @@index([technicianUserId])
+  @@map("service_order_check_outs")
 }

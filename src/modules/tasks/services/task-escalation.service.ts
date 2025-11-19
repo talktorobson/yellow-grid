@@ -74,21 +74,17 @@ export class TaskEscalationService {
     });
 
     // Publish escalation event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.escalated',
-      messages: [
-        {
-          key: taskId,
-          value: JSON.stringify({
-            eventType: 'TASK_ESCALATED',
-            taskId,
-            escalationLevel: level,
-            escalatedAt: new Date().toISOString(),
-            escalationReason: reason,
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.escalated',
+      {
+        eventType: 'TASK_ESCALATED',
+        taskId,
+        escalationLevel: level,
+        escalatedAt: new Date().toISOString(),
+        escalationReason: reason,
+      },
+      taskId,
+    );
 
     // TODO: Send notifications based on escalation level
     // Level 1: Notify assigned operator

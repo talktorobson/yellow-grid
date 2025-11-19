@@ -40,7 +40,7 @@ export class NotificationsService {
   /**
    * Send a notification
    */
-  async sendNotification(options: SendNotificationOptions): Promise<string> {
+  async sendNotification(options: SendNotificationOptions): Promise<string | null> {
     const {
       templateCode,
       recipientId,
@@ -120,7 +120,7 @@ export class NotificationsService {
         case 'EMAIL':
           result = await this.sendEmailNotification(
             recipientEmail,
-            rendered.subject,
+            rendered.subject || 'Notification',
             rendered.body,
           );
           break;
@@ -171,7 +171,7 @@ export class NotificationsService {
    * Send email notification
    */
   private async sendEmailNotification(
-    to: string,
+    to: string | undefined,
     subject: string,
     html: string,
   ): Promise<EmailResult> {
@@ -194,7 +194,7 @@ export class NotificationsService {
    * Send SMS notification
    */
   private async sendSmsNotification(
-    to: string,
+    to: string | undefined,
     body: string,
   ): Promise<SmsResult> {
     if (!to) {
@@ -243,7 +243,7 @@ export class NotificationsService {
       ? 'communications.notification.sent'
       : 'communications.notification.failed';
 
-    await this.kafka.publish(eventType, {
+    await this.kafka.send(eventType, {
       notificationId: notification.id,
       channel: notification.channel,
       eventType: notification.eventType,
@@ -285,7 +285,7 @@ export class NotificationsService {
       where: {
         recipientId: userId,
         ...(channel && { channel }),
-        ...(status && { status }),
+        ...(status && { status: status as any }),
       },
       orderBy: {
         createdAt: 'desc',
@@ -314,18 +314,18 @@ export class NotificationsService {
     // Create new notification with same data
     return this.sendNotification({
       templateCode: notification.eventType,
-      recipientId: notification.recipientId,
-      recipientEmail: notification.recipientEmail,
-      recipientPhone: notification.recipientPhone,
-      recipientName: notification.recipientName,
+      recipientId: notification.recipientId || undefined,
+      recipientEmail: notification.recipientEmail || undefined,
+      recipientPhone: notification.recipientPhone || undefined,
+      recipientName: notification.recipientName || undefined,
       channel: notification.channel as any,
       eventType: notification.eventType,
       language: notification.language,
       variables: notification.variables as Record<string, any>,
-      contextType: notification.contextType,
-      contextId: notification.contextId,
-      countryCode: notification.countryCode,
-      businessUnit: notification.businessUnit,
+      contextType: notification.contextType || undefined,
+      contextId: notification.contextId || undefined,
+      countryCode: notification.countryCode || undefined,
+      businessUnit: notification.businessUnit || undefined,
       priority: notification.priority as any,
       metadata: notification.metadata as Record<string, any>,
     });

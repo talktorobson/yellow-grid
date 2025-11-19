@@ -416,7 +416,7 @@ export class TechnicalVisitsService {
       > = {
         tv_service_order_id: tvOutcome.tvServiceOrderId,
         linked_installation_order_id: tvOutcome.linkedInstallationOrderId,
-        outcome: outcomeMap[tvOutcome.outcome],
+        outcome: outcomeMap[tvOutcome.outcome as TvOutcome],
         modifications: tvOutcome.modifications
           ? tvOutcome.modifications.map((mod: any) => ({
               description: mod.description,

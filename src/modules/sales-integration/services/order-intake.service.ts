@@ -13,7 +13,7 @@ import {
   ValidationResult,
   HealthStatus,
 } from '../interfaces';
-import { KafkaService } from '../../../common/kafka/kafka.service';
+import { KafkaProducerService } from '../../../common/kafka/kafka-producer.service';
 import { RedisService } from '../../../common/redis/redis.service';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class OrderIntakeService
   private readonly logger = new Logger(OrderIntakeService.name);
 
   constructor(
-    private readonly kafkaService: KafkaService,
+    private readonly kafkaService: KafkaProducerService,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
   ) {}
@@ -46,13 +46,12 @@ export class OrderIntakeService
     const idempotencyKey = this.generateIdempotencyKey(request, context);
 
     // Check if already processed (idempotency)
-    const existingResult =
-      await this.redisService.get<OrderIntakeResponseDto>(idempotencyKey);
-    if (existingResult) {
+    const existingResultJson = await this.redisService.get(idempotencyKey);
+    if (existingResultJson) {
       this.logger.log(
         `Idempotent request detected for order: ${request.externalOrderId}`,
       );
-      return existingResult;
+      return JSON.parse(existingResultJson) as OrderIntakeResponseDto;
     }
 
     // Validate request
@@ -85,10 +84,10 @@ export class OrderIntakeService
     };
 
     // Store in Redis for idempotency (TTL: 24 hours)
-    await this.redisService.setex(
+    await this.redisService.set(
       idempotencyKey,
-      24 * 60 * 60,
       JSON.stringify(response),
+      24 * 60 * 60,
     );
 
     this.logger.log(
@@ -194,7 +193,7 @@ export class OrderIntakeService
 
     try {
       // Check Kafka connectivity
-      const kafkaHealthy = await this.kafkaService.ping();
+      const kafkaHealthy = this.kafkaService.isProducerConnected();
       const latency = Date.now() - start;
 
       return {
@@ -235,20 +234,16 @@ export class OrderIntakeService
       orderData: request,
     };
 
-    await this.kafkaService.send({
-      topic: 'sales.order.intake',
-      messages: [
-        {
-          key: orderId,
-          value: JSON.stringify(event),
-          headers: {
-            'correlation-id': context.correlationId,
-            'tenant-id': context.tenantId,
-            'event-type': 'OrderIntakeReceived',
-          },
-        },
-      ],
-    });
+    await this.kafkaService.send(
+      'sales.order.intake',
+      event,
+      orderId,
+      {
+        'correlation-id': context.correlationId,
+        'tenant-id': context.tenantId,
+        'event-type': 'OrderIntakeReceived',
+      },
+    );
 
     this.logger.log(
       `Published order intake event to Kafka. Order ID: ${orderId}`,

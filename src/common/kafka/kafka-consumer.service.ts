@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Kafka, Consumer, EachMessagePayload, ConsumerConfig, KafkaMessage } from 'kafkajs';
+// import { Kafka, Consumer, EachMessagePayload, ConsumerConfig, KafkaMessage } from 'kafkajs';
+const { Kafka } = require('kafkajs');
 import { KafkaProducerService } from './kafka-producer.service';
 
 /**
@@ -8,7 +9,7 @@ import { KafkaProducerService } from './kafka-producer.service';
 export type MessageHandler = (payload: {
   topic: string;
   partition: number;
-  message: KafkaMessage;
+  message: any;
   data: any;
   headers: Record<string, string>;
 }) => Promise<void>;
@@ -43,8 +44,8 @@ export interface ConsumerSubscription {
 @Injectable()
 export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaConsumerService.name);
-  private kafka: Kafka;
-  private consumers: Map<string, Consumer> = new Map();
+  private kafka: any;
+  private consumers: Map<string, any> = new Map();
   private isEnabled: boolean;
 
   constructor(private readonly producerService: KafkaProducerService) {
@@ -143,7 +144,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
       await consumer.run({
         autoCommit,
         autoCommitInterval: 5000,
-        eachMessage: async (payload: EachMessagePayload) => {
+        eachMessage: async (payload: any) => {
           await this.handleMessage(payload, handler, groupId);
         },
       });
@@ -166,7 +167,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
    * @param groupId - Consumer group ID
    */
   private async handleMessage(
-    payload: EachMessagePayload,
+    payload: any,
     handler: MessageHandler,
     groupId: string,
   ): Promise<void> {
@@ -235,7 +236,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     partition: number;
     offset: string;
     key: string | undefined;
-    message: KafkaMessage;
+    message: any;
     error: any;
     groupId: string;
     correlationId: string | undefined;
@@ -397,7 +398,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   /**
    * Extract all headers from Kafka message
    */
-  private extractHeaders(message: KafkaMessage): Record<string, string> {
+  private extractHeaders(message: any): Record<string, string> {
     const headers: Record<string, string> = {};
 
     if (!message.headers) {
@@ -416,7 +417,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   /**
    * Extract a specific header from Kafka message
    */
-  private extractHeader(message: KafkaMessage, headerKey: string): string | undefined {
+  private extractHeader(message: any, headerKey: string): string | undefined {
     if (!message.headers || !message.headers[headerKey]) {
       return undefined;
     }

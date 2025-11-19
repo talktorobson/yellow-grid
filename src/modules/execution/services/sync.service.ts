@@ -46,11 +46,11 @@ export class SyncService {
     // Process client changes in a transaction
     await this.prisma.$transaction(async (tx) => {
       // Process service order changes
-      if (request.serviceOrders?.length > 0) {
+      if (request.serviceOrders && request.serviceOrders.length > 0) {
         const result = await this.processServiceOrderChanges(
           tx,
           request.serviceOrders,
-          request.conflictResolutionStrategy,
+          request.conflictResolutionStrategy || ConflictResolutionStrategy.SERVER_WINS,
           userId,
         );
         conflicts.push(...result.conflicts);
@@ -59,21 +59,21 @@ export class SyncService {
       }
 
       // Process time entry changes (check-ins/outs)
-      if (request.timeEntries?.length > 0) {
+      if (request.timeEntries && request.timeEntries.length > 0) {
         const result = await this.processTimeEntryChanges(tx, request.timeEntries, userId);
         appliedChanges.timeEntriesCreated += result.successCount;
         appliedChanges.operationsFailed += result.failureCount;
       }
 
       // Process task updates
-      if (request.taskUpdates?.length > 0) {
+      if (request.taskUpdates && request.taskUpdates.length > 0) {
         const result = await this.processTaskUpdates(tx, request.taskUpdates, userId);
         appliedChanges.tasksUpdated += result.successCount;
         appliedChanges.operationsFailed += result.failureCount;
       }
 
       // Process media upload references
-      if (request.mediaUploads?.length > 0) {
+      if (request.mediaUploads && request.mediaUploads.length > 0) {
         const result = await this.processMediaUploadReferences(request.mediaUploads);
         pendingUploads.push(...result.pendingUploads);
         appliedChanges.mediaPendingUpload += result.pendingUploads.length;

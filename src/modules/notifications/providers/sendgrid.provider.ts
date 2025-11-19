@@ -67,7 +67,7 @@ export class SendGridProvider {
     try {
       this.logger.log(`Sending email to ${options.to}`);
 
-      const msg: sgMail.MailDataRequired = {
+      const msg = {
         to: options.to,
         from: options.from || {
           email: this.fromEmail,
@@ -81,7 +81,7 @@ export class SendGridProvider {
         attachments: options.attachments,
       };
 
-      const [response] = await sgMail.send(msg);
+      const [response] = await sgMail.send(msg as any);
 
       this.logger.log(
         `Email sent successfully. Message ID: ${response.headers['x-message-id']}`,

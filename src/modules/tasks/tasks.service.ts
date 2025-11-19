@@ -76,11 +76,11 @@ export class TasksService {
 
     if (!assignedTo) {
       // Auto-assign
-      assignedTo = await this.assignmentService.autoAssignTask(
+      assignedTo = (await this.assignmentService.autoAssignTask(
         createTaskDto.serviceOrderId, // temporary ID
         createTaskDto.taskType,
         serviceOrder.countryCode,
-      );
+      )) || undefined;
       assignedBy = 'SYSTEM';
     }
 
@@ -111,25 +111,21 @@ export class TasksService {
     }
 
     // Publish event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.created',
-      messages: [
-        {
-          key: task.id,
-          value: JSON.stringify({
-            eventType: 'TASK_CREATED',
-            taskId: task.id,
-            taskType: task.taskType,
-            priority: task.priority,
-            serviceOrderId: task.serviceOrderId,
-            context: task.context,
-            slaDeadline: task.slaDeadline.toISOString(),
-            countryCode: task.countryCode,
-            businessUnit: task.businessUnit,
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.created',
+      {
+        eventType: 'TASK_CREATED',
+        taskId: task.id,
+        taskType: task.taskType,
+        priority: task.priority,
+        serviceOrderId: task.serviceOrderId,
+        context: task.context,
+        slaDeadline: task.slaDeadline.toISOString(),
+        countryCode: task.countryCode,
+        businessUnit: task.businessUnit,
+      },
+      task.id,
+    );
 
     this.logger.log(`Task ${task.id} created for service order ${task.serviceOrderId}`);
 
@@ -299,21 +295,17 @@ export class TasksService {
     });
 
     // Publish event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.assigned',
-      messages: [
-        {
-          key: id,
-          value: JSON.stringify({
-            eventType: 'TASK_ASSIGNED',
-            taskId: id,
-            assignedTo: assignTaskDto.assignedTo,
-            assignedBy,
-            assignedAt: new Date().toISOString(),
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.assigned',
+      {
+        eventType: 'TASK_ASSIGNED',
+        taskId: id,
+        assignedTo: assignTaskDto.assignedTo,
+        assignedBy,
+        assignedAt: new Date().toISOString(),
+      },
+      id,
+    );
 
     return updatedTask;
   }
@@ -342,20 +334,16 @@ export class TasksService {
     await this.auditService.logAction(id, 'STARTED', startedBy);
 
     // Publish event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.started',
-      messages: [
-        {
-          key: id,
-          value: JSON.stringify({
-            eventType: 'TASK_STARTED',
-            taskId: id,
-            startedBy,
-            startedAt: new Date().toISOString(),
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.started',
+      {
+        eventType: 'TASK_STARTED',
+        taskId: id,
+        startedBy,
+        startedAt: new Date().toISOString(),
+      },
+      id,
+    );
 
     return updatedTask;
   }
@@ -400,24 +388,20 @@ export class TasksService {
     );
 
     // Publish event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.completed',
-      messages: [
-        {
-          key: id,
-          value: JSON.stringify({
-            eventType: 'TASK_COMPLETED',
-            taskId: id,
-            taskType: task.taskType,
-            completedBy,
-            completedAt: completedAt.toISOString(),
-            resolutionTime,
-            withinSLA,
-            serviceOrderId: task.serviceOrderId,
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.completed',
+      {
+        eventType: 'TASK_COMPLETED',
+        taskId: id,
+        taskType: task.taskType,
+        completedBy,
+        completedAt: completedAt.toISOString(),
+        resolutionTime,
+        withinSLA,
+        serviceOrderId: task.serviceOrderId,
+      },
+      id,
+    );
 
     this.logger.log(`Task ${id} completed by ${completedBy} (within SLA: ${withinSLA})`);
 
@@ -456,21 +440,17 @@ export class TasksService {
     );
 
     // Publish event
-    await this.kafkaProducer.produce({
-      topic: 'tasks.task.cancelled',
-      messages: [
-        {
-          key: id,
-          value: JSON.stringify({
-            eventType: 'TASK_CANCELLED',
-            taskId: id,
-            cancelledBy,
-            cancelledAt: new Date().toISOString(),
-            cancellationReason: cancelTaskDto.cancellationReason,
-          }),
-        },
-      ],
-    });
+    await this.kafkaProducer.send(
+      'tasks.task.cancelled',
+      {
+        eventType: 'TASK_CANCELLED',
+        taskId: id,
+        cancelledBy,
+        cancelledAt: new Date().toISOString(),
+        cancellationReason: cancelTaskDto.cancellationReason,
+      },
+      id,
+    );
 
     return updatedTask;
   }

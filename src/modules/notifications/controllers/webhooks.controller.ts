@@ -61,7 +61,7 @@ export class WebhooksController {
         await this.prisma.notification.update({
           where: { id: notification.id },
           data: {
-            status,
+            status: status as any,
             ...(body.MessageStatus === 'delivered' && {
               deliveredAt: new Date(),
             }),

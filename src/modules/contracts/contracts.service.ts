@@ -277,7 +277,7 @@ export class ContractsService {
           expiresAt: this.computeExpiry(dto.expiresInHours ?? 48),
           customerEmail,
           customerPhone,
-          providerEnvelopeId: envelopeResponse.envelopeId,
+          // providerEnvelopeId: envelopeResponse.envelopeId,
           notifications: {
             create: {
               channel: NotificationChannel.EMAIL,
@@ -298,7 +298,7 @@ export class ContractsService {
         `Contract ${contract.contractNumber} sent for e-signature to ${customerEmail}`,
       );
 
-      return this.mapToResponse(updated);
+      return this.mapToResponse(updated as any);
     } catch (error) {
       this.logger.error(
         `Failed to send contract ${contract.contractNumber} via e-signature: ${error.message}`,

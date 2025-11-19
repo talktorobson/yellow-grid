@@ -37,11 +37,10 @@ export class SlotAvailabilityService
 
     // Check cache first
     const cacheKey = this.generateCacheKey(request);
-    const cached =
-      await this.redisService.get<SlotAvailabilityResponseDto>(cacheKey);
-    if (cached) {
+    const cachedJson = await this.redisService.get(cacheKey);
+    if (cachedJson) {
       this.logger.log('Returning cached slot availability');
-      return cached;
+      return JSON.parse(cachedJson) as SlotAvailabilityResponseDto;
     }
 
     // Validate request
@@ -63,10 +62,10 @@ export class SlotAvailabilityService
     };
 
     // Cache for 5 minutes
-    await this.redisService.setex(
+    await this.redisService.set(
       cacheKey,
-      this.CACHE_TTL,
       JSON.stringify(response),
+      this.CACHE_TTL,
     );
 
     return response;

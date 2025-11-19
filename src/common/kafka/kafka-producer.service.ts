@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Kafka, Producer, ProducerRecord, RecordMetadata } from 'kafkajs';
+// import { Kafka, type Producer, type ProducerRecord, type RecordMetadata } from 'kafkajs';
+const { Kafka } = require('kafkajs');
 
 /**
  * Kafka Producer Service
@@ -16,8 +17,8 @@ import { Kafka, Producer, ProducerRecord, RecordMetadata } from 'kafkajs';
 @Injectable()
 export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaProducerService.name);
-  private kafka: Kafka;
-  private producer: Producer;
+  private kafka: any;
+  private producer: any;
   private isConnected = false;
 
   constructor() {
@@ -89,7 +90,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     message: any,
     key?: string,
     headers?: Record<string, string>,
-  ): Promise<RecordMetadata[] | null> {
+  ): Promise<any[] | null> {
     if (!this.isConnected) {
       this.logger.warn(
         `⚠️  Kafka producer not connected, skipping message to topic: ${topic}`,
@@ -134,7 +135,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
       key?: string;
       headers?: Record<string, string>;
     }>,
-  ): Promise<RecordMetadata[] | null> {
+  ): Promise<any[] | null> {
     if (!this.isConnected) {
       this.logger.warn(
         `⚠️  Kafka producer not connected, skipping batch to topic: ${topic}`,
@@ -180,7 +181,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     eventName: string,
     eventData: any,
     correlationId?: string,
-  ): Promise<RecordMetadata[] | null> {
+  ): Promise<any[] | null> {
     const [domain, entity] = eventName.split('.');
     const topic = this.getTopicName(domain);
 

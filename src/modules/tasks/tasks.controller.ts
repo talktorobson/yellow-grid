@@ -45,7 +45,7 @@ export class TasksController {
     status: 400,
     description: 'Bad request - duplicate task or invalid service order',
   })
-  async create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
+  async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
     return this.tasksService.create(createTaskDto, req.user.userId);
   }
 
@@ -65,7 +65,7 @@ export class TasksController {
     status: 200,
     description: 'Dashboard data retrieved successfully',
   })
-  async getOperatorDashboard(@Request() req) {
+  async getOperatorDashboard(@Request() req: any) {
     return this.tasksService.getOperatorDashboard(req.user.userId);
   }
 
@@ -94,7 +94,7 @@ export class TasksController {
   async update(
     @Param('id') id: string,
     @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req,
+    @Request() req: any,
   ) {
     return this.tasksService.update(id, updateTaskDto, req.user.userId);
   }
@@ -113,7 +113,7 @@ export class TasksController {
   async assign(
     @Param('id') id: string,
     @Body() assignTaskDto: AssignTaskDto,
-    @Request() req,
+    @Request() req: any,
   ) {
     return this.tasksService.assign(id, assignTaskDto, req.user.userId);
   }
@@ -130,7 +130,7 @@ export class TasksController {
     status: 400,
     description: 'Cannot start task in current status',
   })
-  async start(@Param('id') id: string, @Request() req) {
+  async start(@Param('id') id: string, @Request() req: any) {
     return this.tasksService.start(id, req.user.userId);
   }
 
@@ -149,7 +149,7 @@ export class TasksController {
   async complete(
     @Param('id') id: string,
     @Body() completeTaskDto: CompleteTaskDto,
-    @Request() req,
+    @Request() req: any,
   ) {
     return this.tasksService.complete(id, completeTaskDto, req.user.userId);
   }
@@ -169,7 +169,7 @@ export class TasksController {
   async cancel(
     @Param('id') id: string,
     @Body() cancelTaskDto: CancelTaskDto,
-    @Request() req,
+    @Request() req: any,
   ) {
     return this.tasksService.cancel(id, cancelTaskDto, req.user.userId);
   }

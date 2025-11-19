@@ -55,10 +55,10 @@ export class TechnicalVisitsController {
     description: 'TV service order or linked installation not found',
   })
   async recordOutcome(
-    @Body() recordDto: RecordTvOutcomeDto,
-    @CurrentUser('sub') userId: string,
+    @Body() dto: RecordTvOutcomeDto,
+    @CurrentUser('userId') userId: string,
   ): Promise<TvOutcomeResponseDto> {
-    return this.technicalVisitsService.recordOutcome(recordDto, userId);
+    return this.technicalVisitsService.recordOutcome(dto, userId);
   }
 
   @Get('outcomes/:outcomeId')
@@ -137,12 +137,9 @@ export class TechnicalVisitsController {
   })
   async linkInstallation(
     @Param('tvServiceOrderId') tvServiceOrderId: string,
-    @Body() linkDto: LinkInstallationDto,
+    @Body() dto: LinkInstallationDto,
   ): Promise<TvOutcomeResponseDto> {
-    return this.technicalVisitsService.linkInstallation(
-      tvServiceOrderId,
-      linkDto,
-    );
+    return this.technicalVisitsService.linkInstallation(tvServiceOrderId, dto);
   }
 
   @Patch('outcomes/:outcomeId/approve-scope-change')
@@ -172,7 +169,7 @@ export class TechnicalVisitsController {
   })
   async approveScopeChange(
     @Param('outcomeId') outcomeId: string,
-    @CurrentUser('sub') userId: string,
+    @CurrentUser('userId') userId: string,
   ): Promise<TvOutcomeResponseDto> {
     return this.technicalVisitsService.approveScopeChange(outcomeId, userId);
   }

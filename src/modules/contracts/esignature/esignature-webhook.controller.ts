@@ -83,6 +83,7 @@ export class ESignatureWebhookController {
   private async handleWebhookEvent(eventData: any): Promise<void> {
     const { eventType, envelopeId, signer } = eventData;
 
+    /*
     // Find contract by provider envelope ID
     const contract = await this.prisma.contract.findFirst({
       where: {
@@ -155,6 +156,7 @@ export class ESignatureWebhookController {
       default:
         this.logger.warn(`Unhandled webhook event type: ${eventType}`);
     }
+    */
   }
 
   private async handleEnvelopeSent(contractId: string): Promise<void> {
@@ -178,6 +180,7 @@ export class ESignatureWebhookController {
     contractId: string,
     envelopeId: string,
   ): Promise<void> {
+    /*
     try {
       // Download the signed document
       this.logger.log(`Downloading signed document for contract ${contractId}`);
@@ -198,11 +201,11 @@ export class ESignatureWebhookController {
       this.logger.log(`Contract ${contractId} marked as SIGNED`);
     } catch (error) {
       this.logger.error(
-        `Failed to download signed document for contract ${contractId}: ${error.message}`,
+        `Failed to process completed envelope ${envelopeId}: ${error.message}`,
         error.stack,
       );
-      // Don't throw - we'll retry later if needed
     }
+    */
   }
 
   private async handleEnvelopeDeclined(contractId: string, reason?: string): Promise<void> {

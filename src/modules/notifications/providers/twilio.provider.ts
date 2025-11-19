@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as twilio from 'twilio';
+import twilio from 'twilio';
 
 export interface SendSmsOptions {
   to: string;
@@ -25,7 +25,7 @@ export class TwilioProvider {
   constructor(private readonly configService: ConfigService) {
     const accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     const authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
-    this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER');
+    this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER') || '';
     this.enabled = this.configService.get<boolean>('TWILIO_ENABLED', false);
 
     if (this.enabled && accountSid && authToken) {

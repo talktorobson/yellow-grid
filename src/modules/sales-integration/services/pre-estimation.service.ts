@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { KafkaService } from '../../../common/kafka/kafka.service';
+import { KafkaProducerService } from '../../../common/kafka/kafka-producer.service';
 import { PreEstimationCreatedEventDto } from '../dto';
 
 @Injectable()
 export class PreEstimationService {
   private readonly logger = new Logger(PreEstimationService.name);
 
-  constructor(private readonly kafkaService: KafkaService) {}
+  constructor(private readonly kafkaService: KafkaProducerService) {}
 
   /**
    * Process pre-estimation created event from sales system
@@ -42,25 +42,19 @@ export class PreEstimationService {
       `Linking pre-estimation ${preEstimationId} to service order ${serviceOrderId}`,
     );
 
-    // Publish event to trigger AI sales potential assessment
-    await this.kafkaService.send({
-      topic: 'fsm.service_order.pre_estimation_linked',
-      messages: [
-        {
-          key: serviceOrderId,
-          value: JSON.stringify({
-            eventId: this.generateEventId(),
-            eventType: 'PRE_ESTIMATION_LINKED',
-            timestamp: new Date().toISOString(),
-            serviceOrderId,
-            preEstimationId,
-          }),
-          headers: {
-            'event-type': 'PRE_ESTIMATION_LINKED',
-          },
-        },
-      ],
-    });
+        // Publish event to trigger AI sales potential assessment
+    await this.kafkaService.send(
+      'fsm.service_order.pre_estimation_linked',
+      {
+        preEstimationId,
+        serviceOrderId,
+        timestamp: new Date().toISOString(),
+      },
+      serviceOrderId,
+      {
+        'event-type': 'PRE_ESTIMATION_LINKED',
+      },
+    );
 
     this.logger.log(
       `Pre-estimation linked successfully. Triggering sales potential assessment.`,
@@ -93,19 +87,15 @@ export class PreEstimationService {
   private async publishPreEstimationEvent(
     event: PreEstimationCreatedEventDto,
   ): Promise<void> {
-    await this.kafkaService.send({
-      topic: 'sales.pre_estimation.created',
-      messages: [
-        {
-          key: event.preEstimationId,
-          value: JSON.stringify(event),
-          headers: {
-            'event-type': 'PRE_ESTIMATION_CREATED',
-            'sales-system': event.salesSystemSource,
-          },
-        },
-      ],
-    });
+    await this.kafkaService.send(
+      'sales.pre_estimation.created',
+      event,
+      event.preEstimationId,
+      {
+        'event-type': 'PRE_ESTIMATION_CREATED',
+        'sales-system': event.salesSystemSource,
+      },
+    );
 
     this.logger.log(
       `Published pre-estimation created event to Kafka: ${event.preEstimationId}`,

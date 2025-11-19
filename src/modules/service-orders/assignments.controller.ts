@@ -86,6 +86,7 @@ export class AssignmentsController {
   })
   @ApiResponse({ status: 404, description: 'Assignment or funnel data not found' })
   async getFunnel(@Param('id') id: string): Promise<AssignmentFunnelResponseDto> {
-    return this.assignmentsService.getAssignmentFunnel(id);
+    const result = await this.assignmentsService.getAssignmentFunnel(id);
+    return result as unknown as AssignmentFunnelResponseDto;
   }
 }
