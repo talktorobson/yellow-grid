@@ -58,6 +58,12 @@ export interface ServiceOrder {
   scheduledDate?: ISODateString;
   estimatedDuration?: number;
 
+  // Customer information
+  customerName?: string;
+  customerAddress?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+
   // AI features
   salesPotential?: SalesPotential;
   salesPotentialScore?: number;

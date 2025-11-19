@@ -62,8 +62,7 @@ describe('AvailabilityHeatmap', () => {
     expect(screen.getByText('Fri')).toBeInTheDocument();
   });
 
-  // TODO: Fix date button click handler - need to identify correct date button selector
-  it.skip('should call onDateClick when date is clicked', () => {
+  it('should call onDateClick when date is clicked', () => {
     const onDateClick = vi.fn();
 
     render(
@@ -75,15 +74,15 @@ describe('AvailabilityHeatmap', () => {
       />
     );
 
-    // Find a date button and click it
+    // Find date buttons (should be calendar dates within range)
     const dateButtons = screen.queryAllByRole('button');
-    if (dateButtons.length > 0) {
-      dateButtons[0].click();
-      expect(onDateClick).toHaveBeenCalled();
-    } else {
-      // If no buttons, test passes (component may not have clickable dates)
-      expect(onDateClick).not.toHaveBeenCalled();
-    }
+    expect(dateButtons.length).toBeGreaterThan(0);
+
+    // Click a button that's enabled (not disabled)
+    const enabledButton = dateButtons.find((button) => !button.hasAttribute('disabled'));
+    expect(enabledButton).toBeDefined();
+    enabledButton!.click();
+    expect(onDateClick).toHaveBeenCalled();
   });
 
   it('should handle empty availability data', () => {

@@ -41,27 +41,21 @@ describe('ServiceOrderDetailPage', () => {
     }, { timeout: 3000 });
   });
 
-  // TODO: Implement customer information display in component
-  it.skip('should display customer information', async () => {
+  it('should display customer information', async () => {
     renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
-      const customerNames = screen.getAllByText(/Marie Dubois/i);
-      const addresses = screen.getAllByText(/123 Rue de Rivoli/i);
-      expect(customerNames.length).toBeGreaterThan(0);
-      expect(addresses.length).toBeGreaterThan(0);
+      expect(screen.getByText(/Marie Dubois/i)).toBeInTheDocument();
+      expect(screen.getByText(/123 Rue de Rivoli/i)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
-  // TODO: Implement AI sales potential display in component
-  it.skip('should show AI sales potential assessment', async () => {
+  it('should show AI sales potential assessment', async () => {
     renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
-      const salesPotential = screen.getAllByText(/Sales Potential/i);
-      const high = screen.getAllByText(/HIGH/i);
-      expect(salesPotential.length).toBeGreaterThan(0);
-      expect(high.length).toBeGreaterThan(0);
+      expect(screen.getByText(/Sales Potential/i)).toBeInTheDocument();
+      expect(screen.getByText(/HIGH/i)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
@@ -78,9 +72,9 @@ describe('ServiceOrderDetailPage', () => {
     renderWithRouter('/service-orders/so-1');
 
     await waitFor(() => {
-      const installations = screen.getAllByText(/Installation/i);
+      const technicalVisits = screen.getAllByText(/TECHNICAL_VISIT/i);
       const scheduled = screen.getAllByText(/SCHEDULED/i);
-      expect(installations.length).toBeGreaterThan(0);
+      expect(technicalVisits.length).toBeGreaterThan(0);
       expect(scheduled.length).toBeGreaterThan(0);
     }, { timeout: 3000 });
   });

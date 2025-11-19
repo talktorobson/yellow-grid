@@ -23,8 +23,8 @@ describe('ServiceOrdersPage', () => {
     render(<ServiceOrdersPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Installation/i)).toBeInTheDocument();
-      expect(screen.getByText(/Technical Visit/i)).toBeInTheDocument();
+      expect(screen.getByText(/INSTALLATION/i)).toBeInTheDocument();
+      expect(screen.getByText(/TECHNICAL_VISIT/i)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 

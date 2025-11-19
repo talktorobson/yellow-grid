@@ -133,6 +133,39 @@ export default function ServiceOrderDetailPage() {
             </dl>
           </div>
 
+          {/* Customer Information */}
+          {(order.customerName || order.customerAddress || order.customerPhone || order.customerEmail) && (
+            <div className="card">
+              <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
+              <dl className="grid grid-cols-2 gap-4">
+                {order.customerName && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Customer Name</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{order.customerName}</dd>
+                  </div>
+                )}
+                {order.customerPhone && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Phone</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{order.customerPhone}</dd>
+                  </div>
+                )}
+                {order.customerAddress && (
+                  <div className="col-span-2">
+                    <dt className="text-sm font-medium text-gray-500">Address</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{order.customerAddress}</dd>
+                  </div>
+                )}
+                {order.customerEmail && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Email</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{order.customerEmail}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
+
           {/* AI Sales Potential Assessment */}
           {order.serviceType === 'TECHNICAL_VISIT' && (
             <div className="card">

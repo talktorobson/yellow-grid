@@ -23,7 +23,7 @@ const mockServiceOrders = [
   {
     id: 'so-1',
     externalId: 'SO-2024-001',
-    serviceType: 'Installation',
+    serviceType: 'TECHNICAL_VISIT',
     status: 'SCHEDULED',
     priority: 'P1',
     customerName: 'Marie Dubois',
@@ -37,7 +37,7 @@ const mockServiceOrders = [
   {
     id: 'so-2',
     externalId: 'SO-2024-002',
-    serviceType: 'Technical Visit',
+    serviceType: 'INSTALLATION',
     status: 'CREATED',
     priority: 'P2',
     customerName: 'Jean Martin',
@@ -122,23 +122,26 @@ export const handlers = [
 
     return HttpResponse.json({
       ...order,
-      customer: {
-        name: order.customerName,
-        address: order.customerAddress,
-        phone: '+33123456789',
-        email: 'customer@example.com',
-      },
-      aiSalesPotential: {
-        prediction: order.salesPotential,
-        confidence: 0.85,
-        assessedAt: '2024-01-15T10:00:00Z',
-      },
-      aiRiskAssessment: {
-        prediction: order.riskLevel,
-        confidence: 0.78,
-        riskFactors: ['First-time customer'],
-        assessedAt: '2024-01-15T10:00:00Z',
-      },
+      // Add additional detail fields
+      countryCode: 'FR',
+      businessUnit: 'LEROY_MERLIN',
+      storeId: 'store-1',
+      projectId: 'project-1',
+      // Customer information
+      customerPhone: '+33123456789',
+      customerEmail: 'customer@example.com',
+      // AI features
+      salesPotentialScore: 0.85,
+      salesPreEstimationValue: 5000,
+      salesmanNotes: 'Customer interested in premium options',
+      salesPotentialUpdatedAt: '2024-01-15T10:00:00Z',
+      riskScore: 0.22,
+      riskFactors: { 'First-time customer': true, 'Complex installation': false },
+      riskAssessedAt: '2024-01-15T10:00:00Z',
+      // Go Exec
+      goExecStatus: 'OK',
+      paymentStatus: 'PAID',
+      productDeliveryStatus: 'DELIVERED',
     });
   }),
 
