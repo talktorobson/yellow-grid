@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { serviceOrderService } from '@/services/service-order-service';
-import { ArrowLeft, TrendingUp, Shield, PlayCircle, FileText, Clock, CalendarClock } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Shield, PlayCircle, FileText, Clock, CalendarClock, Clipboard } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import DocumentUpload from '@/components/documents/DocumentUpload';
@@ -16,6 +16,7 @@ import DocumentList from '@/components/documents/DocumentList';
 import RescheduleModal from '@/components/service-orders/RescheduleModal';
 import GoExecStatusModal from '@/components/service-orders/GoExecStatusModal';
 import DerogationModal from '@/components/service-orders/DerogationModal';
+import TechnicalVisitOutcomeModal from '@/components/service-orders/TechnicalVisitOutcomeModal';
 import type { Note } from '@/services/document-service';
 
 type TabType = 'overview' | 'documents' | 'timeline';
@@ -27,6 +28,7 @@ export default function ServiceOrderDetailPage() {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showGoExecModal, setShowGoExecModal] = useState(false);
   const [showDerogationModal, setShowDerogationModal] = useState(false);
+  const [showTVOutcomeModal, setShowTVOutcomeModal] = useState(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['service-order', id],
@@ -287,6 +289,103 @@ export default function ServiceOrderDetailPage() {
                 </div>
               )}
 
+              {/* Technical Visit Outcome */}
+              {order.serviceType === 'TECHNICAL_VISIT' && (
+                <div className="card">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clipboard className="w-5 h-5 text-purple-600" />
+                      <h2 className="text-lg font-semibold">Technical Visit Outcome</h2>
+                    </div>
+                    <button
+                      onClick={() => setShowTVOutcomeModal(true)}
+                      className="btn btn-primary text-sm"
+                    >
+                      {(order as any).tvOutcome ? 'Update' : 'Record'} Outcome
+                    </button>
+                  </div>
+
+                  {(order as any).tvOutcome ? (
+                    <div>
+                      {/* Outcome Badge */}
+                      <div className={clsx(
+                        'p-4 rounded-lg mb-4',
+                        (order as any).tvOutcome === 'YES' ? 'bg-green-50 border-2 border-green-500' :
+                        (order as any).tvOutcome === 'YES_BUT' ? 'bg-yellow-50 border-2 border-yellow-500' :
+                        'bg-red-50 border-2 border-red-500'
+                      )}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm font-medium mb-1">
+                              {(order as any).tvOutcome === 'YES' ? '✓ YES - Ready to Proceed' :
+                               (order as any).tvOutcome === 'YES_BUT' ? '⚠ YES-BUT - Conditional' :
+                               '✗ NO - Cannot Proceed'}
+                            </div>
+                            <div className={clsx(
+                              'text-2xl font-bold',
+                              (order as any).tvOutcome === 'YES' ? 'text-green-700' :
+                              (order as any).tvOutcome === 'YES_BUT' ? 'text-yellow-700' :
+                              'text-red-700'
+                            )}>
+                              {(order as any).tvOutcome}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Findings */}
+                      {(order as any).tvFindings && (
+                        <div className="p-3 bg-gray-50 rounded-lg mb-3">
+                          <div className="text-sm font-medium text-gray-700 mb-1">Technical Findings</div>
+                          <div className="text-sm text-gray-600">{(order as any).tvFindings}</div>
+                        </div>
+                      )}
+
+                      {/* Issues (for NO) */}
+                      {(order as any).tvOutcome === 'NO' && (order as any).tvIssues && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
+                          <div className="text-sm font-medium text-red-700 mb-1">Identified Issues</div>
+                          <div className="text-sm text-red-600">{(order as any).tvIssues}</div>
+                        </div>
+                      )}
+
+                      {/* Required Actions (for YES-BUT) */}
+                      {(order as any).tvOutcome === 'YES_BUT' && (order as any).tvRequiredActions && (
+                        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-3">
+                          <div className="text-sm font-medium text-yellow-700 mb-1">Required Actions</div>
+                          <div className="text-sm text-yellow-600">{(order as any).tvRequiredActions}</div>
+                        </div>
+                      )}
+
+                      {/* Scope Changes */}
+                      {(order as any).tvScopeChanges && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-3">
+                          <div className="text-sm font-medium text-blue-700 mb-1">Scope Changes (Sent to Sales)</div>
+                          <div className="text-sm text-blue-600">{(order as any).tvScopeChanges}</div>
+                        </div>
+                      )}
+
+                      {/* Estimated Value */}
+                      {(order as any).tvEstimatedValue && (
+                        <div className="text-lg font-semibold text-gray-900 mb-3">
+                          Estimated Value: €{(order as any).tvEstimatedValue.toLocaleString()}
+                        </div>
+                      )}
+
+                      {(order as any).tvRecordedAt && (
+                        <div className="text-xs text-gray-500 mt-3">
+                          Recorded: {format(new Date((order as any).tvRecordedAt), 'PPp')}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 text-center py-8">
+                      No outcome recorded yet. Click "Record Outcome" to document the technical visit results.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* AI Risk Assessment */}
               <div className="card">
                 <div className="flex justify-between items-start mb-4">
@@ -511,6 +610,18 @@ export default function ServiceOrderDetailPage() {
           onClose={() => setShowDerogationModal(false)}
           onSuccess={() => {
             setShowDerogationModal(false);
+            // Service order data will be automatically refreshed by React Query
+          }}
+        />
+      )}
+
+      {/* Technical Visit Outcome Modal */}
+      {showTVOutcomeModal && (
+        <TechnicalVisitOutcomeModal
+          serviceOrder={order}
+          onClose={() => setShowTVOutcomeModal(false)}
+          onSuccess={() => {
+            setShowTVOutcomeModal(false);
             // Service order data will be automatically refreshed by React Query
           }}
         />
