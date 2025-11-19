@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assignmentService } from '@/services/assignment-service';
-import { Search, TrendingUp, Award, MapPin, Clock, User } from 'lucide-react';
+import { Search, TrendingUp, Award, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { AssignmentMode } from '@/types';
 

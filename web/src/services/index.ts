@@ -10,3 +10,4 @@ export * from './document-service';
 export * from './project-service';
 export * from './operator-service';
 export * from './assignment-service';
+export * from './notification-service';

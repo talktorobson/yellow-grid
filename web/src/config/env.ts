@@ -3,6 +3,8 @@
  * Strongly-typed environment variables with validation
  */
 
+/// <reference types="vite/client" />
+
 interface EnvironmentConfig {
   api: {
     baseUrl: string;

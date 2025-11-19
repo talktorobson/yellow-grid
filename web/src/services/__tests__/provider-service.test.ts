@@ -46,6 +46,7 @@ describe('ProviderService', () => {
   describe('create', () => {
     it('should create a new provider', async () => {
       const newProvider = {
+        externalId: 'EXT-12345',
         name: 'New Provider',
         email: 'new@provider.com',
         phone: '+33111222333',

@@ -17,6 +17,8 @@ import {
   BarChart3,
 } from 'lucide-react';
 import clsx from 'clsx';
+import SearchButton from '@/components/search/SearchButton';
+import NotificationBadge from '@/components/notifications/NotificationBadge';
 import NotificationCenter from '@/components/NotificationCenter';
 
 const navigation = [
@@ -102,6 +104,13 @@ export default function DashboardLayout() {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Search */}
+            <SearchButton />
+
+            {/* Notifications */}
+            <NotificationBadge />
+
+            {/* User Role */}
             <NotificationCenter />
             <span className={clsx('badge', {
               'badge-success': user?.role === 'OPERATOR',

@@ -7,15 +7,16 @@ import { useState, useMemo, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, View, Event } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { calendarService, CalendarEvent } from '@/services/calendar-service';
+import { calendarService } from '@/services/calendar-service';
 import { providerService } from '@/services/provider-service';
 import AvailabilityHeatmap from '@/components/calendar/AvailabilityHeatmap';
 import { Calendar as CalendarIcon, Users, Filter, Download } from 'lucide-react';
 import clsx from 'clsx';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { enUS } from 'date-fns/locale/en-US';
 
 const locales = {
-  'en-US': require('date-fns/locale/en-US'),
+  'en-US': enUS,
 };
 
 const localizer = dateFnsLocalizer({
@@ -72,7 +73,7 @@ export default function CalendarPage() {
   });
 
   // Fetch provider availability
-  const { data: availability, isLoading: availabilityLoading } = useQuery({
+  const { isLoading: availabilityLoading } = useQuery({
     queryKey: ['calendar-availability', dateRange, selectedProviders],
     queryFn: () =>
       calendarService.getProviderAvailability({
