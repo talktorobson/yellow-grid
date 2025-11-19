@@ -6,6 +6,7 @@ import LoginPage from './pages/auth/LoginPage';
 import CallbackPage from './pages/auth/CallbackPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import DashboardPage from './pages/DashboardPage';
+import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage';
 import ServiceOrderDetailPage from './pages/service-orders/ServiceOrderDetailPage';
 import AssignmentsPage from './pages/assignments/AssignmentsPage';
@@ -36,6 +37,7 @@ function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="service-orders" element={<ServiceOrdersPage />} />
           <Route path="service-orders/:id" element={<ServiceOrderDetailPage />} />
           <Route path="assignments" element={<AssignmentsPage />} />

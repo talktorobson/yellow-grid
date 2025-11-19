@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { serviceOrderService } from '@/services/service-order-service';
-import { Search, Filter, X, CheckSquare, UserPlus, Calendar, Download } from 'lucide-react';
+import { Search, Filter, X, CheckSquare, UserPlus, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import { ServiceOrderStatus, SalesPotential, RiskLevel } from '@/types';
