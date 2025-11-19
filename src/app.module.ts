@@ -21,6 +21,7 @@ import { ContractsModule } from './modules/contracts/contracts.module';
 import { TechnicalVisitsModule } from './modules/technical-visits/technical-visits.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { SalesIntegrationModule } from './modules/sales-integration/sales-integration.module';
 
 // Controllers
 import { AppController } from './app.controller';
@@ -68,6 +69,9 @@ import { AppController } from './app.controller';
     // Feature modules (Phase 4)
     TasksModule,
     NotificationsModule,
+
+    // Integration modules
+    SalesIntegrationModule,
   ],
   controllers: [AppController],
 })
