@@ -7,9 +7,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { providerService } from '@/services/provider-service';
-import { Search, Filter, Plus } from 'lucide-react';
+import { Search, Filter, Plus, X, Users } from 'lucide-react';
 import clsx from 'clsx';
 import { ProviderStatus } from '@/types';
+import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 export default function ProvidersPage() {
   const [filters, setFilters] = useState({
@@ -36,14 +37,6 @@ export default function ProvidersPage() {
     };
     return <span className={clsx('badge', colors[status])}>{status}</span>;
   };
-
-  if (error) {
-    return (
-      <div className="card">
-        <p className="text-red-600">Error loading providers. Please try again.</p>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -110,12 +103,34 @@ export default function ProvidersPage() {
         </div>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <div className="card bg-red-50 border-red-200 mb-6">
+          <div className="flex items-start gap-3">
+            <X className="w-5 h-5 text-red-600 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-red-900 mb-1">Error Loading Providers</h3>
+              <p className="text-sm text-red-700">
+                We encountered an issue loading the providers. Please try refreshing the page or
+                contact support if the problem persists.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="card overflow-hidden">
         {isLoading ? (
-          <div className="text-center py-12 text-gray-500">Loading providers...</div>
+          <TableSkeleton rows={8} />
         ) : providers.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">No providers found</div>
+          <div className="text-center py-12">
+            <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No providers found</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Try adjusting your filters or add a new provider
+            </p>
+          </div>
         ) : (
           <>
             <table className="table">
