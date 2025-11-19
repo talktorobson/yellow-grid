@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+// import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp,
   TrendingDown,
@@ -15,7 +15,7 @@ import {
   Calendar,
   Download,
 } from 'lucide-react';
-import { dashboardService } from '@/services/dashboard-service';
+// import { dashboardService } from '@/services/dashboard-service';
 
 type TimeRange = '7d' | '30d' | '90d' | 'custom';
 
@@ -80,10 +80,11 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
 
-  const { data: stats } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: () => dashboardService.getStats(),
-  });
+  // TODO: Use real-time stats from dashboard service
+  // const { data: stats } = useQuery({
+  //   queryKey: ['dashboard-stats'],
+  //   queryFn: () => dashboardService.getStats(),
+  // });
 
   const analytics = mockAnalyticsData;
 

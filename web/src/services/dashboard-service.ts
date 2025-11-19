@@ -1,8 +1,9 @@
-import api from './api';
+import apiClient from './api-client';
 
 export interface DashboardStats {
   serviceOrders: {
     total: number;
+    pending: number;
     byStatus: {
       CREATED: number;
       SCHEDULED: number;
@@ -23,6 +24,7 @@ export interface DashboardStats {
   tasks: {
     total: number;
     pending: number;
+    overdue: number;
   };
 }
 
@@ -34,14 +36,15 @@ export const dashboardService = {
     try {
       // Fetch counts from each endpoint
       const [serviceOrdersRes, assignmentsRes, providersRes] = await Promise.all([
-        api.get('/service-orders', { params: { limit: 1 } }),
-        api.get('/assignments', { params: { limit: 1 } }),
-        api.get('/providers', { params: { limit: 1 } }),
+        apiClient.get('/service-orders', { params: { limit: 1 } }),
+        apiClient.get('/assignments', { params: { limit: 1 } }),
+        apiClient.get('/providers', { params: { limit: 1 } }),
       ]);
 
       return {
         serviceOrders: {
           total: serviceOrdersRes.data.pagination?.total || 0,
+          pending: 0, // Would need filtered query
           byStatus: {
             CREATED: 0, // Would need separate API calls or aggregation endpoint
             SCHEDULED: 0,
@@ -62,6 +65,7 @@ export const dashboardService = {
         tasks: {
           total: 0, // Would need tasks endpoint
           pending: 0,
+          overdue: 0,
         },
       };
     } catch (error) {

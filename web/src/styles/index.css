@@ -1,9 +1,9 @@
+/* Import calendar styles */
+@import './calendar.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import calendar styles */
-@import './calendar.css';
 
 @layer base {
   :root {
@@ -48,6 +48,10 @@
 
   .btn-success {
     @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
   }
 
   /* Input styles */
