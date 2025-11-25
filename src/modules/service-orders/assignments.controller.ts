@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AssignmentsService } from './assignments.service';
-import { AssignmentMode } from '@prisma/client';
+import { AssignmentMode, AssignmentState } from '@prisma/client';
 import { AssignmentFunnelResponseDto } from './dto/funnel-response.dto';
 
 class CreateAssignmentDto {
@@ -26,6 +26,18 @@ class BulkAssignmentDto {
 @Controller('assignments')
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List assignments with pagination and filtering' })
+  @ApiResponse({ status: 200, description: 'List of assignments' })
+  async findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: AssignmentState,
+    @Query('mode') mode?: AssignmentMode,
+  ) {
+    return this.assignmentsService.findAll({ page, limit, status, mode });
+  }
 
   @Post('direct')
   @ApiOperation({ summary: 'Direct assignment to specific provider' })

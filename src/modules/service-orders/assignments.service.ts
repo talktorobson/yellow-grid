@@ -195,4 +195,42 @@ export class AssignmentsService {
 
     return results;
   }
+
+  async findAll(params: {
+    page?: number;
+    limit?: number;
+    status?: AssignmentState;
+    mode?: AssignmentMode;
+  }) {
+    const { page = 1, limit = 20, status, mode } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status) where.state = status;
+    if (mode) where.assignmentMode = mode;
+
+    const [items, total] = await Promise.all([
+      this.prisma.assignment.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        include: {
+          serviceOrder: true,
+          provider: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.assignment.count({ where }),
+    ]);
+
+    return {
+      data: items,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit)),
+      },
+    };
+  }
 }

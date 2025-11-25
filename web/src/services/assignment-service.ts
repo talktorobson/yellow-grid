@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { Assignment, AssignmentMode, PaginatedResponse } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 interface AssignmentFilters {
   status?: string;
   mode?: string;
@@ -38,10 +43,10 @@ class AssignmentService {
    * Get all assignments with filters
    */
   async getAll(filters: AssignmentFilters = {}): Promise<PaginatedResponse<AssignmentWithScoring>> {
-    const response = await apiClient.get<PaginatedResponse<AssignmentWithScoring>>('/assignments', {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<AssignmentWithScoring>>>('/assignments', {
       params: filters,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
