@@ -62,3 +62,6 @@ apps/mobile/ios/
 # Docker
 docker/postgres-data/
 docker/redis-data/
+
+# Deploy keys
+deploy/vps_key
