@@ -211,6 +211,7 @@ export class AuthService {
 
   private async generateTokens(user: any): Promise<AuthResponseDto> {
     const roles = user.roles.map((ur: any) => ur.role.name);
+    this.logger.log(`Generating token for user ${user.email} with roles: ${roles.join(', ')}`);
 
     // Generate access token
     const accessTokenPayload = {

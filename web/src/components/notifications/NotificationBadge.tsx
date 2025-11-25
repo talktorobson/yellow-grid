@@ -19,7 +19,7 @@ export default function NotificationBadge({ className }: NotificationBadgeProps)
 
   const { data: unreadCount } = useQuery({
     queryKey: ['notification-count'],
-    queryFn: () => notificationService.getUnreadCount(),
+    queryFn: () => notificationService.getUnreadCount('00000000-0000-0000-0000-000000000000'),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 

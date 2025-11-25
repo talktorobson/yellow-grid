@@ -12,23 +12,23 @@ read -r response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]
 then
     echo -e "\n${GREEN}🔄 Stopping containers and removing volumes...${NC}"
-    docker-compose -f deploy/docker-compose.yml down -v
+    docker compose -f deploy/docker-compose.yml down -v
 
     echo -e "\n${GREEN}🚀 Starting fresh containers...${NC}"
-    docker-compose -f deploy/docker-compose.yml up -d
+    docker compose -f deploy/docker-compose.yml up -d
 
     echo -e "\n${GREEN}⏳ Waiting for database to be ready...${NC}"
     # Simple wait loop
-    until docker-compose -f deploy/docker-compose.yml exec postgres pg_isready -U postgres; do
+    until docker compose -f deploy/docker-compose.yml exec postgres pg_isready -U postgres; do
         echo "Waiting for postgres..."
         sleep 2
     done
 
     echo -e "\n${GREEN}📦 Running database migrations...${NC}"
-    docker-compose -f deploy/docker-compose.yml exec api npx prisma migrate deploy
+    docker compose -f deploy/docker-compose.yml exec api npx prisma migrate deploy
 
     echo -e "\n${GREEN}🌱 Seeding demo data...${NC}"
-    docker-compose -f deploy/docker-compose.yml exec api npx prisma db seed
+    docker compose -f deploy/docker-compose.yml exec api npx prisma db seed
 
     echo -e "\n${GREEN}✅ Demo environment reset complete!${NC}"
     echo -e "Web App: http://localhost (or your server IP)"

@@ -6,7 +6,7 @@ import { SubmitWcfDto } from './dto/submit-wcf.dto';
 import { WcfStatus, WcfSignerType, SignatureMethod, SignatureStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-interface WcfRecord {
+export interface WcfRecord {
   id: string;
   wcfNumber: string;
   serviceOrderId: string;

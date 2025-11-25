@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus } from '@prisma/client';
+// @ts-ignore
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -309,40 +310,40 @@ async function main() {
 
   const specialties = [
     // HVAC Specialties
-    { code: 'HVAC_INSTALL', name: 'HVAC Installation', category: 'HVAC', requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
-    { code: 'HVAC_REPAIR', name: 'HVAC Repair & Maintenance', category: 'HVAC', requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
-    { code: 'AC_INSTALL', name: 'Air Conditioning Installation', category: 'HVAC', requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
+    { code: 'HVAC_INSTALL', name: 'HVAC Installation', category: ServiceCategory.HVAC, requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
+    { code: 'HVAC_REPAIR', name: 'HVAC Repair & Maintenance', category: ServiceCategory.HVAC, requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
+    { code: 'AC_INSTALL', name: 'Air Conditioning Installation', category: ServiceCategory.HVAC, requiresCertification: true, certificationAuthority: 'Spanish HVAC Association' },
 
     // Plumbing Specialties
-    { code: 'PLUMB_INSTALL', name: 'Plumbing Installation', category: 'PLUMBING', requiresCertification: true, certificationAuthority: 'National Plumbing Certification' },
-    { code: 'PLUMB_REPAIR', name: 'Plumbing Repair', category: 'PLUMBING', requiresCertification: false, certificationAuthority: null },
-    { code: 'WATER_HEATER', name: 'Water Heater Installation', category: 'PLUMBING', requiresCertification: true, certificationAuthority: 'National Plumbing Certification' },
+    { code: 'PLUMB_INSTALL', name: 'Plumbing Installation', category: ServiceCategory.PLUMBING, requiresCertification: true, certificationAuthority: 'National Plumbing Certification' },
+    { code: 'PLUMB_REPAIR', name: 'Plumbing Repair', category: ServiceCategory.PLUMBING, requiresCertification: false, certificationAuthority: null },
+    { code: 'WATER_HEATER', name: 'Water Heater Installation', category: ServiceCategory.PLUMBING, requiresCertification: true, certificationAuthority: 'National Plumbing Certification' },
 
     // Electrical Specialties
-    { code: 'ELEC_INSTALL', name: 'Electrical Installation', category: 'ELECTRICAL', requiresCertification: true, certificationAuthority: 'National Electrical Certification' },
-    { code: 'ELEC_REPAIR', name: 'Electrical Repair', category: 'ELECTRICAL', requiresCertification: true, certificationAuthority: 'National Electrical Certification' },
+    { code: 'ELEC_INSTALL', name: 'Electrical Installation', category: ServiceCategory.ELECTRICAL, requiresCertification: true, certificationAuthority: 'National Electrical Certification' },
+    { code: 'ELEC_REPAIR', name: 'Electrical Repair', category: ServiceCategory.ELECTRICAL, requiresCertification: true, certificationAuthority: 'National Electrical Certification' },
 
     // Kitchen Specialties
-    { code: 'KITCHEN_FULL', name: 'Full Kitchen Installation', category: 'KITCHEN', requiresCertification: false, certificationAuthority: null },
-    { code: 'APPLIANCE_INSTALL', name: 'Kitchen Appliance Installation', category: 'KITCHEN', requiresCertification: false, certificationAuthority: null },
+    { code: 'KITCHEN_FULL', name: 'Full Kitchen Installation', category: ServiceCategory.KITCHEN, requiresCertification: false, certificationAuthority: null },
+    { code: 'APPLIANCE_INSTALL', name: 'Kitchen Appliance Installation', category: ServiceCategory.KITCHEN, requiresCertification: false, certificationAuthority: null },
 
     // Bathroom Specialties
-    { code: 'BATHROOM_FULL', name: 'Full Bathroom Installation', category: 'BATHROOM', requiresCertification: false, certificationAuthority: null },
-    { code: 'SHOWER_INSTALL', name: 'Shower Installation', category: 'BATHROOM', requiresCertification: false, certificationAuthority: null },
+    { code: 'BATHROOM_FULL', name: 'Full Bathroom Installation', category: ServiceCategory.BATHROOM, requiresCertification: false, certificationAuthority: null },
+    { code: 'SHOWER_INSTALL', name: 'Shower Installation', category: ServiceCategory.BATHROOM, requiresCertification: false, certificationAuthority: null },
 
     // Flooring Specialties
-    { code: 'FLOOR_TILE', name: 'Tile Flooring Installation', category: 'FLOORING', requiresCertification: false, certificationAuthority: null },
-    { code: 'FLOOR_WOOD', name: 'Wood Flooring Installation', category: 'FLOORING', requiresCertification: false, certificationAuthority: null },
+    { code: 'FLOOR_TILE', name: 'Tile Flooring Installation', category: ServiceCategory.FLOORING, requiresCertification: false, certificationAuthority: null },
+    { code: 'FLOOR_WOOD', name: 'Wood Flooring Installation', category: ServiceCategory.FLOORING, requiresCertification: false, certificationAuthority: null },
 
     // Windows & Doors
-    { code: 'WINDOW_INSTALL', name: 'Window Installation', category: 'WINDOWS_DOORS', requiresCertification: false, certificationAuthority: null },
-    { code: 'DOOR_INSTALL', name: 'Door Installation', category: 'WINDOWS_DOORS', requiresCertification: false, certificationAuthority: null },
+    { code: 'WINDOW_INSTALL', name: 'Window Installation', category: ServiceCategory.WINDOWS_DOORS, requiresCertification: false, certificationAuthority: null },
+    { code: 'DOOR_INSTALL', name: 'Door Installation', category: ServiceCategory.WINDOWS_DOORS, requiresCertification: false, certificationAuthority: null },
 
     // Garden
-    { code: 'GARDEN_INSTALL', name: 'Garden Installation', category: 'GARDEN', requiresCertification: false, certificationAuthority: null },
+    { code: 'GARDEN_INSTALL', name: 'Garden Installation', category: ServiceCategory.GARDEN, requiresCertification: false, certificationAuthority: null },
 
     // Furniture
-    { code: 'FURNITURE_ASSEMBLY', name: 'Furniture Assembly', category: 'FURNITURE', requiresCertification: false, certificationAuthority: null },
+    { code: 'FURNITURE_ASSEMBLY', name: 'Furniture Assembly', category: ServiceCategory.FURNITURE, requiresCertification: false, certificationAuthority: null },
   ];
 
   for (const specialty of specialties) {
@@ -368,7 +369,7 @@ async function main() {
       countryCode: 'ES',
       businessUnit: null, // Applies to all BUs in ES
       externalTemplateId: 'ADOBE_ES_INSTALL_001',
-      provider: 'ADOBE_SIGN',
+      provider: ContractProvider.ADOBE_SIGN,
       version: 1,
       isActive: true,
     },
@@ -379,7 +380,7 @@ async function main() {
       countryCode: 'ES',
       businessUnit: null,
       externalTemplateId: 'ADOBE_ES_TV_CONF_001',
-      provider: 'ADOBE_SIGN',
+      provider: ContractProvider.ADOBE_SIGN,
       version: 1,
       isActive: true,
     },
@@ -389,8 +390,8 @@ async function main() {
       description: 'Contract for quotation technical visits',
       countryCode: 'ES',
       businessUnit: null,
-      externalTemplateId: 'ADOBE_ES_TV_QUOT_001',
-      provider: 'ADOBE_SIGN',
+      externalTemplateId: 'ADOBE_ES_INSTALL_001',
+      provider: ContractProvider.ADOBE_SIGN,
       version: 1,
       isActive: true,
     },
@@ -401,7 +402,7 @@ async function main() {
       countryCode: 'FR',
       businessUnit: null,
       externalTemplateId: 'ADOBE_FR_INSTALL_001',
-      provider: 'ADOBE_SIGN',
+      provider: ContractProvider.ADOBE_SIGN,
       version: 1,
       isActive: true,
     },
@@ -433,8 +434,8 @@ async function main() {
       externalSource: 'PYXIS',
       countryCode: 'ES',
       businessUnit: 'LM_ES',
-      serviceType: 'INSTALLATION',
-      serviceCategory: 'HVAC',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.HVAC,
       name: 'Air Conditioning Installation - Standard',
       description: 'Standard air conditioning unit installation (up to 3.5kW)',
       scopeIncluded: ['Remove old unit (if any)', 'Install new unit', 'Connect to electrical outlet', 'Test functionality'],
@@ -444,8 +445,8 @@ async function main() {
       estimatedDurationMinutes: 180,
       requiresPreServiceContract: true,
       requiresPostServiceWCF: true,
-      contractTemplateId: hvacInstallTemplate?.id,
-      status: 'ACTIVE',
+      contractTemplateId: hvacInstallTemplate?.id || null,
+      status: ServiceStatus.ACTIVE,
       syncChecksum: 'abc123def456',
       lastSyncedAt: new Date(),
       createdBy: 'SEED_SCRIPT',
@@ -456,8 +457,8 @@ async function main() {
       externalSource: 'PYXIS',
       countryCode: 'ES',
       businessUnit: 'LM_ES',
-      serviceType: 'INSTALLATION',
-      serviceCategory: 'PLUMBING',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.PLUMBING,
       name: 'Water Heater Installation',
       description: 'Electric water heater installation (50-100L capacity)',
       scopeIncluded: ['Remove old water heater', 'Install new water heater', 'Connect plumbing', 'Connect electrical', 'Test for leaks'],
@@ -467,8 +468,8 @@ async function main() {
       estimatedDurationMinutes: 240,
       requiresPreServiceContract: true,
       requiresPostServiceWCF: true,
-      contractTemplateId: hvacInstallTemplate?.id,
-      status: 'ACTIVE',
+      contractTemplateId: hvacInstallTemplate?.id || null,
+      status: ServiceStatus.ACTIVE,
       syncChecksum: 'def456ghi789',
       lastSyncedAt: new Date(),
       createdBy: 'SEED_SCRIPT',
@@ -479,8 +480,8 @@ async function main() {
       externalSource: 'PYXIS',
       countryCode: 'ES',
       businessUnit: 'LM_ES',
-      serviceType: 'INSTALLATION',
-      serviceCategory: 'KITCHEN',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.KITCHEN,
       name: 'Full Kitchen Installation',
       description: 'Complete kitchen installation including cabinets, countertop, sink, and appliances',
       scopeIncluded: ['Cabinet assembly and installation', 'Countertop installation', 'Sink and faucet installation', 'Appliance installation (oven, dishwasher, hood)', 'Final adjustments and cleanup'],
@@ -490,8 +491,8 @@ async function main() {
       estimatedDurationMinutes: 960, // 2 days
       requiresPreServiceContract: true,
       requiresPostServiceWCF: true,
-      contractTemplateId: hvacInstallTemplate?.id,
-      status: 'ACTIVE',
+      contractTemplateId: hvacInstallTemplate?.id || null,
+      status: ServiceStatus.ACTIVE,
       syncChecksum: 'ghi789jkl012',
       lastSyncedAt: new Date(),
       createdBy: 'SEED_SCRIPT',
@@ -538,7 +539,7 @@ async function main() {
       postalCodeId: null, // Country default
       baseRate: 150.00,
       currency: 'EUR',
-      rateType: 'FIXED',
+      rateType: RateType.FIXED,
       validFrom: new Date('2025-01-01'),
       validUntil: null,
       createdBy: 'SEED_SCRIPT',
@@ -551,7 +552,7 @@ async function main() {
       postalCodeId: madridPostalCode?.id!,
       baseRate: 175.00, // 16% higher in Madrid
       currency: 'EUR',
-      rateType: 'FIXED',
+      rateType: RateType.FIXED,
       validFrom: new Date('2025-01-01'),
       validUntil: null,
       createdBy: 'SEED_SCRIPT',
@@ -564,7 +565,7 @@ async function main() {
       postalCodeId: null,
       baseRate: 200.00,
       currency: 'EUR',
-      rateType: 'FIXED',
+      rateType: RateType.FIXED,
       validFrom: new Date('2025-01-01'),
       validUntil: null,
       createdBy: 'SEED_SCRIPT',
@@ -577,7 +578,7 @@ async function main() {
       postalCodeId: null,
       baseRate: 1200.00,
       currency: 'EUR',
-      rateType: 'FIXED',
+      rateType: RateType.FIXED,
       validFrom: new Date('2025-01-01'),
       validUntil: null,
       createdBy: 'SEED_SCRIPT',
@@ -621,27 +622,27 @@ async function main() {
       serviceId: hvacService?.id!,
       specialtyId: hvacInstallSpecialty?.id!,
       isRequired: true,
-      minimumExperience: 'INTERMEDIATE',
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
     },
     // Plumbing service requires plumbing and water heater specialties
     {
       serviceId: plumbingService?.id!,
       specialtyId: plumbInstallSpecialty?.id!,
       isRequired: true,
-      minimumExperience: 'INTERMEDIATE',
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
     },
     {
       serviceId: plumbingService?.id!,
       specialtyId: waterHeaterSpecialty?.id!,
       isRequired: true,
-      minimumExperience: 'INTERMEDIATE',
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
     },
     // Kitchen service requires kitchen specialty
     {
       serviceId: kitchenService?.id!,
       specialtyId: kitchenSpecialty?.id!,
       isRequired: true,
-      minimumExperience: 'SENIOR',
+      minimumExperience: ExperienceLevel.SENIOR,
     },
   ];
 

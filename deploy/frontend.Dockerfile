@@ -4,8 +4,8 @@ WORKDIR /app
 COPY web/package*.json ./
 RUN npm ci
 COPY web/ .
-# Environment variables for the build (if needed)
-# ENV VITE_API_URL=/api
+# Environment variables for the build
+ENV VITE_API_BASE_URL=/api/v1
 RUN npm run build
 
 # Run Stage

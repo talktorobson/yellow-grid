@@ -7,6 +7,11 @@ import apiClient from './api-client';
 import { User } from '@/types';
 import { env } from '@/config/env';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 interface LoginResponse {
   user: User;
   accessToken: string;
@@ -18,11 +23,11 @@ class AuthService {
    * Login with email and password (fallback for development)
    */
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/login', {
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', {
       email,
       password,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -61,20 +66,20 @@ class AuthService {
     sessionStorage.removeItem('oauth_state');
 
     // Exchange code for tokens
-    const response = await apiClient.post<LoginResponse>('/auth/sso/callback', {
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/sso/callback', {
       code,
       redirectUri: env.auth.redirectUri,
     });
 
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Get current user info
    */
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>('/auth/me');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<User>>('/auth/me');
+    return response.data.data;
   }
 
   /**
@@ -86,11 +91,11 @@ class AuthService {
       throw new Error('No refresh token available');
     }
 
-    const response = await apiClient.post<{ accessToken: string }>('/auth/refresh', {
+    const response = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/refresh', {
       refreshToken,
     });
 
-    return response.data;
+    return response.data.data;
   }
 
   /**

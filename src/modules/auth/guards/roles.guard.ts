@@ -38,8 +38,14 @@ export class RolesGuard implements CanActivate {
     }
 
     // Extract role names from user.roles array
-    // Expected structure: user.roles = [{ name: 'ADMIN' }, { name: 'OPERATOR' }]
-    const userRoleNames = user.roles?.map((role: { name: string }) => role.name) || [];
+    // Handle both array of strings (from JWT) and array of objects (from DB)
+    const userRoles = user.roles || [];
+    const userRoleNames = userRoles.map((role: any) => {
+      if (typeof role === 'string') {
+        return role;
+      }
+      return role.name;
+    });
 
     if (userRoleNames.length === 0) {
       throw new ForbiddenException('User has no assigned roles');

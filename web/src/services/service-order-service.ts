@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { ServiceOrder, PaginatedResponse, SalesPotential, RiskLevel, GoExecStatus } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 interface ServiceOrderFilters {
   status?: string;
   serviceType?: string;
@@ -42,58 +47,58 @@ class ServiceOrderService {
    * Get all service orders with filters
    */
   async getAll(filters: ServiceOrderFilters = {}): Promise<PaginatedResponse<ServiceOrder>> {
-    const response = await apiClient.get<PaginatedResponse<ServiceOrder>>('/service-orders', {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<ServiceOrder>>>('/service-orders', {
       params: filters,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Get service order by ID
    */
   async getById(id: string): Promise<ServiceOrder> {
-    const response = await apiClient.get<ServiceOrder>(`/service-orders/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<ServiceOrder>>(`/service-orders/${id}`);
+    return response.data.data;
   }
 
   /**
    * Assess sales potential (AI-powered)
    */
   async assessSalesPotential(id: string, data: AssessSalesPotentialDto): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(
       `/service-orders/${id}/assess-sales-potential`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Assess risk level (AI-powered)
    */
   async assessRisk(id: string, data: AssessRiskDto): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(`/service-orders/${id}/assess-risk`, data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(`/service-orders/${id}/assess-risk`, data);
+    return response.data.data;
   }
 
   /**
    * Acknowledge risk
    */
   async acknowledgeRisk(id: string, userId: string): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(`/service-orders/${id}/acknowledge-risk`, {
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(`/service-orders/${id}/acknowledge-risk`, {
       userId,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Update Go Exec status
    */
   async updateGoExecStatus(id: string, data: UpdateGoExecDto): Promise<ServiceOrder> {
-    const response = await apiClient.patch<ServiceOrder>(
+    const response = await apiClient.patch<ApiResponse<ServiceOrder>>(
       `/service-orders/${id}/go-exec-status`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -103,19 +108,19 @@ class ServiceOrderService {
     id: string,
     data: { reason: string; approvedBy: string }
   ): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(
       `/service-orders/${id}/override-go-exec`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Get service order statistics
    */
   async getStatistics() {
-    const response = await apiClient.get('/service-orders/statistics');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<any>>('/service-orders/statistics');
+    return response.data.data;
   }
 
   /**
@@ -151,11 +156,11 @@ class ServiceOrderService {
     };
     message: string;
   }> {
-    const response = await apiClient.post(
+    const response = await apiClient.post<ApiResponse<any>>(
       `/cockpit/service-orders/${id}/reschedule`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -173,11 +178,11 @@ class ServiceOrderService {
       blockInstallation: boolean;
     }
   ): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(
       `/service-orders/${id}/tv-outcome`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -196,21 +201,21 @@ class ServiceOrderService {
     blockedAt: string;
     status: string;
   }>> {
-    const response = await apiClient.get('/service-orders/blocked', {
+    const response = await apiClient.get<ApiResponse<any>>('/service-orders/blocked', {
       params: { projectId },
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Unblock installation order
    */
   async unblockOrder(id: string, reason: string): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>(
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>(
       `/service-orders/${id}/unblock`,
       { reason }
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -221,10 +226,10 @@ class ServiceOrderService {
     failed: number;
     errors: Array<{ id: string; error: string }>;
   }> {
-    const response = await apiClient.post('/service-orders/bulk/assign', {
+    const response = await apiClient.post<ApiResponse<any>>('/service-orders/bulk/assign', {
       serviceOrderIds: ids,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -235,11 +240,11 @@ class ServiceOrderService {
     failed: number;
     errors: Array<{ id: string; error: string }>;
   }> {
-    const response = await apiClient.post('/service-orders/bulk/cancel', {
+    const response = await apiClient.post<ApiResponse<any>>('/service-orders/bulk/cancel', {
       serviceOrderIds: ids,
       reason,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -250,11 +255,11 @@ class ServiceOrderService {
     failed: number;
     errors: Array<{ id: string; error: string }>;
   }> {
-    const response = await apiClient.post('/service-orders/bulk/update-status', {
+    const response = await apiClient.post<ApiResponse<any>>('/service-orders/bulk/update-status', {
       serviceOrderIds: ids,
       status,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -265,16 +270,17 @@ class ServiceOrderService {
     failed: number;
     errors: Array<{ id: string; error: string }>;
   }> {
-    const response = await apiClient.post('/service-orders/bulk/reschedule', {
+    const response = await apiClient.post<ApiResponse<any>>('/service-orders/bulk/reschedule', {
       serviceOrderIds: ids,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Bulk export service orders
    */
   async bulkExport(ids: string[], format: 'csv' | 'excel'): Promise<Blob> {
+    // Export returns a blob, not a JSON wrapper
     const response = await apiClient.post(
       '/service-orders/bulk/export',
       {

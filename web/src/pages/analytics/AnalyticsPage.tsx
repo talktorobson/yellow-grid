@@ -15,7 +15,7 @@ import {
   Calendar,
   Download,
 } from 'lucide-react';
-import { dashboardService, AnalyticsData } from '@/services/dashboard-service';
+import { dashboardService, AnalyticsData, KPIData } from '@/services/dashboard-service';
 import { StatCardSkeleton } from '@/components/LoadingSkeleton';
 
 type TimeRange = '7d' | '30d' | '90d' | 'custom';
@@ -24,7 +24,7 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
 
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['analytics', timeRange],
     queryFn: () => dashboardService.getAnalytics(timeRange),
   });

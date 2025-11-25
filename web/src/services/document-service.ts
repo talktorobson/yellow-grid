@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { UUID, ISODateString } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 // Document types
 export enum DocumentType {
   NOTE = 'NOTE',
@@ -106,8 +111,8 @@ class DocumentService {
       formData.append('description', data.description);
     }
 
-    const response = await apiClient.post<Document>(
-      `/cockpit/service-orders/${serviceOrderId}/documents`,
+    const response = await apiClient.post<ApiResponse<Document>>(
+      `/service-orders/${serviceOrderId}/documents`,
       formData,
       {
         headers: {
@@ -115,21 +120,21 @@ class DocumentService {
         },
       }
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
-   * Create a note on a service order
+   * Create a note for a service order
    */
   async createNote(
     serviceOrderId: string,
     data: CreateNoteDto
   ): Promise<Note> {
-    const response = await apiClient.post<Note>(
-      `/cockpit/service-orders/${serviceOrderId}/notes`,
+    const response = await apiClient.post<ApiResponse<Note>>(
+      `/service-orders/${serviceOrderId}/notes`,
       data
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -138,24 +143,24 @@ class DocumentService {
   async getDocumentsAndNotes(
     serviceOrderId: string
   ): Promise<DocumentsAndNotesResponse> {
-    const response = await apiClient.get<DocumentsAndNotesResponse>(
-      `/cockpit/service-orders/${serviceOrderId}/documents-and-notes`
+    const response = await apiClient.get<ApiResponse<DocumentsAndNotesResponse>>(
+      `/service-orders/${serviceOrderId}/documents-and-notes`
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Delete a document
    */
   async deleteDocument(documentId: string): Promise<void> {
-    await apiClient.delete(`/cockpit/documents/${documentId}`);
+    await apiClient.delete(`/documents/${documentId}`);
   }
 
   /**
    * Delete a note
    */
   async deleteNote(noteId: string): Promise<void> {
-    await apiClient.delete(`/cockpit/notes/${noteId}`);
+    await apiClient.delete(`/notes/${noteId}`);
   }
 
   /**
@@ -165,11 +170,8 @@ class DocumentService {
     noteId: string,
     data: Partial<CreateNoteDto>
   ): Promise<Note> {
-    const response = await apiClient.patch<Note>(
-      `/cockpit/notes/${noteId}`,
-      data
-    );
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<Note>>(`/notes/${noteId}`, data);
+    return response.data.data;
   }
 
   /**

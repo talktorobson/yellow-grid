@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { UUID, ISODateString } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 // Project interfaces
 export interface Project {
   id: UUID;
@@ -57,47 +62,47 @@ class ProjectService {
     page?: number;
     limit?: number;
   }): Promise<{ projects: Project[]; total: number; page: number; limit: number }> {
-    const response = await apiClient.get<{
+    const response = await apiClient.get<ApiResponse<{
       projects: Project[];
       total: number;
       page: number;
       limit: number;
-    }>('/projects', { params });
-    return response.data;
+    }>>('/projects', { params });
+    return response.data.data;
   }
 
   /**
    * Get project by ID
    */
   async getById(id: string): Promise<Project> {
-    const response = await apiClient.get<Project>(`/projects/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<Project>>(`/projects/${id}`);
+    return response.data.data;
   }
 
   /**
    * Get project ownership recommendation
    */
   async getOwnershipRecommendation(id: string): Promise<ProjectOwnershipRecommendation> {
-    const response = await apiClient.get<ProjectOwnershipRecommendation>(
+    const response = await apiClient.get<ApiResponse<ProjectOwnershipRecommendation>>(
       `/projects/${id}/ownership-recommendation`
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Assign project owner
    */
   async assignProjectOwner(id: string, data: AssignProjectOwnerDto): Promise<Project> {
-    const response = await apiClient.post<Project>(`/projects/${id}/assign-owner`, data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<Project>>(`/projects/${id}/assign-owner`, data);
+    return response.data.data;
   }
 
   /**
    * Remove project owner
    */
   async removeProjectOwner(id: string): Promise<Project> {
-    const response = await apiClient.delete<Project>(`/projects/${id}/owner`);
-    return response.data;
+    const response = await apiClient.delete<ApiResponse<Project>>(`/projects/${id}/owner`);
+    return response.data.data;
   }
 
   /**
@@ -114,8 +119,8 @@ class ProjectService {
     projectsWithoutOwner: number;
     averageServiceOrdersPerProject: number;
   }> {
-    const response = await apiClient.get('/projects/statistics', { params });
-    return response.data;
+    const response = await apiClient.get<ApiResponse<any>>('/projects/statistics', { params });
+    return response.data.data;
   }
 }
 

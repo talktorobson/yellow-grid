@@ -45,6 +45,11 @@ export interface NotificationPreferences {
   types: Record<NotificationType, boolean>;
 }
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 class NotificationService {
   /**
    * Get all notifications for the current user
@@ -56,32 +61,32 @@ class NotificationService {
     page?: number;
     limit?: number;
   }): Promise<Notification[]> {
-    const response = await apiClient.get<Notification[]>(`/api/v1/notifications/user/${userId}`, { params });
-    return response.data;
+    const response = await apiClient.get<ApiResponse<Notification[]>>(`/api/v1/notifications/user/${userId}`, { params });
+    return response.data.data;
   }
 
   /**
    * Get unread count
    */
   async getUnreadCount(userId: string): Promise<number> {
-    const response = await apiClient.get<{ count: number }>('/api/v1/notifications/unread/count', { params: { userId } });
-    return response.data.count;
+    const response = await apiClient.get<ApiResponse<{ count: number }>>('/api/v1/notifications/unread/count', { params: { userId } });
+    return response.data.data.count;
   }
 
   /**
    * Mark notification as read
    */
   async markAsRead(id: string): Promise<Notification> {
-    const response = await apiClient.patch<Notification>(`/api/v1/notifications/${id}/read`);
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<Notification>>(`/api/v1/notifications/${id}/read`);
+    return response.data.data;
   }
 
   /**
    * Mark all notifications as read
    */
   async markAllAsRead(userId: string): Promise<{ count: number }> {
-    const response = await apiClient.post<{ count: number }>('/api/v1/notifications/read-all', { userId });
-    return response.data;
+    const response = await apiClient.post<ApiResponse<{ count: number }>>('/api/v1/notifications/read-all', { userId });
+    return response.data.data;
   }
 
   /**
@@ -95,16 +100,16 @@ class NotificationService {
    * Delete all read notifications
    */
   async deleteAllRead(): Promise<{ count: number }> {
-    const response = await apiClient.delete<{ count: number }>('/notifications/read');
-    return response.data;
+    const response = await apiClient.delete<ApiResponse<{ count: number }>>('/notifications/read');
+    return response.data.data;
   }
 
   /**
    * Get notification preferences
    */
   async getPreferences(): Promise<NotificationPreferences> {
-    const response = await apiClient.get<NotificationPreferences>('/notifications/preferences');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<NotificationPreferences>>('/notifications/preferences');
+    return response.data.data;
   }
 
   /**
@@ -113,22 +118,22 @@ class NotificationService {
   async updatePreferences(
     preferences: Partial<NotificationPreferences>
   ): Promise<NotificationPreferences> {
-    const response = await apiClient.patch<NotificationPreferences>(
+    const response = await apiClient.patch<ApiResponse<NotificationPreferences>>(
       '/notifications/preferences',
       preferences
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Get recent notifications (last 24 hours)
    */
   async getRecent(limit: number = 10): Promise<Notification[]> {
-    const response = await apiClient.get<{ notifications: Notification[] }>(
+    const response = await apiClient.get<ApiResponse<{ notifications: Notification[] }>>(
       '/notifications/recent',
       { params: { limit } }
     );
-    return response.data.notifications;
+    return response.data.data.notifications;
   }
 }
 

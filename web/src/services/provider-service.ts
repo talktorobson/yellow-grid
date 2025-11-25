@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { Provider, PaginatedResponse } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 interface ProviderFilters {
   status?: string;
   countryCode?: string;
@@ -30,34 +35,34 @@ class ProviderService {
    * Get all providers with filters
    */
   async getAll(filters: ProviderFilters = {}): Promise<PaginatedResponse<Provider>> {
-    const response = await apiClient.get<PaginatedResponse<Provider>>('/providers', {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<Provider>>>('/providers', {
       params: filters,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
    * Get provider by ID
    */
   async getById(id: string): Promise<Provider> {
-    const response = await apiClient.get<Provider>(`/providers/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<Provider>>(`/providers/${id}`);
+    return response.data.data;
   }
 
   /**
    * Create provider
    */
   async create(data: CreateProviderDto): Promise<Provider> {
-    const response = await apiClient.post<Provider>('/providers', data);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<Provider>>('/providers', data);
+    return response.data.data;
   }
 
   /**
    * Update provider
    */
   async update(id: string, data: Partial<CreateProviderDto>): Promise<Provider> {
-    const response = await apiClient.patch<Provider>(`/providers/${id}`, data);
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<Provider>>(`/providers/${id}`, data);
+    return response.data.data;
   }
 
   /**

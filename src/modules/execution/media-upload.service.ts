@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { randomUUID } from 'crypto';
 import { MediaUploadRequestDto } from './dto/media-upload.dto';
 
-interface MediaUploadResponse {
+export interface MediaUploadResponse {
   uploadUrl: string;
   mediaUrl: string;
   thumbnailUrl: string;

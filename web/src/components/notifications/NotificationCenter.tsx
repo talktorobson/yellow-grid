@@ -37,11 +37,18 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
 
   const { data, isLoading } = useQuery({
     queryKey: ['notifications', filter],
-    queryFn: () =>
-      notificationService.getAll({
-        read: filter === 'unread' ? false : undefined,
-        limit: 50,
-      }),
+    queryFn: async () => {
+      // TODO: Get actual user ID from auth context
+      const userId = '00000000-0000-0000-0000-000000000000';
+      const [notifications, unreadCount] = await Promise.all([
+        notificationService.getAll(userId, {
+          read: filter === 'unread' ? false : undefined,
+          limit: 50,
+        }),
+        notificationService.getUnreadCount(userId),
+      ]);
+      return { notifications, unreadCount };
+    },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -54,7 +61,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
   });
 
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => notificationService.markAllAsRead(),
+    mutationFn: () => notificationService.markAllAsRead('00000000-0000-0000-0000-000000000000'),
     onSuccess: (result) => {
       toast.success(`${result.count} notification${result.count !== 1 ? 's' : ''} marked as read`);
       queryClient.invalidateQueries({ queryKey: ['notifications'] });

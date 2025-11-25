@@ -9,6 +9,7 @@ import { format, parse, startOfWeek, getDay, addDays, startOfMonth, endOfMonth }
 import { useQuery } from '@tanstack/react-query';
 import { calendarService } from '@/services/calendar-service';
 import { providerService } from '@/services/provider-service';
+import { Provider } from '@/types';
 import AvailabilityHeatmap from '@/components/calendar/AvailabilityHeatmap';
 import { Calendar as CalendarIcon, Users, Filter, Download } from 'lucide-react';
 import clsx from 'clsx';
@@ -87,7 +88,7 @@ export default function CalendarPage() {
   const { data: utilization } = useQuery({
     queryKey: ['calendar-utilization', dateRange, selectedProviders],
     queryFn: () =>
-      calendarService.getUtilizationMetrics({
+      calendarService.getUtilizationStats({
         ...dateRange,
         providerIds: selectedProviders.length > 0 ? selectedProviders : undefined,
       }),
@@ -150,7 +151,7 @@ export default function CalendarPage() {
   const heatmapData = useMemo(() => {
     if (!utilization) return [];
 
-    return utilization.flatMap((provider) => ({
+    return utilization.flatMap((provider: any) => ({
       date: dateRange.startDate,
       utilizationRate: provider.utilizationRate,
       totalHours: provider.totalHours,
@@ -219,7 +220,7 @@ export default function CalendarPage() {
               <Users className="w-4 h-4 text-gray-400" />
             </div>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {providers.map((provider) => (
+              {providers.map((provider: Provider) => (
                 <label
                   key={provider.id}
                   className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
@@ -253,7 +254,7 @@ export default function CalendarPage() {
                 <div className="text-2xl font-bold text-gray-900">
                   {utilization
                     ? (
-                        (utilization.reduce((sum, u) => sum + u.utilizationRate, 0) /
+                        (utilization.reduce((sum: number, u: any) => sum + u.utilizationRate, 0) /
                           utilization.length) *
                         100
                       ).toFixed(0)

@@ -59,22 +59,27 @@ export interface AnalyticsData {
   };
 }
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 export const dashboardService = {
   /**
    * Get dashboard statistics
    */
   async getStats(): Promise<DashboardStats> {
-    const response = await apiClient.get<DashboardStats>('/dashboard/stats');
-    return response.data;
+    const response = await apiClient.get<ApiResponse<DashboardStats>>('/dashboard/stats');
+    return response.data.data;
   },
 
   /**
    * Get advanced analytics data
    */
   async getAnalytics(range: string = '30d'): Promise<AnalyticsData> {
-    const response = await apiClient.get<AnalyticsData>('/dashboard/analytics', {
+    const response = await apiClient.get<ApiResponse<AnalyticsData>>('/dashboard/analytics', {
       params: { range },
     });
-    return response.data;
+    return response.data.data;
   },
 };

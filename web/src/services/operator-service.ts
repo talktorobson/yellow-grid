@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { UUID, ISODateString } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 // Operator interfaces
 export interface Operator {
   id: UUID;
@@ -46,31 +51,31 @@ class OperatorService {
     page?: number;
     limit?: number;
   }): Promise<{ operators: Operator[]; total: number; page: number; limit: number }> {
-    const response = await apiClient.get<{
+    const response = await apiClient.get<ApiResponse<{
       operators: Operator[];
       total: number;
       page: number;
       limit: number;
-    }>('/operators', { params });
-    return response.data;
+    }>>('/operators', { params });
+    return response.data.data;
   }
 
   /**
    * Get operator by ID
    */
   async getById(id: string): Promise<Operator> {
-    const response = await apiClient.get<Operator>(`/operators/${id}`);
-    return response.data;
+    const response = await apiClient.get<ApiResponse<Operator>>(`/operators/${id}`);
+    return response.data.data;
   }
 
   /**
    * Get operators for project ownership
    */
   async getOperatorsForProjectOwnership(countryCode: string): Promise<Operator[]> {
-    const response = await apiClient.get<Operator[]>(
+    const response = await apiClient.get<ApiResponse<Operator[]>>(
       `/operators/project-ownership/${countryCode}`
     );
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -80,10 +85,10 @@ class OperatorService {
     countryCode?: string,
     operatorId?: string
   ): Promise<OperatorWorkloadStats> {
-    const response = await apiClient.get<OperatorWorkloadStats>('/operators/workload-stats', {
+    const response = await apiClient.get<ApiResponse<OperatorWorkloadStats>>('/operators/workload-stats', {
       params: { countryCode, operatorId },
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -93,8 +98,8 @@ class OperatorService {
     id: string,
     data: { status: string; reason?: string }
   ): Promise<Operator> {
-    const response = await apiClient.patch<Operator>(`/operators/${id}/availability`, data);
-    return response.data;
+    const response = await apiClient.patch<ApiResponse<Operator>>(`/operators/${id}/availability`, data);
+    return response.data.data;
   }
 }
 

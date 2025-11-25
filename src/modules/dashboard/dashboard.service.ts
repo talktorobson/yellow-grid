@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { ServiceOrderState, AssignmentState, TaskStatus } from '@prisma/client';
-import { subDays, startOfDay, format } from 'date-fns';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class DashboardService {
@@ -101,8 +101,8 @@ export class DashboardService {
       days = 90;
     }
     
-    const startDate = startOfDay(subDays(new Date(), days));
-    const previousStartDate = startOfDay(subDays(new Date(), days * 2));
+    const startDate = DateTime.now().minus({ days }).startOf('day').toJSDate();
+    const previousStartDate = DateTime.now().minus({ days: days * 2 }).startOf('day').toJSDate();
 
     // Helper to calculate percentage change
     const calculateChange = (current: number, previous: number) => {
@@ -183,22 +183,22 @@ export class DashboardService {
     const interval = Math.ceil(days / trendPoints);
 
     for (let i = trendPoints - 1; i >= 0; i--) {
-      const date = subDays(new Date(), i * interval);
-      const nextDate = addDays(date, interval);
-      labels.push(format(date, 'MMM dd'));
+      const date = DateTime.now().minus({ days: i * interval }).startOf('day');
+      const nextDate = date.plus({ days: interval });
+      labels.push(date.toFormat('MMM dd'));
 
       const [orders, completions, assignments] = await Promise.all([
         this.prisma.serviceOrder.count({
-          where: { createdAt: { gte: startOfDay(date), lt: startOfDay(nextDate) } },
+          where: { createdAt: { gte: date.toJSDate(), lt: nextDate.toJSDate() } },
         }),
         this.prisma.serviceOrder.count({
           where: {
             state: ServiceOrderState.COMPLETED,
-            updatedAt: { gte: startOfDay(date), lt: startOfDay(nextDate) },
+            updatedAt: { gte: date.toJSDate(), lt: nextDate.toJSDate() },
           },
         }),
         this.prisma.assignment.count({
-          where: { createdAt: { gte: startOfDay(date), lt: startOfDay(nextDate) } },
+          where: { createdAt: { gte: date.toJSDate(), lt: nextDate.toJSDate() } },
         }),
       ]);
 
@@ -254,8 +254,4 @@ export class DashboardService {
   }
 }
 
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
+

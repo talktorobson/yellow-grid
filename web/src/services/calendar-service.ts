@@ -6,6 +6,11 @@
 import apiClient from './api-client';
 import { ServiceOrder } from '@/types';
 
+interface ApiResponse<T> {
+  data: T;
+  meta: any;
+}
+
 export interface AvailabilitySlot {
   id: string;
   providerId: string;
@@ -52,10 +57,10 @@ class CalendarService {
     endDate: string;
     countryCode?: string;
   }): Promise<ProviderAvailability[]> {
-    const response = await apiClient.get<ProviderAvailability[]>('/calendar/availability', {
+    const response = await apiClient.get<ApiResponse<ProviderAvailability[]>>('/calendar/availability', {
       params,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -68,10 +73,10 @@ class CalendarService {
     providerIds?: string[];
     countryCode?: string;
   }): Promise<ServiceOrder[]> {
-    const response = await apiClient.get<ServiceOrder[]>('/calendar/scheduled-orders', {
+    const response = await apiClient.get<ApiResponse<ServiceOrder[]>>('/calendar/scheduled-orders', {
       params,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -82,12 +87,12 @@ class CalendarService {
     providerId: string,
     scheduledDate: string
   ): Promise<SchedulingConflict[]> {
-    const response = await apiClient.post<SchedulingConflict[]>('/calendar/check-conflicts', {
+    const response = await apiClient.post<ApiResponse<SchedulingConflict[]>>('/calendar/check-conflicts', {
       serviceOrderId,
       providerId,
       scheduledDate,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
@@ -98,60 +103,50 @@ class CalendarService {
     providerId: string,
     scheduledDate: string
   ): Promise<ServiceOrder> {
-    const response = await apiClient.post<ServiceOrder>('/calendar/schedule', {
+    const response = await apiClient.post<ApiResponse<ServiceOrder>>('/calendar/schedule', {
       serviceOrderId,
       providerId,
       scheduledDate,
     });
-    return response.data;
+    return response.data.data;
   }
 
   /**
-   * Reschedule service order
+   * Block provider time
    */
-  async rescheduleOrder(
-    serviceOrderId: string,
-    newScheduledDate: string
-  ): Promise<ServiceOrder> {
-    const response = await apiClient.patch<ServiceOrder>(
-      `/calendar/reschedule/${serviceOrderId}`,
-      {
-        newScheduledDate,
-      }
-    );
-    return response.data;
+  async blockProviderTime(
+    providerId: string,
+    startTime: string,
+    endTime: string,
+    reason: string
+  ): Promise<AvailabilitySlot> {
+    const response = await apiClient.post<ApiResponse<AvailabilitySlot>>('/calendar/block-time', {
+      providerId,
+      startTime,
+      endTime,
+      reason,
+    });
+    return response.data.data;
   }
 
   /**
-   * Block time slot (mark as unavailable)
+   * Unblock provider time
    */
-  async blockTimeSlot(params: {
-    providerId: string;
-    startTime: string;
-    endTime: string;
-    reason: string;
-  }): Promise<AvailabilitySlot> {
-    const response = await apiClient.post<AvailabilitySlot>('/calendar/block-slot', params);
-    return response.data;
+  async unblockProviderTime(slotId: string): Promise<void> {
+    await apiClient.delete(`/calendar/block-time/${slotId}`);
   }
 
   /**
-   * Get provider utilization metrics
+   * Get calendar utilization stats
    */
-  async getUtilizationMetrics(params: {
-    providerIds?: string[];
+  async getUtilizationStats(params: {
     startDate: string;
     endDate: string;
-  }): Promise<Array<{
-    providerId: string;
-    providerName: string;
-    totalHours: number;
-    scheduledHours: number;
-    availableHours: number;
-    utilizationRate: number;
-  }>> {
-    const response = await apiClient.get('/calendar/utilization', { params });
-    return response.data;
+    countryCode?: string;
+    providerIds?: string[];
+  }) {
+    const response = await apiClient.get<ApiResponse<any>>('/calendar/utilization', { params });
+    return response.data.data;
   }
 }
 
