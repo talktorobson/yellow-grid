@@ -203,7 +203,9 @@ export class AssignmentsService {
     mode?: AssignmentMode;
   }) {
     const { page = 1, limit = 20, status, mode } = params;
-    const skip = (page - 1) * limit;
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     const where: any = {};
     if (status) where.state = status;
@@ -213,7 +215,7 @@ export class AssignmentsService {
       this.prisma.assignment.findMany({
         where,
         skip,
-        take: Number(limit),
+        take: limitNum,
         include: {
           serviceOrder: true,
           provider: true,
@@ -227,9 +229,9 @@ export class AssignmentsService {
       data: items,
       pagination: {
         total,
-        page: Number(page),
-        limit: Number(limit),
-        totalPages: Math.ceil(total / Number(limit)),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }

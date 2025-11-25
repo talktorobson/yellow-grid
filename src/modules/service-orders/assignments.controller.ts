@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AssignmentsService } from './assignments.service';
 import { AssignmentMode, AssignmentState } from '@prisma/client';
@@ -31,8 +31,8 @@ export class AssignmentsController {
   @ApiOperation({ summary: 'List assignments with pagination and filtering' })
   @ApiResponse({ status: 200, description: 'List of assignments' })
   async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('status') status?: AssignmentState,
     @Query('mode') mode?: AssignmentMode,
   ) {
