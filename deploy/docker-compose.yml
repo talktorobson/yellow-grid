@@ -61,8 +61,7 @@ services:
     restart: always
     ports:
       - '80:80'
-      # Uncomment 443 if you configure a domain in Caddyfile
-      # - '443:443'
+      - '443:443'
     depends_on:
       - api
 

@@ -1,4 +1,12 @@
-:80 {
+# To use a real domain with automatic HTTPS (Let's Encrypt):
+# 1. Replace '135.181.96.93' with your domain (e.g., 'yellowgrid.com')
+# 2. Remove the 'tls internal' line
+# 3. Ensure your DNS A record points to 135.181.96.93
+
+135.181.96.93 {
+    # Use self-signed certificate for IP address
+    tls internal
+    
     encode gzip
 
     # Proxy API requests to the backend
