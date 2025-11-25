@@ -27,7 +27,7 @@ We use a **Single VPS** approach with Docker Compose to keep costs low (~$5-10/m
 
 SSH into your server:
 ```bash
-ssh root@your-server-ip
+ssh root@135.181.96.93
 ```
 
 Install Docker & Docker Compose:
@@ -111,7 +111,7 @@ docker-compose -f deploy/docker-compose.yml build
 
 Since the API is running on your VPS, you can point the mobile app to it.
 
-1.  **Expo Go**: If you are developing locally, update your `.env` in `mobile-app/` to point to `http://<your-vps-ip>/api`.
+1.  **Expo Go**: If you are developing locally, update your `.env` in `mobile-app/` to point to `http://135.181.96.93/api`.
 2.  **Production**: If you build an APK, ensure the API URL is configured to your VPS IP or Domain.
 
 ## 💰 Estimated Cost
