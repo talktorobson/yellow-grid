@@ -85,6 +85,56 @@ Run the reset script. This will build the images, start containers, migrate the 
 
 *Note: The first run will take a few minutes to build the Docker images.*
 
+### Remote Deployment (from local machine)
+
+Deploy to VPS directly from your local development machine:
+
+```bash
+# Basic deployment (base data only)
+./deploy/deploy-remote.sh
+
+# Deploy with demo data for PT, ES, IT, FR
+./deploy/deploy-remote.sh --seed-demo
+
+# Quick deploy (skip Docker rebuild)
+./deploy/deploy-remote.sh --skip-build --seed-demo
+```
+
+## 🌱 Demo Data
+
+The platform includes a demo data seeder that creates realistic test data for **Portugal, Spain, Italy, and France**.
+
+### What gets seeded:
+| Country | Providers | Work Teams | Service Orders |
+|---------|-----------|------------|----------------|
+| PT      | 3         | 6          | 8              |
+| ES      | 4         | 8          | 15             |
+| IT      | 3         | 6          | 8              |
+| FR      | 4         | 8          | 12             |
+| **Total** | **14**  | **28**     | **43**         |
+
+Service orders include various states: CREATED, SCHEDULED, ASSIGNED, ACCEPTED, IN_PROGRESS, COMPLETED, CANCELLED.
+
+### Seed demo data locally:
+```bash
+./scripts/seed-demo.sh
+
+# Or reset and reseed
+./scripts/seed-demo.sh --reset
+```
+
+### Seed demo data on server:
+```bash
+# Via reset script (default includes demo data)
+./deploy/reset-demo.sh
+
+# Skip demo data
+./deploy/reset-demo.sh --no-demo
+
+# Via deploy script
+./deploy/deploy-remote.sh --seed-demo
+```
+
 ## 🔄 Operations
 
 ### Resetting the Demo
