@@ -200,32 +200,450 @@ export default function ServiceOrderDetailPage() {
               </div>
 
               {/* Customer Information */}
-              {(order.customerName || order.customerAddress || order.customerPhone || order.customerEmail) && (
+              {(order.customerInfo || order.customerName || order.customerAddress || order.customerPhone || order.customerEmail) && (
                 <div className="card">
                   <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
                   <dl className="grid grid-cols-2 gap-4">
-                    {order.customerName && (
+                    {(order.customerInfo?.name || order.customerName) && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Customer Name</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{order.customerName}</dd>
+                        <dd className="mt-1 text-sm text-gray-900">{order.customerInfo?.name || order.customerName}</dd>
                       </div>
                     )}
-                    {order.customerPhone && (
+                    {(order.customerInfo?.phone || order.customerPhone) && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{order.customerPhone}</dd>
+                        <dd className="mt-1 text-sm text-gray-900">{order.customerInfo?.phone || order.customerPhone}</dd>
                       </div>
                     )}
-                    {order.customerAddress && (
-                      <div className="col-span-2">
-                        <dt className="text-sm font-medium text-gray-500">Address</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{order.customerAddress}</dd>
-                      </div>
-                    )}
-                    {order.customerEmail && (
+                    {(order.customerInfo?.email || order.customerEmail) && (
                       <div>
                         <dt className="text-sm font-medium text-gray-500">Email</dt>
-                        <dd className="mt-1 text-sm text-gray-900">{order.customerEmail}</dd>
+                        <dd className="mt-1 text-sm text-gray-900">{order.customerInfo?.email || order.customerEmail}</dd>
+                      </div>
+                    )}
+                    {(order.customerInfo?.address || order.customerAddress) && (
+                      <div className="col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Address</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {order.customerInfo?.address 
+                            ? `${order.customerInfo.address.street || ''}, ${order.customerInfo.address.city || ''} ${order.customerInfo.address.postalCode || ''}, ${order.customerInfo.address.country || ''}`
+                            : order.customerAddress}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+              
+              {/* Service Address */}
+              {order.serviceAddress && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Service Address</h2>
+                  <dl className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <dt className="text-sm font-medium text-gray-500">Location</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        {order.serviceAddress.street}, {order.serviceAddress.city} {order.serviceAddress.postalCode}, {order.serviceAddress.country}
+                      </dd>
+                    </div>
+                    {order.serviceAddress.lat && order.serviceAddress.lng && (
+                      <div className="col-span-2">
+                        <dt className="text-sm font-medium text-gray-500">Coordinates</dt>
+                        <dd className="mt-1 text-sm text-gray-500 font-mono text-xs">
+                          {order.serviceAddress.lat.toFixed(6)}, {order.serviceAddress.lng.toFixed(6)}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {/* Sales Context (v2.1) */}
+              {(order.salesSystem || order.store || order.salesOrderNumber || order.salesChannel) && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Sales Context</h2>
+                  <dl className="grid grid-cols-2 gap-4">
+                    {order.salesOrderNumber && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Sales Order #</dt>
+                        <dd className="mt-1 text-sm text-gray-900 font-mono">{order.salesOrderNumber}</dd>
+                      </div>
+                    )}
+                    {order.salesChannel && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Sales Channel</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          <span className={clsx(
+                            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                            order.salesChannel === 'ONLINE' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                          )}>
+                            {order.salesChannel === 'IN_STORE' ? '🏪 In-Store' : 
+                             order.salesChannel === 'ONLINE' ? '🌐 Online' : 
+                             order.salesChannel === 'PHONE' ? '📞 Phone' : '🚗 Field Sales'}
+                          </span>
+                        </dd>
+                      </div>
+                    )}
+                    {order.salesSystem && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Sales System</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {order.salesSystem.name} <span className="text-gray-400">({order.salesSystem.code})</span>
+                        </dd>
+                      </div>
+                    )}
+                    {order.store && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Store</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {order.store.name}
+                          <div className="text-xs text-gray-400">{order.store.buCode}</div>
+                        </dd>
+                      </div>
+                    )}
+                    {order.orderDate && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Order Date</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {format(new Date(order.orderDate), 'PPP')}
+                        </dd>
+                      </div>
+                    )}
+                    {order.buCode && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Business Unit Code</dt>
+                        <dd className="mt-1 text-sm text-gray-900 font-mono">{order.buCode}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {/* Contacts (v2.1) */}
+              {order.contacts && order.contacts.length > 0 && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Contacts</h2>
+                  <div className="space-y-3">
+                    {order.contacts.map((contact) => (
+                      <div 
+                        key={contact.id} 
+                        className={clsx(
+                          'p-3 rounded-lg border',
+                          contact.isPrimary ? 'border-primary-200 bg-primary-50' : 'border-gray-200 bg-gray-50'
+                        )}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">
+                                {contact.firstName} {contact.lastName}
+                              </span>
+                              {contact.isPrimary && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-700">
+                                  Primary
+                                </span>
+                              )}
+                              <span className={clsx(
+                                'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium',
+                                contact.contactType === 'CUSTOMER' ? 'bg-blue-100 text-blue-700' :
+                                contact.contactType === 'SITE_CONTACT' ? 'bg-green-100 text-green-700' :
+                                contact.contactType === 'BILLING' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              )}>
+                                {contact.contactType === 'CUSTOMER' ? '👤 Customer' :
+                                 contact.contactType === 'SITE_CONTACT' ? '📍 Site' :
+                                 contact.contactType === 'BILLING' ? '💳 Billing' : '🚨 Emergency'}
+                              </span>
+                            </div>
+                            {contact.title && (
+                              <div className="text-xs text-gray-500">{contact.title}</div>
+                            )}
+                          </div>
+                          {contact.preferredMethod && (
+                            <span className="text-xs text-gray-400">
+                              Prefers: {contact.preferredMethod}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                          {contact.phone && (
+                            <div className="flex items-center gap-1 text-gray-600">
+                              📞 <a href={`tel:${contact.phone}`} className="hover:text-primary-600">{contact.phone}</a>
+                            </div>
+                          )}
+                          {contact.mobile && (
+                            <div className="flex items-center gap-1 text-gray-600">
+                              📱 <a href={`tel:${contact.mobile}`} className="hover:text-primary-600">{contact.mobile}</a>
+                            </div>
+                          )}
+                          {contact.email && (
+                            <div className="flex items-center gap-1 text-gray-600">
+                              ✉️ <a href={`mailto:${contact.email}`} className="hover:text-primary-600">{contact.email}</a>
+                            </div>
+                          )}
+                          {contact.whatsapp && (
+                            <div className="flex items-center gap-1 text-gray-600">
+                              💬 {contact.whatsapp}
+                            </div>
+                          )}
+                        </div>
+                        {contact.availabilityNotes && (
+                          <div className="mt-2 text-xs text-gray-500 italic">
+                            📝 {contact.availabilityNotes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Line Items / Order Contents (v2.1) */}
+              {order.lineItems && order.lineItems.length > 0 && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Order Contents</h2>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                          <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                          <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                          <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                          <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {order.lineItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 text-sm text-gray-500">{item.lineNumber}</td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-start gap-2">
+                                <span className={clsx(
+                                  'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium mt-0.5',
+                                  item.lineType === 'PRODUCT' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                )}>
+                                  {item.lineType === 'PRODUCT' ? '📦' : '🔧'}
+                                </span>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                                  <div className="text-xs text-gray-400 font-mono">{item.sku}</div>
+                                  {item.productBrand && (
+                                    <div className="text-xs text-gray-500">{item.productBrand} {item.productModel}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center text-sm text-gray-900">
+                              {Number(item.quantity)} {item.unitOfMeasure !== 'UNIT' && item.unitOfMeasure !== 'SERVICE' && item.unitOfMeasure}
+                            </td>
+                            <td className="px-3 py-2 text-right text-sm text-gray-900">
+                              {order.currency || '€'}{Number(item.unitPriceCustomer).toFixed(2)}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {order.currency || '€'}{Number(item.lineTotalCustomer).toFixed(2)}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                incl. {(Number(item.taxRateCustomer) * 100).toFixed(0)}% tax
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {item.lineType === 'PRODUCT' && item.deliveryStatus && (
+                                <span className={clsx(
+                                  'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                                  item.deliveryStatus === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+                                  item.deliveryStatus === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
+                                  item.deliveryStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                                )}>
+                                  {item.deliveryStatus === 'DELIVERED' ? '✓ Delivered' :
+                                   item.deliveryStatus === 'IN_TRANSIT' ? '🚚 In Transit' :
+                                   item.deliveryStatus === 'PENDING' ? '⏳ Pending' : item.deliveryStatus}
+                                </span>
+                              )}
+                              {item.lineType === 'SERVICE' && item.executionStatus && (
+                                <span className={clsx(
+                                  'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                                  item.executionStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                  item.executionStatus === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
+                                  item.executionStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                                )}>
+                                  {item.executionStatus === 'COMPLETED' ? '✓ Done' :
+                                   item.executionStatus === 'IN_PROGRESS' ? '🔄 In Progress' :
+                                   item.executionStatus === 'PENDING' ? '⏳ Pending' : item.executionStatus}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right text-sm font-medium text-gray-500">
+                            Subtotal (excl. tax)
+                          </td>
+                          <td className="px-3 py-2 text-right text-sm text-gray-900">
+                            {order.currency || '€'}{Number(order.totalAmountCustomerExclTax || 0).toFixed(2)}
+                          </td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right text-sm font-medium text-gray-500">
+                            Tax
+                          </td>
+                          <td className="px-3 py-2 text-right text-sm text-gray-900">
+                            {order.currency || '€'}{Number(order.totalTaxCustomer || 0).toFixed(2)}
+                          </td>
+                          <td></td>
+                        </tr>
+                        <tr className="border-t-2 border-gray-300">
+                          <td colSpan={4} className="px-3 py-2 text-right text-sm font-bold text-gray-900">
+                            Total
+                          </td>
+                          <td className="px-3 py-2 text-right text-sm font-bold text-gray-900">
+                            {order.currency || '€'}{Number(order.totalAmountCustomer || 0).toFixed(2)}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  
+                  {/* Margin info (visible to operators) */}
+                  {order.totalMargin !== undefined && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-blue-700 font-medium">Provider Cost</span>
+                        <span className="text-blue-900">{order.currency || '€'}{Number(order.totalAmountProvider || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mt-1">
+                        <span className="text-blue-700 font-medium">Margin</span>
+                        <span className="text-blue-900 font-semibold">
+                          {order.currency || '€'}{Number(order.totalMargin).toFixed(2)}
+                          {order.marginPercent && (
+                            <span className="text-blue-600 ml-1">({(Number(order.marginPercent) * 100).toFixed(1)}%)</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Delivery Status (v2.1) */}
+              {(order.productDeliveryStatusEnum || order.earliestDeliveryDate || order.latestDeliveryDate) && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Delivery Status</h2>
+                  <dl className="grid grid-cols-2 gap-4">
+                    {order.productDeliveryStatusEnum && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Overall Delivery Status</dt>
+                        <dd className="mt-1">
+                          <span className={clsx(
+                            'inline-flex items-center px-2 py-1 rounded text-sm font-medium',
+                            order.productDeliveryStatusEnum === 'DELIVERED' ? 'bg-green-100 text-green-700' :
+                            order.productDeliveryStatusEnum === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
+                            order.productDeliveryStatusEnum === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          )}>
+                            {order.productDeliveryStatusEnum === 'DELIVERED' ? '✓ All Delivered' :
+                             order.productDeliveryStatusEnum === 'IN_TRANSIT' ? '🚚 In Transit' :
+                             order.productDeliveryStatusEnum === 'PENDING' ? '⏳ Pending' : order.productDeliveryStatusEnum}
+                          </span>
+                        </dd>
+                      </div>
+                    )}
+                    {order.allProductsDelivered !== undefined && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">All Products Delivered?</dt>
+                        <dd className="mt-1 text-sm">
+                          {order.allProductsDelivered ? 
+                            <span className="text-green-600 font-medium">✓ Yes</span> : 
+                            <span className="text-yellow-600 font-medium">⏳ Not yet</span>
+                          }
+                        </dd>
+                      </div>
+                    )}
+                    {order.earliestDeliveryDate && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Earliest Delivery</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {format(new Date(order.earliestDeliveryDate), 'PPP')}
+                        </dd>
+                      </div>
+                    )}
+                    {order.latestDeliveryDate && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Latest Delivery</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {format(new Date(order.latestDeliveryDate), 'PPP')}
+                        </dd>
+                      </div>
+                    )}
+                    {order.deliveryBlocksExecution && (
+                      <div className="col-span-2">
+                        <div className="p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700">
+                          ⚠️ Service execution is blocked until all products are delivered
+                        </div>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+
+              {/* Payment Status (v2.1) */}
+              {(order.paymentStatus || order.paymentMethod || order.paidAmount) && (
+                <div className="card">
+                  <h2 className="text-lg font-semibold mb-4">Payment</h2>
+                  <dl className="grid grid-cols-2 gap-4">
+                    {order.paymentStatus && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Payment Status</dt>
+                        <dd className="mt-1">
+                          <span className={clsx(
+                            'inline-flex items-center px-2 py-1 rounded text-sm font-medium',
+                            order.paymentStatus === 'PAID' ? 'bg-green-100 text-green-700' :
+                            order.paymentStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                            order.paymentStatus === 'PARTIAL' ? 'bg-blue-100 text-blue-700' :
+                            'bg-red-100 text-red-700'
+                          )}>
+                            {order.paymentStatus === 'PAID' ? '✓ Paid' :
+                             order.paymentStatus === 'PENDING' ? '⏳ Pending' :
+                             order.paymentStatus === 'PARTIAL' ? '◐ Partial' : order.paymentStatus}
+                          </span>
+                        </dd>
+                      </div>
+                    )}
+                    {order.paymentMethod && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Payment Method</dt>
+                        <dd className="mt-1 text-sm text-gray-900">{order.paymentMethod}</dd>
+                      </div>
+                    )}
+                    {order.paidAmount !== undefined && order.paidAmount !== null && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Amount Paid</dt>
+                        <dd className="mt-1 text-sm text-gray-900 font-semibold">
+                          {order.currency || '€'}{Number(order.paidAmount).toFixed(2)}
+                        </dd>
+                      </div>
+                    )}
+                    {order.paymentReference && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Reference</dt>
+                        <dd className="mt-1 text-sm text-gray-900 font-mono">{order.paymentReference}</dd>
+                      </div>
+                    )}
+                    {order.paidAt && (
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">Paid At</dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {format(new Date(order.paidAt), 'PPp')}
+                        </dd>
                       </div>
                     )}
                   </dl>

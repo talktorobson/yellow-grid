@@ -460,8 +460,12 @@ export default function ServiceOrdersPage() {
                       <div className="text-xs text-gray-500">{order.countryCode}</div>
                     </td>
                     <td className="table-cell">
-                      <div className="text-sm text-gray-900">Customer Name</div>
-                      <div className="text-xs text-gray-500">Location</div>
+                      <div className="text-sm text-gray-900">
+                        {order.customerInfo?.name || 'Unknown Customer'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.serviceAddress?.city || order.customerInfo?.address?.city || 'Unknown Location'}
+                      </div>
                     </td>
                     <td className="table-cell">
                       <span className="text-sm text-gray-900">{order.serviceType}</span>

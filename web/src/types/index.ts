@@ -19,6 +19,169 @@ export enum BusinessUnit {
   BRICO_DEPOT = 'BRICO_DEPOT',
 }
 
+// ============================================================================
+// Sales System & Store Types (v2.1)
+// ============================================================================
+
+export interface SalesSystem {
+  id: UUID;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface Store {
+  id: UUID;
+  externalStoreId?: string;
+  name: string;
+  countryCode: CountryCode;
+  businessUnit: BusinessUnit;
+  buCode: string;
+  address: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    lat?: number;
+    lng?: number;
+  };
+  phone?: string;
+  email?: string;
+  timezone: string;
+  isActive: boolean;
+}
+
+// ============================================================================
+// Service Order Line Item Types (v2.1)
+// ============================================================================
+
+export enum LineItemType {
+  PRODUCT = 'PRODUCT',
+  SERVICE = 'SERVICE',
+}
+
+export enum DeliveryStatus {
+  PENDING = 'PENDING',
+  READY_FOR_PICKUP = 'READY_FOR_PICKUP',
+  IN_TRANSIT = 'IN_TRANSIT',
+  DELIVERED = 'DELIVERED',
+  FAILED = 'FAILED',
+  RETURNED = 'RETURNED',
+}
+
+export enum LineExecutionStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  PARTIALLY_COMPLETED = 'PARTIALLY_COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface ServiceOrderLineItem {
+  id: UUID;
+  lineNumber: number;
+  lineType: LineItemType;
+  sku: string;
+  externalSku?: string;
+  name: string;
+  description?: string;
+  
+  // Product-specific
+  productCategory?: string;
+  productBrand?: string;
+  productModel?: string;
+  
+  // Quantities
+  quantity: number;
+  unitOfMeasure: string;
+  
+  // Customer pricing
+  unitPriceCustomer: number;
+  taxRateCustomer: number;
+  discountPercent?: number;
+  discountAmount?: number;
+  lineTotalCustomer: number;
+  lineTotalCustomerExclTax: number;
+  lineTaxAmountCustomer: number;
+  
+  // Provider pricing
+  unitPriceProvider?: number;
+  taxRateProvider?: number;
+  lineTotalProvider?: number;
+  
+  // Margin
+  marginAmount?: number;
+  marginPercent?: number;
+  
+  // Delivery tracking (products)
+  deliveryStatus?: DeliveryStatus;
+  expectedDeliveryDate?: ISODateString;
+  actualDeliveryDate?: ISODateString;
+  deliveryReference?: string;
+  
+  // Execution tracking (services)
+  executionStatus?: LineExecutionStatus;
+  executedAt?: ISODateString;
+  executedQuantity?: number;
+}
+
+// ============================================================================
+// Service Order Contact Types (v2.1)
+// ============================================================================
+
+export enum ContactType {
+  CUSTOMER = 'CUSTOMER',
+  SITE_CONTACT = 'SITE_CONTACT',
+  BILLING = 'BILLING',
+  EMERGENCY = 'EMERGENCY',
+}
+
+export enum ContactMethod {
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  MOBILE = 'MOBILE',
+  WHATSAPP = 'WHATSAPP',
+  SMS = 'SMS',
+}
+
+export interface ServiceOrderContact {
+  id: UUID;
+  contactType: ContactType;
+  isPrimary: boolean;
+  firstName: string;
+  lastName: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  whatsapp?: string;
+  preferredMethod?: ContactMethod;
+  preferredLanguage?: string;
+  doNotCall?: boolean;
+  doNotEmail?: boolean;
+  availabilityNotes?: string;
+}
+
+// ============================================================================
+// Sales Channel & Payment Types (v2.1)
+// ============================================================================
+
+export enum SalesChannel {
+  IN_STORE = 'IN_STORE',
+  ONLINE = 'ONLINE',
+  PHONE = 'PHONE',
+  FIELD_SALES = 'FIELD_SALES',
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PARTIAL = 'PARTIAL',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+  DISPUTED = 'DISPUTED',
+}
+
 // User & Auth types
 export interface User {
   id: UUID;
@@ -45,6 +208,29 @@ export enum UserRole {
 export type Permission = string; // Format: "resource:action:scope"
 
 // Service Order types
+// Customer info nested structure (from JSON field)
+export interface CustomerInfo {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+}
+
+// Service address structure (from JSON field)
+export interface ServiceAddress {
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+}
+
 export interface ServiceOrder {
   id: UUID;
   externalId: string;
@@ -58,11 +244,17 @@ export interface ServiceOrder {
   scheduledDate?: ISODateString;
   estimatedDuration?: number;
 
-  // Customer information
+  // Customer information (legacy flat fields)
   customerName?: string;
   customerAddress?: string;
   customerPhone?: string;
   customerEmail?: string;
+  
+  // Customer information (v2.1 nested JSON)
+  customerInfo?: CustomerInfo;
+  
+  // Service address (v2.1 nested JSON)
+  serviceAddress?: ServiceAddress;
 
   // AI features
   salesPotential?: SalesPotential;
@@ -93,6 +285,49 @@ export interface ServiceOrder {
 
   createdAt: ISODateString;
   updatedAt: ISODateString;
+  
+  // ============================================================================
+  // v2.1 Enhanced fields
+  // ============================================================================
+  
+  // Sales context
+  salesSystem?: SalesSystem;
+  store?: Store;
+  buCode?: string;
+  salesChannel?: SalesChannel;
+  salesOrderNumber?: string;
+  orderDate?: ISODateString;
+  
+  // Financial totals
+  currency?: string;
+  totalAmountCustomer?: number;
+  totalAmountCustomerExclTax?: number;
+  totalTaxCustomer?: number;
+  totalDiscountCustomer?: number;
+  totalAmountProvider?: number;
+  totalMargin?: number;
+  marginPercent?: number;
+  
+  // Payment
+  paymentMethod?: string;
+  paymentReference?: string;
+  paidAmount?: number;
+  paidAt?: ISODateString;
+  
+  // Delivery
+  productDeliveryStatusEnum?: DeliveryStatus;
+  earliestDeliveryDate?: ISODateString;
+  latestDeliveryDate?: ISODateString;
+  allProductsDelivered?: boolean;
+  deliveryBlocksExecution?: boolean;
+  
+  // Related data
+  lineItems?: ServiceOrderLineItem[];
+  contacts?: ServiceOrderContact[];
+  _count?: {
+    lineItems: number;
+    contacts: number;
+  };
 }
 
 export enum ServiceOrderStatus {

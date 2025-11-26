@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -408,6 +408,60 @@ async function main() {
   }
 
   console.log('✅ Created sample postal codes');
+
+  // ============================================================================
+  // 4.5. SEED SALES SYSTEMS AND STORES
+  // ============================================================================
+  console.log('\n🏪 Seeding sales systems and stores...');
+
+  // Sales Systems - these are the source systems that create service orders
+  const salesSystems = [
+    { code: 'PYXIS', name: 'Pyxis Sales System', description: 'Primary point-of-sale system for Leroy Merlin stores', isActive: true },
+    { code: 'TEMPO', name: 'Tempo Order System', description: 'Online order management system', isActive: true },
+    { code: 'SAP', name: 'SAP ERP', description: 'Enterprise resource planning system', isActive: true },
+    { code: 'MANUAL', name: 'Manual Entry', description: 'Manually created service orders', isActive: true },
+    { code: 'API', name: 'External API', description: 'Service orders from external integrations', isActive: true },
+  ];
+
+  const createdSalesSystems: Record<string, any> = {};
+  for (const system of salesSystems) {
+    const salesSystem = await prisma.salesSystem.upsert({
+      where: { code: system.code },
+      update: { name: system.name, description: system.description, isActive: system.isActive },
+      create: system,
+    });
+    createdSalesSystems[system.code] = salesSystem;
+  }
+  console.log(`✅ Created ${salesSystems.length} sales systems`);
+
+  // Stores - physical retail locations
+  const storesData = [
+    // Spain stores
+    { externalStoreId: 'LM_ES_001', name: 'Leroy Merlin Madrid Centro', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_001', address: { street: 'Calle Gran Via 45', city: 'Madrid', postalCode: '28013', country: 'ES', lat: 40.4200, lng: -3.7050 }, phone: '+34 91 123 4567', email: 'madrid.centro@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'LM_ES_002', name: 'Leroy Merlin Getafe', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_002', address: { street: 'Av. de los Ángeles 12', city: 'Getafe', postalCode: '28901', country: 'ES', lat: 40.3050, lng: -3.7320 }, phone: '+34 91 234 5678', email: 'getafe@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'LM_ES_003', name: 'Leroy Merlin Barcelona Sant Cugat', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_003', address: { street: 'Carrer de la Indústria 10', city: 'Sant Cugat', postalCode: '08172', country: 'ES', lat: 41.4700, lng: 2.0750 }, phone: '+34 93 123 4567', email: 'santcugat@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'LM_ES_004', name: 'Leroy Merlin Valencia', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_004', address: { street: 'Av. de Francia 15', city: 'Valencia', postalCode: '46023', country: 'ES', lat: 39.4560, lng: -0.3560 }, phone: '+34 96 123 4567', email: 'valencia@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
+    // France stores
+    { externalStoreId: 'LM_FR_001', name: 'Leroy Merlin Paris Ivry', countryCode: 'FR', businessUnit: 'LEROY_MERLIN', buCode: 'LM_FR_001', address: { street: '92 Quai de la Gare', city: 'Paris', postalCode: '75013', country: 'FR', lat: 48.8300, lng: 2.3700 }, phone: '+33 1 40 12 34 56', email: 'paris.ivry@leroymerlin.fr', timezone: 'Europe/Paris', isActive: true },
+    { externalStoreId: 'LM_FR_002', name: 'Leroy Merlin Paris Madeleine', countryCode: 'FR', businessUnit: 'LEROY_MERLIN', buCode: 'LM_FR_002', address: { street: '14 Rue de la Madeleine', city: 'Paris', postalCode: '75008', country: 'FR', lat: 48.8700, lng: 2.3250 }, phone: '+33 1 42 12 34 56', email: 'paris.madeleine@leroymerlin.fr', timezone: 'Europe/Paris', isActive: true },
+    // Italy stores
+    { externalStoreId: 'LM_IT_001', name: 'Leroy Merlin Milano Carugate', countryCode: 'IT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_IT_001', address: { street: 'Via Milanofiori 5', city: 'Carugate', postalCode: '20061', country: 'IT', lat: 45.5500, lng: 9.3400 }, phone: '+39 02 123 4567', email: 'carugate@leroymerlin.it', timezone: 'Europe/Rome', isActive: true },
+    { externalStoreId: 'LM_IT_002', name: 'Leroy Merlin Roma Est', countryCode: 'IT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_IT_002', address: { street: 'Via Prenestina 156', city: 'Roma', postalCode: '00176', country: 'IT', lat: 41.8900, lng: 12.5200 }, phone: '+39 06 123 4567', email: 'roma.est@leroymerlin.it', timezone: 'Europe/Rome', isActive: true },
+    // Portugal stores
+    { externalStoreId: 'LM_PT_001', name: 'Leroy Merlin Lisboa Alfragide', countryCode: 'PT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_PT_001', address: { street: 'Estrada de Alfragide', city: 'Lisboa', postalCode: '2610-001', country: 'PT', lat: 38.7300, lng: -9.2200 }, phone: '+351 21 123 4567', email: 'alfragide@leroymerlin.pt', timezone: 'Europe/Lisbon', isActive: true },
+    { externalStoreId: 'LM_PT_002', name: 'Leroy Merlin Porto Maia', countryCode: 'PT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_PT_002', address: { street: 'Av. Eng. Duarte Pacheco 190', city: 'Maia', postalCode: '4470-158', country: 'PT', lat: 41.2400, lng: -8.6200 }, phone: '+351 22 123 4567', email: 'maia@leroymerlin.pt', timezone: 'Europe/Lisbon', isActive: true },
+  ];
+
+  const createdStores: Record<string, any> = {};
+  for (const storeData of storesData) {
+    const createdStore = await prisma.store.upsert({
+      where: { externalStoreId: storeData.externalStoreId },
+      update: { name: storeData.name, buCode: storeData.buCode, phone: storeData.phone, email: storeData.email, isActive: storeData.isActive },
+      create: storeData,
+    });
+    createdStores[storeData.buCode] = createdStore;
+  }
+  console.log(`✅ Created ${storesData.length} stores`);
 
 
   // ============================================================================
@@ -1317,6 +1371,8 @@ async function main() {
   } else {
     // CLEANUP: Delete existing orders and bookings to avoid collisions and duplicates
     console.log('🧹 Cleaning up existing transactional data...');
+    await prisma.serviceOrderLineItem.deleteMany({});
+    await prisma.serviceOrderContact.deleteMany({});
     await prisma.booking.deleteMany({});
     await prisma.assignment.deleteMany({});
     await prisma.serviceOrder.deleteMany({
@@ -1328,10 +1384,44 @@ async function main() {
 
     const today = new Date();
     
+    // Sample products and services for line items
+    const sampleProducts = [
+      { sku: 'PROD-AC-001', name: 'Split Air Conditioner 12000 BTU', unitPrice: 599.99, providerUnitCost: 480.00, taxRate: 21 },
+      { sku: 'PROD-AC-002', name: 'Window AC Unit 8000 BTU', unitPrice: 349.99, providerUnitCost: 280.00, taxRate: 21 },
+      { sku: 'PROD-HVAC-001', name: 'Heat Pump Inverter', unitPrice: 1299.99, providerUnitCost: 1040.00, taxRate: 21 },
+      { sku: 'PROD-TILE-001', name: 'Ceramic Floor Tiles (10 sqm)', unitPrice: 189.99, providerUnitCost: 150.00, taxRate: 21 },
+      { sku: 'PROD-PLUMB-001', name: 'Water Heater 50L', unitPrice: 449.99, providerUnitCost: 360.00, taxRate: 21 },
+    ];
+    
+    const sampleServices = [
+      { sku: 'SVC-INSTALL-001', name: 'Standard Installation Service', unitPrice: 150.00, providerUnitCost: 90.00, taxRate: 21 },
+      { sku: 'SVC-INSTALL-002', name: 'Premium Installation Service', unitPrice: 250.00, providerUnitCost: 150.00, taxRate: 21 },
+      { sku: 'SVC-MAINT-001', name: 'Annual Maintenance Plan', unitPrice: 99.99, providerUnitCost: 60.00, taxRate: 21 },
+      { sku: 'SVC-REPAIR-001', name: 'Standard Repair Service', unitPrice: 120.00, providerUnitCost: 72.00, taxRate: 21 },
+    ];
+    
+    // Get stores per country
+    const storesByCountry: Record<string, any[]> = {};
+    const allStores = await prisma.store.findMany();
+    for (const store of allStores) {
+      if (!storesByCountry[store.countryCode]) {
+        storesByCountry[store.countryCode] = [];
+      }
+      storesByCountry[store.countryCode].push(store);
+    }
+    
+    // Get sales systems
+    const pyxisSystem = await prisma.salesSystem.findFirst({ where: { code: 'PYXIS' } });
+    const tempoSystem = await prisma.salesSystem.findFirst({ where: { code: 'TEMPO' } });
+    
     for (const loc of locations) {
       // Find a provider in this country
       const localProvider = allProviders.find(p => p.countryCode === loc.country);
       const localTeam = workTeams.find(t => t.providerId === localProvider?.id);
+      
+      // Get a store for this country
+      const countryStores = storesByCountry[loc.country] || [];
+      const store = countryStores[Math.floor(Math.random() * countryStores.length)];
 
       // Create 5 orders per location
       for (let i = 0; i < 5; i++) {
@@ -1340,6 +1430,46 @@ async function main() {
         const lon = loc.lon + (Math.random() - 0.5) * 0.1;
         
         const status = i < 3 ? ServiceOrderState.ASSIGNED : ServiceOrderState.CREATED;
+        
+        // Determine sales channel and system
+        const isOnline = i % 3 === 0;
+        const salesChannel = isOnline ? SalesChannel.ONLINE : SalesChannel.IN_STORE;
+        const salesSystem = isOnline ? tempoSystem : pyxisSystem;
+        
+        // Generate realistic IDs
+        const salesOrderId = `SO-${loc.country}-${Date.now()}-${i}`;
+        const purchaseOrderId = isOnline ? null : `PO-${loc.country}-${Date.now()}-${i}`;
+        const ticketId = `TKT-${Date.now()}-${i}`;
+        
+        // Random product and service
+        const product = sampleProducts[Math.floor(Math.random() * sampleProducts.length)];
+        const svcItem = sampleServices[Math.floor(Math.random() * sampleServices.length)];
+        
+        // Calculate totals
+        const productQuantity = Math.floor(Math.random() * 2) + 1;
+        const productSubtotal = product.unitPrice * productQuantity;
+        const productTax = productSubtotal * (product.taxRate / 100);
+        const serviceSubtotal = svcItem.unitPrice;
+        const serviceTax = serviceSubtotal * (svcItem.taxRate / 100);
+        
+        const subtotal = productSubtotal + serviceSubtotal;
+        const taxTotal = productTax + serviceTax;
+        const totalAmount = subtotal + taxTotal;
+        
+        const providerProductCost = product.providerUnitCost * productQuantity;
+        const providerServiceCost = svcItem.providerUnitCost;
+        const providerTotalCost = providerProductCost + providerServiceCost;
+        
+        // Customer names by country
+        const customerNames: Record<string, string[]> = {
+          'ES': ['María García', 'Juan Martínez', 'Carmen López', 'Carlos Rodríguez', 'Ana Fernández'],
+          'FR': ['Marie Dupont', 'Jean Martin', 'Sophie Bernard', 'Pierre Durand', 'Isabelle Moreau'],
+          'IT': ['Maria Rossi', 'Giuseppe Russo', 'Anna Ferrari', 'Marco Esposito', 'Francesca Romano'],
+          'PT': ['Maria Silva', 'João Santos', 'Ana Oliveira', 'Pedro Costa', 'Catarina Ferreira'],
+        };
+        const names = customerNames[loc.country] || customerNames['ES'];
+        const customerName = names[i % names.length];
+        const [firstName, lastName] = customerName.split(' ');
         
         const order = await prisma.serviceOrder.create({
           data: {
@@ -1351,10 +1481,38 @@ async function main() {
             estimatedDurationMinutes: 120,
             countryCode: loc.country,
             businessUnit: 'LEROY_MERLIN',
+            
+            // NEW: Sales context fields
+            salesSystemId: salesSystem?.id,
+            storeId: store?.id,
+            buCode: store?.buCode || `LM_${loc.country}_001`,
+            salesOrderNumber: salesOrderId,
+            salesChannel: salesChannel,
+            orderDate: new Date(today.getTime() - i * 24 * 60 * 60 * 1000), // Order date was before today
+            
+            // NEW: Financial fields
+            currency: loc.country === 'ES' || loc.country === 'FR' || loc.country === 'IT' || loc.country === 'PT' ? 'EUR' : 'PLN',
+            totalAmountCustomer: totalAmount,
+            totalAmountCustomerExclTax: subtotal,
+            totalTaxCustomer: taxTotal,
+            totalAmountProvider: providerTotalCost,
+            totalAmountProviderExclTax: providerTotalCost * 0.83,
+            totalTaxProvider: providerTotalCost * 0.17,
+            totalMargin: totalAmount - providerTotalCost,
+            marginPercent: ((totalAmount - providerTotalCost) / totalAmount),
+            paymentStatus: i % 4 === 0 ? PaymentStatus.PENDING : PaymentStatus.PAID,
+            
+            // NEW: Delivery fields (for products)
+            productDeliveryStatus: i < 2 ? DeliveryStatus.DELIVERED : DeliveryStatus.PENDING,
+            earliestDeliveryDate: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000),
+            latestDeliveryDate: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+            allProductsDelivered: i < 2,
+            
+            // Preserved: Legacy JSON fields for backward compatibility
             customerInfo: {
-              name: 'John Doe',
-              email: 'john@example.com',
-              phone: '+1234567890',
+              name: customerName,
+              email: `${customerName.toLowerCase().replace(' ', '.')}@email.com`,
+              phone: `+34 ${Math.floor(600000000 + Math.random() * 99999999)}`,
               address: {
                 street: 'Main St',
                 city: loc.city,
@@ -1363,9 +1521,9 @@ async function main() {
               }
             },
             serviceAddress: {
-              street: 'Main St',
+              street: `Calle Principal ${Math.floor(Math.random() * 100) + 1}`,
               city: loc.city,
-              postalCode: '12345',
+              postalCode: `${loc.country === 'PT' ? '1000-' : ''}${Math.floor(10000 + Math.random() * 89999)}`,
               country: loc.country,
               lat: lat,
               lng: lon
@@ -1374,6 +1532,84 @@ async function main() {
             requestedEndDate: new Date(today.getTime() + (i + 7) * 24 * 60 * 60 * 1000),
           }
         });
+        
+        // Create line items for this order
+        await prisma.serviceOrderLineItem.createMany({
+          data: [
+            {
+              serviceOrderId: order.id,
+              lineNumber: 1,
+              lineType: LineItemType.PRODUCT,
+              sku: product.sku,
+              name: product.name,
+              quantity: productQuantity,
+              unitOfMeasure: 'UNIT',
+              unitPriceCustomer: product.unitPrice,
+              taxRateCustomer: product.taxRate / 100, // Convert to decimal (0.21)
+              lineTotalCustomer: productSubtotal + productTax,
+              lineTotalCustomerExclTax: productSubtotal,
+              lineTaxAmountCustomer: productTax,
+              unitPriceProvider: product.providerUnitCost,
+              taxRateProvider: product.taxRate / 100,
+              lineTotalProvider: providerProductCost * 1.21,
+              lineTotalProviderExclTax: providerProductCost,
+              lineTaxAmountProvider: providerProductCost * 0.21,
+              marginAmount: (productSubtotal + productTax) - (providerProductCost * 1.21),
+              marginPercent: ((productSubtotal + productTax) - (providerProductCost * 1.21)) / (productSubtotal + productTax),
+              deliveryStatus: i < 2 ? DeliveryStatus.DELIVERED : DeliveryStatus.PENDING,
+              executionStatus: i < 2 ? LineExecutionStatus.COMPLETED : LineExecutionStatus.PENDING,
+            },
+            {
+              serviceOrderId: order.id,
+              lineNumber: 2,
+              lineType: LineItemType.SERVICE,
+              sku: svcItem.sku,
+              name: svcItem.name,
+              quantity: 1,
+              unitOfMeasure: 'SERVICE',
+              unitPriceCustomer: svcItem.unitPrice,
+              taxRateCustomer: svcItem.taxRate / 100,
+              lineTotalCustomer: serviceSubtotal + serviceTax,
+              lineTotalCustomerExclTax: serviceSubtotal,
+              lineTaxAmountCustomer: serviceTax,
+              unitPriceProvider: svcItem.providerUnitCost,
+              taxRateProvider: svcItem.taxRate / 100,
+              lineTotalProvider: providerServiceCost * 1.21,
+              lineTotalProviderExclTax: providerServiceCost,
+              lineTaxAmountProvider: providerServiceCost * 0.21,
+              marginAmount: (serviceSubtotal + serviceTax) - (providerServiceCost * 1.21),
+              marginPercent: ((serviceSubtotal + serviceTax) - (providerServiceCost * 1.21)) / (serviceSubtotal + serviceTax),
+              executionStatus: status === ServiceOrderState.ASSIGNED ? LineExecutionStatus.IN_PROGRESS : LineExecutionStatus.PENDING,
+            },
+          ],
+        });
+        
+        // Create contacts for this order
+        await prisma.serviceOrderContact.createMany({
+          data: [
+            {
+              serviceOrderId: order.id,
+              contactType: ContactType.CUSTOMER,
+              firstName: firstName,
+              lastName: lastName,
+              email: `${customerName.toLowerCase().replace(' ', '.')}@email.com`,
+              phone: `+${loc.country === 'ES' ? '34' : loc.country === 'FR' ? '33' : loc.country === 'IT' ? '39' : '351'} ${Math.floor(600000000 + Math.random() * 99999999)}`,
+              preferredMethod: ContactMethod.PHONE,
+              isPrimary: true,
+            },
+            {
+              serviceOrderId: order.id,
+              contactType: ContactType.SITE_CONTACT,
+              firstName: `Site`,
+              lastName: firstName,
+              phone: `+${loc.country === 'ES' ? '34' : loc.country === 'FR' ? '33' : loc.country === 'IT' ? '39' : '351'} ${Math.floor(600000000 + Math.random() * 99999999)}`,
+              preferredMethod: ContactMethod.SMS,
+              isPrimary: false,
+              availabilityNotes: 'Contact at service location',
+            },
+          ],
+        });
+        
         orderCount++;
 
         if (status === ServiceOrderState.ASSIGNED && localProvider && localTeam) {
