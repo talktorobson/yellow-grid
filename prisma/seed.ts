@@ -587,9 +587,17 @@ async function main() {
 
   for (const pricing of pricingData) {
     if (pricing.serviceId) {
-      await prisma.servicePricing.create({
-        data: pricing,
-      });
+      try {
+        await prisma.servicePricing.create({
+          data: pricing,
+        });
+      } catch (e: any) {
+        if (e.code === 'P2002') {
+          // Ignore unique constraint violations (already exists)
+        } else {
+          throw e;
+        }
+      }
     }
   }
 
