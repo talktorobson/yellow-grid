@@ -150,14 +150,8 @@ export default function CalendarPage() {
   // Heatmap data
   const heatmapData = useMemo(() => {
     if (!utilization) return [];
-
-    return utilization.flatMap((provider: any) => ({
-      date: dateRange.startDate,
-      utilizationRate: provider.utilizationRate,
-      totalHours: provider.totalHours,
-      availableHours: provider.availableHours,
-    }));
-  }, [utilization, dateRange]);
+    return utilization;
+  }, [utilization]);
 
   return (
     <div>
@@ -317,8 +311,8 @@ export default function CalendarPage() {
                 ) : (
                   <AvailabilityHeatmap
                     data={heatmapData}
-                    startDate={new Date(dateRange.startDate)}
-                    endDate={new Date(dateRange.endDate)}
+                    startDate={parse(dateRange.startDate, 'yyyy-MM-dd', new Date())}
+                    endDate={parse(dateRange.endDate, 'yyyy-MM-dd', new Date())}
                     onDateClick={handleDateClick}
                   />
                 )}

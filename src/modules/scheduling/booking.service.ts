@@ -209,12 +209,16 @@ export class BookingService {
     countryCode?: string;
   }) {
     const { startDate, endDate, providerIds, countryCode } = params;
+    
+    // Ensure end date covers the full day
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     return this.prisma.serviceOrder.findMany({
       where: {
         scheduledDate: {
           gte: new Date(startDate),
-          lte: new Date(endDate),
+          lte: end,
         },
         ...(providerIds && providerIds.length > 0 && { assignedProviderId: { in: providerIds } }),
         ...(countryCode && { countryCode }),
@@ -237,6 +241,7 @@ export class BookingService {
     const { startDate, endDate, providerIds } = params;
     const start = new Date(startDate);
     const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     // Get all providers if not specified
     const providers = await this.prisma.provider.findMany({
@@ -244,48 +249,66 @@ export class BookingService {
         ...(providerIds && providerIds.length > 0 && { id: { in: providerIds } }),
         status: 'ACTIVE',
       },
-      select: { id: true, name: true },
+      select: { id: true },
     });
 
-    const metrics = [];
+    const providerCount = providers.length;
+    const providerIdsList = providers.map(p => p.id);
 
-    for (const provider of providers) {
-      // Get scheduled orders for this provider in the range
-      const orders = await this.prisma.serviceOrder.findMany({
-        where: {
-          assignedProviderId: provider.id,
-          scheduledDate: {
-            gte: start,
-            lte: end,
-          },
-          state: {
-            in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
-          },
+    // Get all orders for these providers in the range
+    const orders = await this.prisma.serviceOrder.findMany({
+      where: {
+        assignedProviderId: { in: providerIdsList },
+        scheduledDate: {
+          gte: start,
+          lte: end,
         },
-        select: {
-          estimatedDurationMinutes: true,
+        state: {
+          in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
         },
-      });
+      },
+      select: {
+        scheduledDate: true,
+        estimatedDurationMinutes: true,
+      },
+    });
 
-      const scheduledHours = orders.reduce((acc, order) => acc + ((order.estimatedDurationMinutes || 0) / 60), 0);
+    const dailyMetrics: Record<string, { scheduledMinutes: number; totalCapacityMinutes: number }> = {};
+
+    // Initialize days
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      dailyMetrics[dateStr] = {
+        scheduledMinutes: 0,
+        totalCapacityMinutes: providerCount * 8 * 60, // 8 hours per provider
+      };
+    }
+
+    // Aggregate orders
+    for (const order of orders) {
+      if (!order.scheduledDate) continue;
+      const dateStr = order.scheduledDate.toISOString().split('T')[0];
       
-      // Simplified calculation: Assume 8 hours per day, 5 days a week
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      const totalHours = days * 8; // Rough estimate
-      const availableHours = Math.max(0, totalHours - scheduledHours);
-      const utilizationRate = totalHours > 0 ? (scheduledHours / totalHours) * 100 : 0;
+      if (dailyMetrics[dateStr]) {
+        dailyMetrics[dateStr].scheduledMinutes += (order.estimatedDurationMinutes || 0);
+      }
+    }
 
-      metrics.push({
-        providerId: provider.id,
-        providerName: provider.name,
+    // Format result
+    return Object.entries(dailyMetrics).map(([date, metrics]) => {
+      const scheduledHours = metrics.scheduledMinutes / 60;
+      const totalHours = metrics.totalCapacityMinutes / 60;
+      const availableHours = Math.max(0, totalHours - scheduledHours);
+      const utilizationRate = totalHours > 0 ? (scheduledHours / totalHours) : 0;
+
+      return {
+        date,
         totalHours,
         scheduledHours,
         availableHours,
-        utilizationRate: Number(utilizationRate.toFixed(1)),
-      });
-    }
-
-    return metrics;
+        utilizationRate: Number(utilizationRate.toFixed(2)),
+      };
+    });
   }
 
   async getProviderAvailability(params: {

@@ -143,14 +143,14 @@ async function main() {
   const adminPassword = await bcrypt.hash('Admin123!', 10);
 
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@adeo.com' },
+    where: { email: 'admin-fr@adeo.com' },
     update: {
       password: adminPassword, // Update password to ensure it's correct
       firstName: 'Admin',
       lastName: 'User',
     },
     create: {
-      email: 'admin@adeo.com',
+      email: 'admin-fr@adeo.com',
       password: adminPassword,
       firstName: 'Admin',
       lastName: 'User',
@@ -214,6 +214,49 @@ async function main() {
   });
 
   console.log('✅ Test operator created');
+
+  // Create country-specific admins
+  const countryAdmins = [
+    { email: 'admin-es@adeo.com', country: 'ES', name: 'Admin Spain' },
+    { email: 'admin-it@adeo.com', country: 'IT', name: 'Admin Italy' },
+    { email: 'admin-pt@adeo.com', country: 'PT', name: 'Admin Portugal' },
+  ];
+
+  for (const admin of countryAdmins) {
+    const user = await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {
+        password: adminPassword,
+        firstName: admin.name,
+        countryCode: admin.country,
+      },
+      create: {
+        email: admin.email,
+        password: adminPassword,
+        firstName: admin.name,
+        lastName: 'User',
+        countryCode: admin.country,
+        businessUnit: 'LEROY_MERLIN',
+        isActive: true,
+        isVerified: true,
+      },
+    });
+
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: adminRole.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        roleId: adminRole.id,
+      },
+    });
+  }
+  console.log(`✅ Created ${countryAdmins.length} country-specific admins`);
 
   // ============================================================================
   // 4. SEED GEOGRAPHIC MASTER DATA
@@ -1272,6 +1315,14 @@ async function main() {
   if (!service) {
     console.warn('⚠️ No services found, skipping transactional data seeding');
   } else {
+    // CLEANUP: Delete existing orders and bookings to avoid collisions and duplicates
+    console.log('🧹 Cleaning up existing transactional data...');
+    await prisma.booking.deleteMany({});
+    await prisma.assignment.deleteMany({});
+    await prisma.serviceOrder.deleteMany({
+      where: { externalServiceOrderId: { startsWith: 'ORD-' } }
+    });
+
     let orderCount = 0;
     let bookingCount = 0;
 
@@ -1345,7 +1396,12 @@ async function main() {
             bookingDate.setDate(today.getDate() + i + 1); // Tomorrow and day after
             
             try {
-              const start = 32 + Math.floor(Math.random() * 16); // 08:00 to 12:00 start
+              // Deterministic slot to avoid collisions
+              // Base start: 32 (08:00)
+              // Offset by location index to spread them out if same provider
+              const locIndex = locations.indexOf(loc);
+              const start = 32 + (locIndex % 2) * 8; // 08:00 or 10:00
+              
               await prisma.booking.create({
                 data: {
                   serviceOrderId: order.id,
@@ -1359,11 +1415,31 @@ async function main() {
                   status: BookingStatus.CONFIRMED,
                 }
               });
+
+              // Update ServiceOrder with scheduled date
+              const startTime = new Date(bookingDate);
+              startTime.setHours(Math.floor(start * 15 / 60), (start * 15) % 60, 0, 0);
+              
+              const endTime = new Date(startTime);
+              endTime.setMinutes(endTime.getMinutes() + 120);
+
+              await prisma.serviceOrder.update({
+                where: { id: order.id },
+                data: {
+                  state: ServiceOrderState.SCHEDULED,
+                  scheduledDate: bookingDate,
+                  scheduledStartTime: startTime,
+                  scheduledEndTime: endTime,
+                }
+              });
+
               bookingCount++;
             } catch (e: any) {
               // Ignore unique constraint violation (P2002)
               if (e.code !== 'P2002') {
                 console.warn('Failed to create booking:', e);
+              } else {
+                console.warn(`Collision for ${loc.city} on ${bookingDate.toISOString()}`);
               }
             }
           }
@@ -1378,7 +1454,10 @@ async function main() {
 
   console.log('\n✨ Database seeding completed!');
   console.log('\n📝 Test Credentials:');
-  console.log('   Admin: admin@adeo.com / Admin123!');
+  console.log('   Admin (FR): admin-fr@adeo.com / Admin123!');
+  console.log('   Admin (ES): admin-es@adeo.com / Admin123!');
+  console.log('   Admin (IT): admin-it@adeo.com / Admin123!');
+  console.log('   Admin (PT): admin-pt@adeo.com / Admin123!');
   console.log('   Operator: operator@adeo.com / Operator123!');
   console.log('\n📊 Service Referential Data:');
   console.log(`   Countries: 4 (ES, FR, IT, PL)`);

@@ -57,12 +57,14 @@ export default function AvailabilityHeatmap({
   }, [dates]);
 
   const getUtilization = (date: Date): number => {
-    const dayData = data.find((d) => isSameDay(new Date(d.date), date));
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = data.find((d) => d.date === dateStr);
     return dayData?.utilizationRate ?? 0;
   };
 
   const getAvailableHours = (date: Date): number => {
-    const dayData = data.find((d) => isSameDay(new Date(d.date), date));
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const dayData = data.find((d) => d.date === dateStr);
     return dayData?.availableHours ?? 0;
   };
 

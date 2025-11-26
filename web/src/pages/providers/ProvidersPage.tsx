@@ -162,21 +162,21 @@ export default function ProvidersPage() {
                     <td className="table-cell">{getStatusBadge(provider.status)}</td>
                     <td className="table-cell">
                       <div className="flex flex-wrap gap-1">
-                        {provider.serviceTypes.slice(0, 2).map((type) => (
+                        {(provider.serviceTypes || []).slice(0, 2).map((type) => (
                           <span key={type} className="badge badge-info text-xs">
                             {type}
                           </span>
                         ))}
-                        {provider.serviceTypes.length > 2 && (
+                        {(provider.serviceTypes || []).length > 2 && (
                           <span className="text-xs text-gray-500">
-                            +{provider.serviceTypes.length - 2} more
+                            +{(provider.serviceTypes || []).length - 2} more
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="table-cell">
                       <div className="text-sm text-gray-900">
-                        {provider.coverageZones.length} zones
+                        {(provider.coverageZones || []).length} zones
                       </div>
                     </td>
                     <td className="table-cell">
