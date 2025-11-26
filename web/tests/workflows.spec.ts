@@ -75,12 +75,18 @@ test.describe('Exhaustive E2E Workflows', () => {
     const emptyState = page.getByText('No providers found');
     await expect(table.or(emptyState)).toBeVisible();
 
-    // 3. Check for "Add Provider" button (even if we don't click it to submit)
-    // It might be "Onboard Provider" or similar
-    const addBtn = page.getByRole('button', { name: /Add|Create|Onboard/i });
-    if (await addBtn.isVisible()) {
-      await expect(addBtn).toBeEnabled();
-    }
+    // 3. Check for "Add Provider" button and click it
+    const addBtn = page.getByRole('link', { name: /Add Provider/i });
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+    
+    // 4. Verify navigation to Create Provider page
+    await expect(page).toHaveURL('/providers/new');
+    await expect(page.getByRole('heading', { name: 'Onboard New Provider' })).toBeVisible();
+    
+    // 5. Go back
+    await page.click('text=Back to Providers');
+    await expect(page).toHaveURL('/providers');
   });
 
   test('Calendar Workflow', async ({ page }) => {

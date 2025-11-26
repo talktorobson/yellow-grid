@@ -48,10 +48,10 @@ export default function ProvidersPage() {
             {pagination ? `${pagination.total} total providers` : 'Loading...'}
           </p>
         </div>
-        <button className="btn btn-primary">
+        <Link to="/providers/new" className="btn btn-primary">
           <Plus className="w-4 h-4 mr-2" />
           Add Provider
-        </button>
+        </Link>
       </div>
 
       {/* Filters */}

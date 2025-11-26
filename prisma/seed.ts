@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -655,6 +655,75 @@ async function main() {
   }
 
   console.log(`✅ Created ${skillRequirements.length} service skill requirements`);
+
+  // ============================================================================
+  // 8. SEED PROVIDERS
+  // ============================================================================
+  console.log('\n👷 Seeding providers...');
+
+  const providers = [
+    {
+      externalId: 'PROV_FR_001',
+      countryCode: 'FR',
+      businessUnit: 'LM_FR',
+      name: 'Paris Installers SARL',
+      legalName: 'Paris Installers SARL',
+      taxId: 'FR123456789',
+      email: 'contact@paris-installers.fr',
+      phone: '+33123456789',
+      status: ProviderStatus.ACTIVE,
+      address: {
+        street: '123 Rue de Paris',
+        city: 'Paris',
+        postalCode: '75001',
+        country: 'FR',
+      },
+    },
+    {
+      externalId: 'PROV_FR_002',
+      countryCode: 'FR',
+      businessUnit: 'LM_FR',
+      name: 'FastFix France',
+      legalName: 'FastFix France SAS',
+      taxId: 'FR987654321',
+      email: 'support@fastfix.fr',
+      phone: '+33987654321',
+      status: ProviderStatus.ACTIVE,
+      address: {
+        street: '456 Avenue de Lyon',
+        city: 'Lyon',
+        postalCode: '69001',
+        country: 'FR',
+      },
+    },
+    {
+      externalId: 'PROV_ES_001',
+      countryCode: 'ES',
+      businessUnit: 'LM_ES',
+      name: 'Madrid Servicios SL',
+      legalName: 'Madrid Servicios SL',
+      taxId: 'ESB12345678',
+      email: 'info@madrid-servicios.es',
+      phone: '+34912345678',
+      status: ProviderStatus.ACTIVE,
+      address: {
+        street: 'Calle Mayor 1',
+        city: 'Madrid',
+        postalCode: '28001',
+        country: 'ES',
+      },
+    },
+  ];
+
+  for (const provider of providers) {
+    await prisma.provider.upsert({
+      where: { externalId: provider.externalId },
+      update: {},
+      create: provider,
+    });
+  }
+
+  console.log(`✅ Created ${providers.length} providers`);
 
   // ============================================================================
   // 9. SEED CALENDAR CONFIGS (PRD BR-5 Compliant Buffer Settings)
