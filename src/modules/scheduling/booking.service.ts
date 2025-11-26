@@ -276,12 +276,14 @@ export class BookingService {
     const dailyMetrics: Record<string, { scheduledMinutes: number; totalCapacityMinutes: number }> = {};
 
     // Initialize days
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0];
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
       dailyMetrics[dateStr] = {
         scheduledMinutes: 0,
         totalCapacityMinutes: providerCount * 8 * 60, // 8 hours per provider
       };
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     // Aggregate orders

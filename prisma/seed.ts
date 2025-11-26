@@ -1377,6 +1377,12 @@ async function main() {
         orderCount++;
 
         if (status === ServiceOrderState.ASSIGNED && localProvider && localTeam) {
+          // Update ServiceOrder with assignedProviderId
+          await prisma.serviceOrder.update({
+            where: { id: order.id },
+            data: { assignedProviderId: localProvider.id }
+          });
+
           // Create Assignment
           await prisma.assignment.create({
             data: {
