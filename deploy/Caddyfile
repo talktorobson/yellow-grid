@@ -1,11 +1,19 @@
-# To use a real domain with automatic HTTPS (Let's Encrypt):
-# 1. Replace '135.181.96.93' with your domain (e.g., 'yellowgrid.com')
-# 2. Remove the 'tls internal' line
-# 3. Ensure your DNS A record points to 135.181.96.93
+{
+}
 
-135.181.96.93 {
-    # Use self-signed certificate for IP address
-    tls internal
+# HTTP Listener - Redirect to HTTPS
+:80 {
+    redir https://{host}{uri}
+}
+
+# HTTPS Listener - Catch-all for port 443
+:443 {
+    # Use internal self-signed certificate with on-demand issuance
+    # This allows Caddy to generate certs for the internal Docker IP (172.x.x.x)
+    tls {
+        issuer internal
+        on_demand
+    }
     
     encode gzip
 
