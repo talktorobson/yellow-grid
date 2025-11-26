@@ -222,10 +222,149 @@ async function main() {
 
   // Countries
   const countries = [
-    { code: 'ES', name: 'Spain', timezone: 'Europe/Madrid', currency: 'EUR', locale: 'es-ES' },
+        { code: 'ES', name: 'Spain', timezone: 'Europe/Madrid', currency: 'EUR', locale: 'es-ES' },
     { code: 'FR', name: 'France', timezone: 'Europe/Paris', currency: 'EUR', locale: 'fr-FR' },
     { code: 'IT', name: 'Italy', timezone: 'Europe/Rome', currency: 'EUR', locale: 'it-IT' },
     { code: 'PL', name: 'Poland', timezone: 'Europe/Warsaw', currency: 'PLN', locale: 'pl-PL' },
+    { code: 'PT', name: 'Portugal', timezone: 'Europe/Lisbon', currency: 'EUR', locale: 'pt-PT' },
+  ];
+
+  for (const country of countries) {
+    await prisma.country.upsert({
+      where: { code: country.code },
+      update: {},
+      create: country,
+    });
+  }
+  console.log('✅ Created 5 countries');
+
+  // Sample provinces
+  // Spain
+  const madridProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'ES', code: '28' } },
+    update: {},
+    create: { countryCode: 'ES', code: '28', name: 'Madrid' },
+  });
+  const barcelonaProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'ES', code: '08' } },
+    update: {},
+    create: { countryCode: 'ES', code: '08', name: 'Barcelona' },
+  });
+  const valenciaProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'ES', code: '46' } },
+    update: {},
+    create: { countryCode: 'ES', code: '46', name: 'Valencia' },
+  });
+
+  // France
+  const parisProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'FR', code: '75' } },
+    update: {},
+    create: { countryCode: 'FR', code: '75', name: 'Paris' },
+  });
+
+  // Italy
+  const milanProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'IT', code: 'MI' } },
+    update: {},
+    create: { countryCode: 'IT', code: 'MI', name: 'Milan' },
+  });
+  const romeProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'IT', code: 'RM' } },
+    update: {},
+    create: { countryCode: 'IT', code: 'RM', name: 'Rome' },
+  });
+
+  // Portugal
+  const lisbonProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'PT', code: '11' } },
+    update: {},
+    create: { countryCode: 'PT', code: '11', name: 'Lisbon' },
+  });
+  const portoProvince = await prisma.province.upsert({
+    where: { countryCode_code: { countryCode: 'PT', code: '13' } },
+    update: {},
+    create: { countryCode: 'PT', code: '13', name: 'Porto' },
+  });
+
+  console.log('✅ Created sample provinces');
+
+  // Sample cities
+  // Spain
+  const madridCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: madridProvince.id, code: 'MAD' } },
+    update: {},
+    create: { provinceId: madridProvince.id, code: 'MAD', name: 'Madrid' },
+  });
+  const barcelonaCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: barcelonaProvince.id, code: 'BCN' } },
+    update: {},
+    create: { provinceId: barcelonaProvince.id, code: 'BCN', name: 'Barcelona' },
+  });
+  const valenciaCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: valenciaProvince.id, code: 'VLC' } },
+    update: {},
+    create: { provinceId: valenciaProvince.id, code: 'VLC', name: 'Valencia' },
+  });
+
+  // France
+  const parisCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: parisProvince.id, code: 'PAR' } },
+    update: {},
+    create: { provinceId: parisProvince.id, code: 'PAR', name: 'Paris' },
+  });
+
+  // Italy
+  const milanCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: milanProvince.id, code: 'MIL' } },
+    update: {},
+    create: { provinceId: milanProvince.id, code: 'MIL', name: 'Milan' },
+  });
+  const romeCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: romeProvince.id, code: 'ROM' } },
+    update: {},
+    create: { provinceId: romeProvince.id, code: 'ROM', name: 'Rome' },
+  });
+
+  // Portugal
+  const lisbonCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: lisbonProvince.id, code: 'LIS' } },
+    update: {},
+    create: { provinceId: lisbonProvince.id, code: 'LIS', name: 'Lisbon' },
+  });
+  const portoCity = await prisma.city.upsert({
+    where: { provinceId_code: { provinceId: portoProvince.id, code: 'OPO' } },
+    update: {},
+    create: { provinceId: portoProvince.id, code: 'OPO', name: 'Porto' },
+  });
+
+  console.log('✅ Created sample cities');
+
+  // Sample postal codes
+  const samplePostalCodes = [
+    { cityId: madridCity.id, code: '28001' },
+    { cityId: madridCity.id, code: '28002' },
+    { cityId: madridCity.id, code: '28003' },
+    { cityId: barcelonaCity.id, code: '08001' },
+    { cityId: valenciaCity.id, code: '46001' },
+    { cityId: parisCity.id, code: '75001' },
+    { cityId: parisCity.id, code: '75002' },
+    { cityId: parisCity.id, code: '75003' },
+    { cityId: milanCity.id, code: '20121' },
+    { cityId: romeCity.id, code: '00118' },
+    { cityId: lisbonCity.id, code: '1000-001' },
+    { cityId: portoCity.id, code: '4000-001' },
+  ];
+
+  for (const postalCode of samplePostalCodes) {
+    await prisma.postalCode.upsert({
+      where: { cityId_code: { cityId: postalCode.cityId, code: postalCode.code } },
+      update: {},
+      create: postalCode,
+    });
+  }
+
+  console.log('✅ Created sample postal codes');
   ];
 
   for (const country of countries) {
@@ -497,6 +636,100 @@ async function main() {
       lastSyncedAt: new Date(),
       createdBy: 'SEED_SCRIPT',
     },
+    // Italy Services
+    {
+      externalServiceCode: 'PYX_IT_HVAC_001',
+      fsmServiceCode: 'SVC_IT_HVAC_001',
+      externalSource: 'PYXIS',
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.HVAC,
+      name: 'Installazione Aria Condizionata - Standard',
+      description: 'Installazione standard condizionatore (fino a 3.5kW)',
+      scopeIncluded: ['Rimozione vecchia unità', 'Installazione nuova unità', 'Collegamento elettrico', 'Test funzionalità'],
+      scopeExcluded: ['Modifiche impianto elettrico', 'Opere murarie', 'Installazione staffa esterna'],
+      worksiteRequirements: ['Presa elettrica entro 2m', 'Accesso libero', 'Predisposizione unità esterna'],
+      productPrerequisites: ['Unità consegnata', 'Kit installazione incluso'],
+      estimatedDurationMinutes: 180,
+      requiresPreServiceContract: true,
+      requiresPostServiceWCF: true,
+      contractTemplateId: null,
+      status: ServiceStatus.ACTIVE,
+      syncChecksum: 'it_hvac_123',
+      lastSyncedAt: new Date(),
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      externalServiceCode: 'PYX_IT_PLUMB_001',
+      fsmServiceCode: 'SVC_IT_PLUMB_001',
+      externalSource: 'PYXIS',
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.PLUMBING,
+      name: 'Installazione Scaldabagno',
+      description: 'Installazione scaldabagno elettrico (50-100L)',
+      scopeIncluded: ['Rimozione vecchio scaldabagno', 'Installazione nuovo', 'Allacciamenti idraulici', 'Allacciamento elettrico'],
+      scopeExcluded: ['Modifiche tubazioni oltre 1m', 'Nuovo punto luce'],
+      worksiteRequirements: ['Attacchi acqua presenti', 'Presa elettrica presente'],
+      productPrerequisites: ['Scaldabagno consegnato'],
+      estimatedDurationMinutes: 240,
+      requiresPreServiceContract: true,
+      requiresPostServiceWCF: true,
+      contractTemplateId: null,
+      status: ServiceStatus.ACTIVE,
+      syncChecksum: 'it_plumb_123',
+      lastSyncedAt: new Date(),
+      createdBy: 'SEED_SCRIPT',
+    },
+    // Portugal Services
+    {
+      externalServiceCode: 'PYX_PT_HVAC_001',
+      fsmServiceCode: 'SVC_PT_HVAC_001',
+      externalSource: 'PYXIS',
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.HVAC,
+      name: 'Instalação Ar Condicionado - Standard',
+      description: 'Instalação standard ar condicionado (até 3.5kW)',
+      scopeIncluded: ['Remoção unidade antiga', 'Instalação nova unidade', 'Ligação elétrica', 'Teste funcionamento'],
+      scopeExcluded: ['Alterações elétricas', 'Trabalhos de alvenaria', 'Instalação suporte exterior'],
+      worksiteRequirements: ['Tomada elétrica a 2m', 'Acesso livre', 'Local unidade exterior preparado'],
+      productPrerequisites: ['Unidade entregue', 'Kit instalação incluído'],
+      estimatedDurationMinutes: 180,
+      requiresPreServiceContract: true,
+      requiresPostServiceWCF: true,
+      contractTemplateId: null,
+      status: ServiceStatus.ACTIVE,
+      syncChecksum: 'pt_hvac_123',
+      lastSyncedAt: new Date(),
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      externalServiceCode: 'PYX_PT_PLUMB_001',
+      fsmServiceCode: 'SVC_PT_PLUMB_001',
+      externalSource: 'PYXIS',
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      serviceType: ServiceType.INSTALLATION,
+      serviceCategory: ServiceCategory.PLUMBING,
+      name: 'Instalação Termoacumulador',
+      description: 'Instalação termoacumulador elétrico (50-100L)',
+      scopeIncluded: ['Remoção antigo', 'Instalação novo', 'Ligações água', 'Ligação elétrica'],
+      scopeExcluded: ['Alteração canalização > 1m', 'Novo ponto elétrico'],
+      worksiteRequirements: ['Pontos água acessíveis', 'Ponto luz acessível'],
+      productPrerequisites: ['Termoacumulador entregue'],
+      estimatedDurationMinutes: 240,
+      requiresPreServiceContract: true,
+      requiresPostServiceWCF: true,
+      contractTemplateId: null,
+      status: ServiceStatus.ACTIVE,
+      syncChecksum: 'pt_plumb_123',
+      lastSyncedAt: new Date(),
+      createdBy: 'SEED_SCRIPT',
+    },
   ];
 
   for (const service of sampleServices) {
@@ -526,8 +759,22 @@ async function main() {
     where: { externalServiceCode: 'PYX_ES_KITCHEN_001' },
   });
 
+  // Fetch new services
+  const itHvacService = await prisma.serviceCatalog.findUnique({ where: { externalServiceCode: 'PYX_IT_HVAC_001' } });
+  const itPlumbingService = await prisma.serviceCatalog.findUnique({ where: { externalServiceCode: 'PYX_IT_PLUMB_001' } });
+  const ptHvacService = await prisma.serviceCatalog.findUnique({ where: { externalServiceCode: 'PYX_PT_HVAC_001' } });
+  const ptPlumbingService = await prisma.serviceCatalog.findUnique({ where: { externalServiceCode: 'PYX_PT_PLUMB_001' } });
+
   const madridPostalCode = await prisma.postalCode.findUnique({
     where: { cityId_code: { cityId: madridCity.id, code: '28001' } },
+  });
+
+  const milanPostalCode = await prisma.postalCode.findUnique({
+    where: { cityId_code: { cityId: milanCity.id, code: '20121' } },
+  });
+
+  const lisbonPostalCode = await prisma.postalCode.findUnique({
+    where: { cityId_code: { cityId: lisbonCity.id, code: '1000-001' } },
   });
 
   const pricingData = [
@@ -577,6 +824,80 @@ async function main() {
       businessUnit: 'LM_ES',
       postalCodeId: null,
       baseRate: 1200.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    // IT Pricing
+    {
+      serviceId: itHvacService?.id!,
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      postalCodeId: null,
+      baseRate: 160.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      serviceId: itHvacService?.id!,
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      postalCodeId: milanPostalCode?.id!,
+      baseRate: 190.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      serviceId: itPlumbingService?.id!,
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      postalCodeId: null,
+      baseRate: 210.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    // PT Pricing
+    {
+      serviceId: ptHvacService?.id!,
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      postalCodeId: null,
+      baseRate: 130.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      serviceId: ptHvacService?.id!,
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      postalCodeId: lisbonPostalCode?.id!,
+      baseRate: 150.00,
+      currency: 'EUR',
+      rateType: RateType.FIXED,
+      validFrom: new Date('2025-01-01'),
+      validUntil: null,
+      createdBy: 'SEED_SCRIPT',
+    },
+    {
+      serviceId: ptPlumbingService?.id!,
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      postalCodeId: null,
+      baseRate: 180.00,
       currency: 'EUR',
       rateType: RateType.FIXED,
       validFrom: new Date('2025-01-01'),
@@ -651,6 +972,34 @@ async function main() {
       specialtyId: kitchenSpecialty?.id!,
       isRequired: true,
       minimumExperience: ExperienceLevel.SENIOR,
+    },
+    // IT HVAC
+    {
+      serviceId: itHvacService?.id!,
+      specialtyId: hvacInstallSpecialty?.id!,
+      isRequired: true,
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
+    },
+    // IT Plumbing
+    {
+      serviceId: itPlumbingService?.id!,
+      specialtyId: plumbInstallSpecialty?.id!,
+      isRequired: true,
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
+    },
+    // PT HVAC
+    {
+      serviceId: ptHvacService?.id!,
+      specialtyId: hvacInstallSpecialty?.id!,
+      isRequired: true,
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
+    },
+    // PT Plumbing
+    {
+      serviceId: ptPlumbingService?.id!,
+      specialtyId: plumbInstallSpecialty?.id!,
+      isRequired: true,
+      minimumExperience: ExperienceLevel.INTERMEDIATE,
     },
   ];
 
@@ -728,6 +1077,57 @@ async function main() {
         postalCode: '28001',
         country: 'ES',
       },
+    },
+    // Spain (Additional)
+    {
+      externalId: 'PROV_ES_002',
+      countryCode: 'ES',
+      businessUnit: 'LM_ES',
+      name: 'Barcelona Installs SL',
+      legalName: 'Barcelona Installs SL',
+      taxId: 'ESB87654321',
+      email: 'info@bcn-installs.es',
+      phone: '+34931234567',
+      status: ProviderStatus.ACTIVE,
+      address: { street: 'La Rambla 100', city: 'Barcelona', postalCode: '08001', country: 'ES' },
+    },
+    // Italy
+    {
+      externalId: 'PROV_IT_001',
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      name: 'Milano Servizi SRL',
+      legalName: 'Milano Servizi SRL',
+      taxId: 'IT12345678901',
+      email: 'contact@milano-servizi.it',
+      phone: '+390212345678',
+      status: ProviderStatus.ACTIVE,
+      address: { street: 'Via Dante 1', city: 'Milan', postalCode: '20121', country: 'IT' },
+    },
+    {
+      externalId: 'PROV_IT_002',
+      countryCode: 'IT',
+      businessUnit: 'LM_IT',
+      name: 'Roma Fix SRL',
+      legalName: 'Roma Fix SRL',
+      taxId: 'IT98765432109',
+      email: 'info@romafix.it',
+      phone: '+390612345678',
+      status: ProviderStatus.ACTIVE,
+      address: { street: 'Via del Corso 10', city: 'Rome', postalCode: '00118', country: 'IT' },
+    },
+    // Portugal
+    {
+      externalId: 'PROV_PT_001',
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      name: 'Lisboa Montagens Lda',
+      legalName: 'Lisboa Montagens Lda',
+      taxId: 'PT123456789',
+      email: 'geral@lisboa-montagens.pt',
+      phone: '+351211234567',
+      status: ProviderStatus.ACTIVE,
+      address: { street: 'Av. da Liberdade 1', city: 'Lisbon', postalCode: '1000-001', country: 'PT' },
     },
   ];
 
@@ -859,6 +1259,25 @@ async function main() {
       travelBufferMinutes: 30,
       crossDayAllowed: false,
       holidayRegion: 'PL',
+      createdBy: 'system',
+    },
+    // Portugal - Leroy Merlin
+    {
+      countryCode: 'PT',
+      businessUnit: 'LM_PT',
+      workingDays: [1, 2, 3, 4, 5],
+      timezone: 'Europe/Lisbon',
+      morningShiftStart: '09:00',
+      morningShiftEnd: '13:00',
+      afternoonShiftStart: '14:00',
+      afternoonShiftEnd: '18:00',
+      eveningShiftStart: null,
+      eveningShiftEnd: null,
+      globalBufferNonWorkingDays: 2,
+      staticBufferNonWorkingDays: 1,
+      travelBufferMinutes: 30,
+      crossDayAllowed: false,
+      holidayRegion: 'PT',
       createdBy: 'system',
     },
   ];
