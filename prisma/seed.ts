@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -497,7 +497,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Air Conditioning Installation - Standard',
@@ -520,7 +520,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Water Heater Installation',
@@ -543,7 +543,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_KITCHEN_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.KITCHEN,
       name: 'Full Kitchen Installation',
@@ -567,7 +567,7 @@ async function main() {
       fsmServiceCode: 'SVC_IT_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Installazione Aria Condizionata - Standard',
@@ -590,7 +590,7 @@ async function main() {
       fsmServiceCode: 'SVC_IT_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Installazione Scaldabagno',
@@ -614,7 +614,7 @@ async function main() {
       fsmServiceCode: 'SVC_PT_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Instalação Ar Condicionado - Standard',
@@ -637,7 +637,7 @@ async function main() {
       fsmServiceCode: 'SVC_PT_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Instalação Termoacumulador',
@@ -707,7 +707,7 @@ async function main() {
     {
       serviceId: hvacService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null, // Country default
       baseRate: 150.00,
       currency: 'EUR',
@@ -720,7 +720,7 @@ async function main() {
     {
       serviceId: hvacService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: madridPostalCode?.id!,
       baseRate: 175.00, // 16% higher in Madrid
       currency: 'EUR',
@@ -733,7 +733,7 @@ async function main() {
     {
       serviceId: plumbingService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 200.00,
       currency: 'EUR',
@@ -746,7 +746,7 @@ async function main() {
     {
       serviceId: kitchenService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 1200.00,
       currency: 'EUR',
@@ -759,7 +759,7 @@ async function main() {
     {
       serviceId: itHvacService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 160.00,
       currency: 'EUR',
@@ -771,7 +771,7 @@ async function main() {
     {
       serviceId: itHvacService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: milanPostalCode?.id!,
       baseRate: 190.00,
       currency: 'EUR',
@@ -783,7 +783,7 @@ async function main() {
     {
       serviceId: itPlumbingService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 210.00,
       currency: 'EUR',
@@ -796,7 +796,7 @@ async function main() {
     {
       serviceId: ptHvacService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 130.00,
       currency: 'EUR',
@@ -808,7 +808,7 @@ async function main() {
     {
       serviceId: ptHvacService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: lisbonPostalCode?.id!,
       baseRate: 150.00,
       currency: 'EUR',
@@ -820,7 +820,7 @@ async function main() {
     {
       serviceId: ptPlumbingService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       postalCodeId: null,
       baseRate: 180.00,
       currency: 'EUR',
@@ -955,7 +955,7 @@ async function main() {
     {
       externalId: 'PROV_FR_001',
       countryCode: 'FR',
-      businessUnit: 'LM_FR',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Paris Installers SARL',
       legalName: 'Paris Installers SARL',
       taxId: 'FR123456789',
@@ -972,7 +972,7 @@ async function main() {
     {
       externalId: 'PROV_FR_002',
       countryCode: 'FR',
-      businessUnit: 'LM_FR',
+      businessUnit: 'LEROY_MERLIN',
       name: 'FastFix France',
       legalName: 'FastFix France SAS',
       taxId: 'FR987654321',
@@ -989,7 +989,7 @@ async function main() {
     {
       externalId: 'PROV_ES_001',
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Madrid Servicios SL',
       legalName: 'Madrid Servicios SL',
       taxId: 'ESB12345678',
@@ -1007,7 +1007,7 @@ async function main() {
     {
       externalId: 'PROV_ES_002',
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Barcelona Installs SL',
       legalName: 'Barcelona Installs SL',
       taxId: 'ESB87654321',
@@ -1020,7 +1020,7 @@ async function main() {
     {
       externalId: 'PROV_IT_001',
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Milano Servizi SRL',
       legalName: 'Milano Servizi SRL',
       taxId: 'IT12345678901',
@@ -1032,7 +1032,7 @@ async function main() {
     {
       externalId: 'PROV_IT_002',
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Roma Fix SRL',
       legalName: 'Roma Fix SRL',
       taxId: 'IT98765432109',
@@ -1045,7 +1045,7 @@ async function main() {
     {
       externalId: 'PROV_PT_001',
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       name: 'Lisboa Montagens Lda',
       legalName: 'Lisboa Montagens Lda',
       taxId: 'PT123456789',
@@ -1059,7 +1059,7 @@ async function main() {
   for (const provider of providers) {
     await prisma.provider.upsert({
       where: { externalId: provider.externalId },
-      update: {},
+      update: provider,
       create: provider,
     });
   }
@@ -1075,7 +1075,7 @@ async function main() {
     // Spain - Leroy Merlin
     {
       countryCode: 'ES',
-      businessUnit: 'LM_ES',
+      businessUnit: 'LEROY_MERLIN',
       workingDays: [1, 2, 3, 4, 5], // Monday-Friday
       timezone: 'Europe/Madrid',
       morningShiftStart: '08:00',
@@ -1094,7 +1094,7 @@ async function main() {
     // Spain - Brico Depot
     {
       countryCode: 'ES',
-      businessUnit: 'BD_ES',
+      businessUnit: 'BRICO_DEPOT',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Madrid',
       morningShiftStart: '08:00',
@@ -1113,7 +1113,7 @@ async function main() {
     // France - Leroy Merlin
     {
       countryCode: 'FR',
-      businessUnit: 'LM_FR',
+      businessUnit: 'LEROY_MERLIN',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Paris',
       morningShiftStart: '08:00',
@@ -1132,7 +1132,7 @@ async function main() {
     // France - Brico Depot
     {
       countryCode: 'FR',
-      businessUnit: 'BD_FR',
+      businessUnit: 'BRICO_DEPOT',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Paris',
       morningShiftStart: '08:00',
@@ -1151,7 +1151,7 @@ async function main() {
     // Italy - Leroy Merlin
     {
       countryCode: 'IT',
-      businessUnit: 'LM_IT',
+      businessUnit: 'LEROY_MERLIN',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Rome',
       morningShiftStart: '08:00',
@@ -1170,7 +1170,7 @@ async function main() {
     // Poland - Leroy Merlin
     {
       countryCode: 'PL',
-      businessUnit: 'LM_PL',
+      businessUnit: 'LEROY_MERLIN',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Warsaw',
       morningShiftStart: '08:00',
@@ -1189,7 +1189,7 @@ async function main() {
     // Portugal - Leroy Merlin
     {
       countryCode: 'PT',
-      businessUnit: 'LM_PT',
+      businessUnit: 'LEROY_MERLIN',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Lisbon',
       morningShiftStart: '09:00',
@@ -1218,6 +1218,160 @@ async function main() {
       update: config,
       create: config,
     });
+  }
+
+  // ============================================================================
+  // 10. SEED WORK TEAMS & TRANSACTIONAL DATA (Calendar/Heatmap)
+  // ============================================================================
+  console.log('\n👷 Seeding work teams and transactional data...');
+
+  // Fetch providers to link
+  const allProviders = await prisma.provider.findMany();
+  
+  // Create Work Teams for each provider
+  const workTeams = [];
+  for (const provider of allProviders) {
+    let team = await prisma.workTeam.findFirst({
+      where: { 
+        providerId: provider.id,
+        name: `${provider.name} - Team A`
+      }
+    });
+
+    if (!team) {
+      team = await prisma.workTeam.create({
+        data: {
+          providerId: provider.id,
+          countryCode: provider.countryCode,
+          name: `${provider.name} - Team A`,
+          maxDailyJobs: 5,
+          skills: ["installation", "repair"],
+          serviceTypes: ["P1", "P2"],
+          postalCodes: ["28001", "08001", "20121", "00118", "1000-001"],
+          workingDays: ["MON", "TUE", "WED", "THU", "FRI"],
+          shifts: [{code:"M", startLocal:"08:00", endLocal:"18:00"}]
+        }
+      });
+    }
+    workTeams.push(team);
+  }
+  console.log(`✅ Created/Verified ${workTeams.length} work teams`);
+
+  // Create Service Orders & Bookings for Heatmap/Calendar
+  // We'll create orders around the major cities we seeded
+  const locations = [
+    { city: 'Madrid', lat: 40.4168, lon: -3.7038, country: 'ES', province: '28' },
+    { city: 'Barcelona', lat: 41.3851, lon: 2.1734, country: 'ES', province: '08' },
+    { city: 'Milan', lat: 45.4642, lon: 9.1900, country: 'IT', province: 'MI' },
+    { city: 'Rome', lat: 41.9028, lon: 12.4964, country: 'IT', province: 'RM' },
+    { city: 'Lisbon', lat: 38.7223, lon: -9.1393, country: 'PT', province: '11' },
+  ];
+
+  // Get a service to use
+  const service = await prisma.serviceCatalog.findFirst();
+  if (!service) {
+    console.warn('⚠️ No services found, skipping transactional data seeding');
+  } else {
+    let orderCount = 0;
+    let bookingCount = 0;
+
+    const today = new Date();
+    
+    for (const loc of locations) {
+      // Find a provider in this country
+      const localProvider = allProviders.find(p => p.countryCode === loc.country);
+      const localTeam = workTeams.find(t => t.providerId === localProvider?.id);
+
+      // Create 5 orders per location
+      for (let i = 0; i < 5; i++) {
+        // Jitter location slightly for heatmap
+        const lat = loc.lat + (Math.random() - 0.5) * 0.1;
+        const lon = loc.lon + (Math.random() - 0.5) * 0.1;
+        
+        const status = i < 3 ? ServiceOrderState.ASSIGNED : ServiceOrderState.CREATED;
+        
+        const order = await prisma.serviceOrder.create({
+          data: {
+            externalServiceOrderId: `ORD-${loc.country}-${Date.now()}-${i}-${Math.floor(Math.random() * 1000)}`,
+            serviceId: service.id,
+            state: status,
+            serviceType: service.serviceType,
+            priority: ServicePriority.P2,
+            estimatedDurationMinutes: 120,
+            countryCode: loc.country,
+            businessUnit: 'LEROY_MERLIN',
+            customerInfo: {
+              name: 'John Doe',
+              email: 'john@example.com',
+              phone: '+1234567890',
+              address: {
+                street: 'Main St',
+                city: loc.city,
+                postalCode: '12345',
+                country: loc.country
+              }
+            },
+            serviceAddress: {
+              street: 'Main St',
+              city: loc.city,
+              postalCode: '12345',
+              country: loc.country,
+              lat: lat,
+              lng: lon
+            },
+            requestedStartDate: new Date(today.getTime() + i * 24 * 60 * 60 * 1000),
+            requestedEndDate: new Date(today.getTime() + (i + 7) * 24 * 60 * 60 * 1000),
+          }
+        });
+        orderCount++;
+
+        if (status === ServiceOrderState.ASSIGNED && localProvider && localTeam) {
+          // Create Assignment
+          await prisma.assignment.create({
+            data: {
+              serviceOrderId: order.id,
+              providerId: localProvider.id,
+              workTeamId: localTeam.id,
+              state: AssignmentState.ACCEPTED,
+              assignmentMode: AssignmentMode.DIRECT,
+              assignmentMethod: 'DIRECT',
+              acceptedAt: new Date(),
+            }
+          });
+
+          // Create Booking for the first 2 assigned ones
+          if (i < 2) {
+            const bookingDate = new Date(today);
+            bookingDate.setDate(today.getDate() + i + 1); // Tomorrow and day after
+            
+            try {
+              const start = 32 + Math.floor(Math.random() * 16); // 08:00 to 12:00 start
+              await prisma.booking.create({
+                data: {
+                  serviceOrderId: order.id,
+                  providerId: localProvider.id,
+                  workTeamId: localTeam.id,
+                  bookingDate: bookingDate,
+                  startSlot: start,
+                  endSlot: start + 8,   // 2 hours
+                  durationMinutes: 120,
+                  bookingType: BookingType.SERVICE_ORDER,
+                  status: BookingStatus.CONFIRMED,
+                }
+              });
+              bookingCount++;
+            } catch (e: any) {
+              // Ignore unique constraint violation (P2002)
+              if (e.code !== 'P2002') {
+                console.warn('Failed to create booking:', e);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Created ${orderCount} service orders and ${bookingCount} bookings for visualization`);
   }
 
   console.log(`✅ Created ${calendarConfigs.length} calendar configurations`);
