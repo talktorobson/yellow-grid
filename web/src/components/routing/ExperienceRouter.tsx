@@ -59,9 +59,12 @@ function getUserExperienceConfig(user: ReturnType<typeof useAuth>['user']): Expe
   }
 
   // Build a compatible user object for determineUserExperience
+  // Support both user.role (singular) and user.roles (array from API)
+  const userRoles = (user as any).roles || [user.role].filter(Boolean);
+  
   const userForExp = {
     userType: UserType.INTERNAL, // Default, will be overridden by role logic
-    roles: [{ name: user.role }],
+    roles: userRoles,
     providerId: undefined,
     isProviderOnboarding: false,
   };

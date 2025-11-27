@@ -3,22 +3,9 @@ import { test, expect } from '@playwright/test';
 test.describe('User Experience & Integration Tests', () => {
   
   test.beforeEach(async ({ page }) => {
-    // Go to login page
-    await page.goto('/login');
-    
-    // Click "Use Email & Password" if visible (it's behind a toggle)
-    const devLoginBtn = page.getByText('Use Email & Password');
-    if (await devLoginBtn.isVisible()) {
-      await devLoginBtn.click();
-    }
-
-    // Login
-    await page.fill('input[type="email"]', 'operator@adeo.com');
-    await page.fill('input[type="password"]', 'Operator123!');
-    await page.click('button[type="submit"]');
-    
-    // Wait for navigation to dashboard
-    await expect(page).toHaveURL('/dashboard');
+    // Auth is handled by global setup - just navigate to dashboard
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/dashboard/);
   });
 
   test('Dashboard loads correctly', async ({ page }) => {

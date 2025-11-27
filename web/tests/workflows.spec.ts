@@ -3,22 +3,20 @@ import { test, expect } from '@playwright/test';
 test.describe('Exhaustive E2E Workflows', () => {
   
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('/login');
-    
-    // Handle dev login toggle if present
-    const devLoginBtn = page.getByText('Use Email & Password');
-    if (await devLoginBtn.isVisible()) {
-      await devLoginBtn.click();
-    }
-
-    await page.fill('input[type="email"]', 'operator@adeo.com');
-    await page.fill('input[type="password"]', 'Operator123!');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/dashboard');
+    // Auth is handled by global setup - just navigate to dashboard
+    await page.goto('/dashboard');
+    // Wait for navigation to complete
+    await page.waitForLoadState('networkidle');
+    // Take screenshot for debugging
+    await page.screenshot({ path: 'test-before-each.png' });
+    console.log('beforeEach URL:', page.url());
   });
 
   test('Service Orders Workflow', async ({ page }) => {
+    // Take screenshot at start
+    await page.screenshot({ path: 'test-service-orders-start.png' });
+    console.log('Test start URL:', page.url());
+    
     // 1. Navigate to Service Orders
     await page.click('a[href="/service-orders"]');
     await expect(page).toHaveURL('/service-orders');
@@ -57,8 +55,8 @@ test.describe('Exhaustive E2E Workflows', () => {
           await expect(page.getByText('Service Order Details')).toBeVisible();
           
           // Check for tabs in details page
-          await expect(page.getByText('Overview')).toBeVisible();
-          await expect(page.getByText('Timeline')).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Overview', exact: true })).toBeVisible();
+          await expect(page.getByRole('button', { name: 'Timeline', exact: true })).toBeVisible();
         }
       }
     }

@@ -28,6 +28,11 @@ dist-ssr
 .env.local
 .env.production
 
+# Playwright
+.auth/
+playwright-report/
+test-results/
+
 # Testing
 coverage
 

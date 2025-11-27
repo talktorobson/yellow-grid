@@ -288,7 +288,7 @@ export const ROLE_TO_EXPERIENCE: Record<string, string> = {
  */
 export function determineUserExperience(user: {
   userType: UserType;
-  roles: Array<{ name: string }>;
+  roles: Array<{ name: string } | string>;
   providerId?: string;
   isProviderOnboarding?: boolean;
 }): ExperienceConfig {
@@ -310,8 +310,11 @@ export function determineUserExperience(user: {
     };
   }
 
-  // Get role names
-  const roleNames = user.roles.map(r => r.name.toUpperCase());
+  // Get role names - handle both string[] and Array<{name: string}> formats
+  const roleNames = user.roles.map(r => {
+    const roleName = typeof r === 'string' ? r : r.name;
+    return roleName?.toUpperCase() || '';
+  }).filter(Boolean);
 
   // Priority-based role checking (higher roles first)
   const rolePriority = [

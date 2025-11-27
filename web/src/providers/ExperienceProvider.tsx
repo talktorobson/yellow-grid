@@ -28,9 +28,12 @@ export function ExperienceProvider({ children }: ExperienceProviderProps) {
     if (!user) return UserExperience.OPERATOR;
     
     // Use determineUserExperience for full logic including onboarding state
+    // Support both user.role (singular) and user.roles (array from API)
+    const userRoles = (user as any).roles || [user.role].filter(Boolean);
+    
     const userForExp = {
       userType: UserType.INTERNAL,
-      roles: [{ name: user.role }],
+      roles: userRoles,
       providerId: undefined,
       isProviderOnboarding: false,
     };
