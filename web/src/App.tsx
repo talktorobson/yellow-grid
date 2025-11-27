@@ -35,6 +35,12 @@ import {
   ProviderJobsPage,
   ProviderTeamsPage,
   ProviderFinancialPage,
+  ProviderCalendarPage,
+  ProviderPerformancePage,
+  ProviderSettingsPage,
+  ProviderJobDetailPage,
+  ProviderTeamDetailPage,
+  ProviderMessagesPage,
 } from './pages/provider';
 
 // Customer Portal Pages
@@ -53,6 +59,8 @@ import {
   PSMPipelinePage,
   PSMProvidersPage,
   PSMCoveragePage,
+  PSMProviderDetailPage,
+  PSMVerificationPage,
 } from './pages/psm';
 
 // Seller Portal Pages
@@ -60,6 +68,8 @@ import {
   SellerDashboardPage,
   SellerAvailabilityPage,
   SellerTVReportPage,
+  SellerProjectsPage,
+  SellerQuotationsPage,
 } from './pages/seller';
 
 // Admin Portal Pages
@@ -67,6 +77,9 @@ import {
   AdminDashboardPage,
   AdminUsersPage,
   AdminConfigPage,
+  AdminRolesPage,
+  AdminAuditPage,
+  AdminUserDetailPage,
 } from './pages/admin';
 
 // Offer Manager / Catalog Pages
@@ -74,17 +87,8 @@ import {
   OfferManagerServicesPage,
   OfferManagerPricingPage,
   OfferManagerChecklistsPage,
+  CatalogServiceDetailPage,
 } from './pages/catalog';
-
-// Placeholder for pages not yet implemented
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center h-64">
-    <div className="text-center">
-      <h2 className="text-2xl font-semibold text-gray-700">{title}</h2>
-      <p className="text-gray-500 mt-2">Coming soon...</p>
-    </div>
-  </div>
-);
 
 function App() {
   return (
@@ -136,13 +140,14 @@ function App() {
             <Route index element={<Navigate to="/provider/dashboard" replace />} />
             <Route path="dashboard" element={<ProviderDashboardPage />} />
             <Route path="jobs" element={<ProviderJobsPage />} />
-            <Route path="jobs/:id" element={<PlaceholderPage title="Job Details" />} />
-            <Route path="calendar" element={<PlaceholderPage title="Provider Calendar" />} />
+            <Route path="jobs/:id" element={<ProviderJobDetailPage />} />
+            <Route path="calendar" element={<ProviderCalendarPage />} />
             <Route path="teams" element={<ProviderTeamsPage />} />
-            <Route path="teams/:id" element={<PlaceholderPage title="Team Details" />} />
+            <Route path="teams/:id" element={<ProviderTeamDetailPage />} />
             <Route path="financial" element={<ProviderFinancialPage />} />
-            <Route path="performance" element={<PlaceholderPage title="Provider Performance" />} />
-            <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="performance" element={<ProviderPerformancePage />} />
+            <Route path="settings" element={<ProviderSettingsPage />} />
+            <Route path="messages" element={<ProviderMessagesPage />} />
           </Route>
 
           {/* ============================================================ */}
@@ -173,9 +178,9 @@ function App() {
             <Route path="dashboard" element={<PSMDashboardPage />} />
             <Route path="pipeline" element={<PSMPipelinePage />} />
             <Route path="providers" element={<PSMProvidersPage />} />
-            <Route path="providers/:id" element={<PlaceholderPage title="Provider Details" />} />
+            <Route path="providers/:id" element={<PSMProviderDetailPage />} />
             <Route path="coverage" element={<PSMCoveragePage />} />
-            <Route path="verification" element={<PlaceholderPage title="Document Verification" />} />
+            <Route path="verification" element={<PSMVerificationPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
           </Route>
 
@@ -193,12 +198,12 @@ function App() {
             <Route index element={<Navigate to="/seller/dashboard" replace />} />
             <Route path="dashboard" element={<SellerDashboardPage />} />
             <Route path="availability" element={<SellerAvailabilityPage />} />
-            <Route path="projects" element={<PlaceholderPage title="Customer Projects" />} />
-            <Route path="projects/:id" element={<PlaceholderPage title="Project Details" />} />
+            <Route path="projects" element={<SellerProjectsPage />} />
+            <Route path="projects/:id" element={<SellerProjectsPage />} />
             <Route path="reports" element={<SellerTVReportPage />} />
-            <Route path="reports/:id" element={<PlaceholderPage title="Report Details" />} />
-            <Route path="quotations" element={<PlaceholderPage title="Quotations" />} />
-            <Route path="quotations/:id" element={<PlaceholderPage title="Quotation Details" />} />
+            <Route path="reports/:id" element={<SellerTVReportPage />} />
+            <Route path="quotations" element={<SellerQuotationsPage />} />
+            <Route path="quotations/:id" element={<SellerQuotationsPage />} />
           </Route>
 
           {/* ============================================================ */}
@@ -215,10 +220,10 @@ function App() {
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="users" element={<AdminUsersPage />} />
-            <Route path="users/:id" element={<PlaceholderPage title="User Details" />} />
-            <Route path="roles" element={<PlaceholderPage title="Roles & Permissions" />} />
+            <Route path="users/:id" element={<AdminUserDetailPage />} />
+            <Route path="roles" element={<AdminRolesPage />} />
             <Route path="config" element={<AdminConfigPage />} />
-            <Route path="audit" element={<PlaceholderPage title="Audit Logs" />} />
+            <Route path="audit" element={<AdminAuditPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
           </Route>
 
@@ -235,7 +240,7 @@ function App() {
           >
             <Route index element={<Navigate to="/catalog/services" replace />} />
             <Route path="services" element={<OfferManagerServicesPage />} />
-            <Route path="services/:id" element={<PlaceholderPage title="Service Details" />} />
+            <Route path="services/:id" element={<CatalogServiceDetailPage />} />
             <Route path="pricing" element={<OfferManagerPricingPage />} />
             <Route path="checklists" element={<OfferManagerChecklistsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
