@@ -17,6 +17,7 @@ import {
   Phone,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
 
 interface ServiceType {
   id: string;
@@ -99,7 +100,31 @@ export default function SellerAvailabilityPage() {
   const handleSearch = () => {
     if (selectedService && postalCode) {
       setSearchPerformed(true);
+      toast.success('Search completed - showing available providers');
     }
+  };
+
+  const handleContactProvider = (provider: AvailableProvider) => {
+    toast.success(`Opening contact for ${provider.companyName}`);
+    // In real implementation, this would open a contact modal or initiate a call
+  };
+
+  const handleBookSlot = () => {
+    if (!selectedSlot) return;
+    const provider = mockProviders.find(p => p.id === selectedSlot.providerId);
+    toast.success(`Booking confirmed with ${provider?.companyName} for ${selectedSlot.date} at ${selectedSlot.slot}`);
+    setSelectedSlot(null);
+  };
+
+  const handleToggleProvider = (providerId: string) => {
+    setExpandedProvider(expandedProvider === providerId ? null : providerId);
+  };
+
+  const handleSelectSlot = (providerId: string, date: string, slot: string) => {
+    const isSelected = selectedSlot?.providerId === providerId && 
+      selectedSlot?.date === date && 
+      selectedSlot?.slot === slot;
+    setSelectedSlot(isSelected ? null : { providerId, date, slot });
   };
 
   return (
@@ -111,11 +136,12 @@ export default function SellerAvailabilityPage() {
         <div className="grid md:grid-cols-4 gap-4">
           {/* Service Selection */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-2">
               Service Type
             </label>
             <div className="relative">
               <select
+                id="serviceType"
                 value={selectedService}
                 onChange={(e) => setSelectedService(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none bg-white"
@@ -133,12 +159,13 @@ export default function SellerAvailabilityPage() {
           
           {/* Postal Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
               Postal Code
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
+                id="postalCode"
                 type="text"
                 value={postalCode}
                 onChange={(e) => setPostalCode(e.target.value)}
@@ -187,11 +214,10 @@ export default function SellerAvailabilityPage() {
                 key={provider.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
               >
-                <div
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => setExpandedProvider(
-                    expandedProvider === provider.id ? null : provider.id
-                  )}
+                <button
+                  type="button"
+                  className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                  onClick={() => handleToggleProvider(provider.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -230,7 +256,7 @@ export default function SellerAvailabilityPage() {
                       )} />
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {expandedProvider === provider.id && (
                   <div className="border-t border-gray-200 p-4 bg-gray-50">
@@ -251,7 +277,10 @@ export default function SellerAvailabilityPage() {
                             ))}
                           </div>
                         </div>
-                        <button className="mt-4 w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-1">
+                        <button 
+                          onClick={() => handleContactProvider(provider)}
+                          className="mt-4 w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
+                        >
                           <Phone className="w-4 h-4" />
                           Contact Provider
                         </button>
@@ -273,9 +302,7 @@ export default function SellerAvailabilityPage() {
                                   return (
                                     <button
                                       key={slot}
-                                      onClick={() => setSelectedSlot(
-                                        isSelected ? null : { providerId: provider.id, date: day.date, slot }
-                                      )}
+                                      onClick={() => handleSelectSlot(provider.id, day.date, slot)}
                                       className={clsx(
                                         'w-full py-1.5 px-2 rounded text-xs font-medium transition-all',
                                         isSelected
@@ -302,7 +329,10 @@ export default function SellerAvailabilityPage() {
                               {selectedSlot.date} at {selectedSlot.slot}
                             </span>
                           </div>
-                          <button className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+                          <button 
+                            onClick={handleBookSlot}
+                            className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                          >
                             Book This Slot
                           </button>
                         </div>

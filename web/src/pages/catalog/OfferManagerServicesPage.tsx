@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Package,
   Search,
@@ -23,6 +24,7 @@ import {
   FileText,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
 
 interface Service {
   id: string;
@@ -116,13 +118,19 @@ const categories = ['All', 'Électricité', 'Chauffage', 'Isolation', 'Plomberie
 
 type StatusFilter = 'all' | 'active' | 'draft' | 'archived';
 
+const initialServices = mockServices;
+
 export default function OfferManagerServicesPage() {
+  const navigate = useNavigate();
+  const [services, setServices] = useState<Service[]>(initialServices);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showActions, setShowActions] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newService, setNewService] = useState({ name: '', category: 'Électricité', description: '', basePrice: '' });
 
-  const filteredServices = mockServices.filter(service => {
+  const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       service.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'All' || service.category === categoryFilter;
@@ -132,10 +140,64 @@ export default function OfferManagerServicesPage() {
   });
 
   const stats = {
-    total: mockServices.length,
-    active: mockServices.filter(s => s.status === 'active').length,
-    draft: mockServices.filter(s => s.status === 'draft').length,
-    archived: mockServices.filter(s => s.status === 'archived').length,
+    total: services.length,
+    active: services.filter(s => s.status === 'active').length,
+    draft: services.filter(s => s.status === 'draft').length,
+    archived: services.filter(s => s.status === 'archived').length,
+  };
+
+  const handleAddService = () => {
+    if (!newService.name || !newService.description || !newService.basePrice) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    const service: Service = {
+      id: String(services.length + 1),
+      name: newService.name,
+      category: newService.category,
+      description: newService.description,
+      basePrice: Number.parseInt(newService.basePrice),
+      duration: '1 day',
+      status: 'draft',
+      checklistItems: 0,
+      variations: 0,
+      lastUpdated: 'Just now',
+    };
+    setServices(prev => [...prev, service]);
+    setNewService({ name: '', category: 'Électricité', description: '', basePrice: '' });
+    setShowAddModal(false);
+    toast.success(`Service "${service.name}" created successfully`);
+  };
+
+  const handleViewService = (service: Service) => {
+    navigate(`/catalog/services/${service.id}`);
+    setShowActions(null);
+  };
+
+  const handleEditService = (service: Service) => {
+    navigate(`/catalog/services/${service.id}/edit`);
+    setShowActions(null);
+  };
+
+  const handleDuplicateService = (service: Service) => {
+    const duplicate: Service = {
+      ...service,
+      id: String(services.length + 1),
+      name: `${service.name} (Copy)`,
+      status: 'draft',
+      lastUpdated: 'Just now',
+    };
+    setServices(prev => [...prev, duplicate]);
+    toast.success(`Service duplicated successfully`);
+    setShowActions(null);
+  };
+
+  const handleDeleteService = (service: Service) => {
+    if (confirm(`Are you sure you want to delete "${service.name}"?`)) {
+      setServices(prev => prev.filter(s => s.id !== service.id));
+      toast.success('Service deleted');
+    }
+    setShowActions(null);
   };
 
   return (
@@ -237,7 +299,10 @@ export default function OfferManagerServicesPage() {
             </div>
           </div>
           
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
             <Plus className="w-4 h-4" />
             Add Service
           </button>
@@ -276,20 +341,32 @@ export default function OfferManagerServicesPage() {
                   
                   {showActions === service.id && (
                     <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[140px]">
-                      <button className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <button 
+                        onClick={() => handleViewService(service)}
+                        className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
                         <Eye className="w-4 h-4" />
                         View
                       </button>
-                      <button className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <button 
+                        onClick={() => handleEditService(service)}
+                        className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
                         <Edit className="w-4 h-4" />
                         Edit
                       </button>
-                      <button className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                      <button 
+                        onClick={() => handleDuplicateService(service)}
+                        className="w-full px-3 py-1.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
                         <Copy className="w-4 h-4" />
                         Duplicate
                       </button>
                       <hr className="my-1" />
-                      <button className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                      <button 
+                        onClick={() => handleDeleteService(service)}
+                        className="w-full px-3 py-1.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      >
                         <Trash2 className="w-4 h-4" />
                         Delete
                       </button>
@@ -351,9 +428,86 @@ export default function OfferManagerServicesPage() {
           <p className="text-gray-500 mb-4">
             Try adjusting your search or filters
           </p>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
             Add New Service
           </button>
+        </div>
+      )}
+
+      {/* Add Service Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Service</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="serviceName" className="block text-sm font-medium text-gray-700 mb-1">Service Name</label>
+                <input
+                  id="serviceName"
+                  type="text"
+                  value={newService.name}
+                  onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Electrical Panel Upgrade"
+                />
+              </div>
+              <div>
+                <label htmlFor="serviceCategory" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  id="serviceCategory"
+                  value={newService.category}
+                  onChange={(e) => setNewService(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  {categories.filter(c => c !== 'All').map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="serviceDescription" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  id="serviceDescription"
+                  value={newService.description}
+                  onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows={3}
+                  placeholder="Service description..."
+                />
+              </div>
+              <div>
+                <label htmlFor="servicePrice" className="block text-sm font-medium text-gray-700 mb-1">Base Price (€)</label>
+                <input
+                  id="servicePrice"
+                  type="number"
+                  value={newService.basePrice}
+                  onChange={(e) => setNewService(prev => ({ ...prev, basePrice: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="1250"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => {
+                  setNewService({ name: '', category: 'Électricité', description: '', basePrice: '' });
+                  setShowAddModal(false);
+                }}
+                className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddService}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Add Service
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

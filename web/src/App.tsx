@@ -76,6 +76,7 @@ import {
   AdminRolesPage,
   AdminAuditPage,
   AdminUserDetailPage,
+  AdminNotificationsPage,
 } from './pages/admin';
 
 // Offer Manager / Catalog Pages
@@ -176,6 +177,7 @@ function App() {
             <Route path="admin/users" element={<AdminUsersPage />} />
             <Route path="admin/users/:id" element={<AdminUserDetailPage />} />
             <Route path="admin/roles" element={<AdminRolesPage />} />
+            <Route path="admin/notifications" element={<AdminNotificationsPage />} />
             <Route path="admin/config" element={<AdminConfigPage />} />
             <Route path="admin/audit" element={<AdminAuditPage />} />
             <Route path="admin/analytics" element={<AnalyticsPage />} />

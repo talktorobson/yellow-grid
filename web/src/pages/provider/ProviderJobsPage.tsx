@@ -18,6 +18,7 @@ import {
   User,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
 
 type JobStatus = 'OFFER_PENDING' | 'OFFER_ACCEPTED' | 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'PENDING_WCF' | 'CANCELLED';
 type TabType = 'offers' | 'active' | 'completed' | 'all';
@@ -266,27 +267,28 @@ export default function ProviderJobsPage() {
   
   const [activeTab, setActiveTab] = useState<TabType>(initialTab as TabType);
   const [searchQuery, setSearchQuery] = useState('');
+  const [jobs, setJobs] = useState<Job[]>(mockJobs);
 
   const filteredJobs = useMemo(() => {
-    let jobs = mockJobs;
+    let result = jobs;
 
     // Filter by tab
     switch (activeTab) {
       case 'offers':
-        jobs = jobs.filter(j => j.status === 'OFFER_PENDING');
+        result = result.filter(j => j.status === 'OFFER_PENDING');
         break;
       case 'active':
-        jobs = jobs.filter(j => ['OFFER_ACCEPTED', 'SCHEDULED', 'IN_PROGRESS', 'PENDING_WCF'].includes(j.status));
+        result = result.filter(j => ['OFFER_ACCEPTED', 'SCHEDULED', 'IN_PROGRESS', 'PENDING_WCF'].includes(j.status));
         break;
       case 'completed':
-        jobs = jobs.filter(j => j.status === 'COMPLETED');
+        result = result.filter(j => j.status === 'COMPLETED');
         break;
     }
 
     // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      jobs = jobs.filter(j => 
+      result = result.filter(j => 
         j.id.toLowerCase().includes(query) ||
         j.customer.name.toLowerCase().includes(query) ||
         j.service.name.toLowerCase().includes(query) ||
@@ -294,24 +296,34 @@ export default function ProviderJobsPage() {
       );
     }
 
-    return jobs;
-  }, [activeTab, searchQuery]);
+    return result;
+  }, [activeTab, searchQuery, jobs]);
 
   const tabCounts = useMemo(() => ({
-    offers: mockJobs.filter(j => j.status === 'OFFER_PENDING').length,
-    active: mockJobs.filter(j => ['OFFER_ACCEPTED', 'SCHEDULED', 'IN_PROGRESS', 'PENDING_WCF'].includes(j.status)).length,
-    completed: mockJobs.filter(j => j.status === 'COMPLETED').length,
-    all: mockJobs.length,
-  }), []);
+    offers: jobs.filter(j => j.status === 'OFFER_PENDING').length,
+    active: jobs.filter(j => ['OFFER_ACCEPTED', 'SCHEDULED', 'IN_PROGRESS', 'PENDING_WCF'].includes(j.status)).length,
+    completed: jobs.filter(j => j.status === 'COMPLETED').length,
+    all: jobs.length,
+  }), [jobs]);
 
   const handleAcceptOffer = (jobId: string) => {
-    console.log('Accepting offer:', jobId);
-    // TODO: Implement accept offer API call
+    setJobs(prev => prev.map(job => 
+      job.id === jobId 
+        ? { ...job, status: 'OFFER_ACCEPTED' as JobStatus, scheduledDate: '2025-12-02', scheduledTime: '09:00' }
+        : job
+    ));
+    toast.success('Offer accepted! Job scheduled for Dec 2nd at 09:00');
   };
 
   const handleDeclineOffer = (jobId: string) => {
-    console.log('Declining offer:', jobId);
-    // TODO: Implement decline offer API call
+    if (confirm('Are you sure you want to decline this offer?')) {
+      setJobs(prev => prev.map(job => 
+        job.id === jobId 
+          ? { ...job, status: 'CANCELLED' as JobStatus }
+          : job
+      ));
+      toast.success('Offer declined');
+    }
   };
 
   return (
@@ -405,10 +417,16 @@ export default function ProviderJobsPage() {
           <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900">No jobs found</h3>
           <p className="text-gray-500 mt-1">
-            {searchQuery ? 'Try adjusting your search terms' : `No ${activeTab === 'all' ? '' : activeTab} jobs at the moment`}
+            {getEmptyMessage()}
           </p>
         </div>
       )}
     </div>
   );
+
+  function getEmptyMessage(): string {
+    if (searchQuery) return 'Try adjusting your search terms';
+    if (activeTab === 'all') return 'No jobs at the moment';
+    return `No ${activeTab} jobs at the moment`;
+  }
 }

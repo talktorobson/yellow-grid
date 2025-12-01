@@ -26,4 +26,18 @@ export class DashboardController {
   async getAnalytics(@Query('range') range: string = '30d') {
     return this.dashboardService.getAnalytics(range);
   }
+
+  @Get('critical-actions')
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @ApiOperation({ summary: 'Get critical actions requiring immediate attention' })
+  async getCriticalActions() {
+    return this.dashboardService.getCriticalActions();
+  }
+
+  @Get('priority-tasks')
+  @Roles(UserRole.ADMIN, UserRole.OPERATOR)
+  @ApiOperation({ summary: 'Get priority tasks for dashboard' })
+  async getPriorityTasks(@Query('limit') limit: string = '10') {
+    return this.dashboardService.getPriorityTasks(Number.parseInt(limit, 10));
+  }
 }

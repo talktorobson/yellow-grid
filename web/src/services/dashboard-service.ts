@@ -59,6 +59,37 @@ export interface AnalyticsData {
   };
 }
 
+export interface CriticalAction {
+  id: string;
+  type: 'UNASSIGNED' | 'OVERDUE' | 'SLA_RISK' | 'PENDING_RESPONSE' | 'FAILED_ASSIGNMENT' | 'ESCALATED';
+  title: string;
+  description: string;
+  count: number;
+  priority: 'critical' | 'high' | 'medium';
+  link: string;
+}
+
+export interface PriorityTask {
+  id: string;
+  title: string;
+  description: string | null;
+  type: string;
+  status: string;
+  priority: string;
+  escalationLevel: number;
+  serviceOrderId: string | null;
+  serviceOrderExternalId: string | null;
+  customerName: string;
+  assignee: {
+    id: string;
+    name: string;
+  } | null;
+  slaDeadline: string | null;
+  isOverdue: boolean;
+  hoursRemaining: number | null;
+  createdAt: string;
+}
+
 interface ApiResponse<T> {
   data: T;
   meta: any;
@@ -79,6 +110,24 @@ export const dashboardService = {
   async getAnalytics(range: string = '30d'): Promise<AnalyticsData> {
     const response = await apiClient.get<ApiResponse<AnalyticsData>>('/dashboard/analytics', {
       params: { range },
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Get critical actions requiring immediate attention
+   */
+  async getCriticalActions(): Promise<CriticalAction[]> {
+    const response = await apiClient.get<ApiResponse<CriticalAction[]>>('/dashboard/critical-actions');
+    return response.data.data;
+  },
+
+  /**
+   * Get priority tasks for dashboard
+   */
+  async getPriorityTasks(limit: number = 10): Promise<PriorityTask[]> {
+    const response = await apiClient.get<ApiResponse<PriorityTask[]>>('/dashboard/priority-tasks', {
+      params: { limit },
     });
     return response.data.data;
   },

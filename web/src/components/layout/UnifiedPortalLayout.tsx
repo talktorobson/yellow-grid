@@ -185,6 +185,7 @@ const portals: Portal[] = [
       { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
       { name: 'Users', href: '/admin/users', icon: UserCog },
       { name: 'Roles & Permissions', href: '/admin/roles', icon: Shield },
+      { name: 'Notifications', href: '/admin/notifications', icon: Bell },
       { name: 'Business Units', href: '/admin/business-units', icon: Building2 },
       { name: 'Configuration', href: '/admin/config', icon: Settings },
       { name: 'Audit Logs', href: '/admin/audit', icon: FileText },

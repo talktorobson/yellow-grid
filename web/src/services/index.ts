@@ -12,3 +12,7 @@ export * from './operator-service';
 export * from './assignment-service';
 export * from './notification-service';
 export * from './performance-service';
+export * from './user-service';
+export * from './catalog-service';
+export * from './task-service';
+export * from './dashboard-service';

@@ -22,6 +22,7 @@ import {
   GripVertical,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
 
 interface Lead {
   id: string;
@@ -173,7 +174,7 @@ const initialStages: Stage[] = [
   },
 ];
 
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({ lead }: Readonly<{ lead: Lead }>) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -269,12 +270,78 @@ function LeadCard({ lead }: { lead: Lead }) {
 }
 
 export default function PSMPipelinePage() {
-  const [stages] = useState(initialStages);
+  const [stages, setStages] = useState(initialStages);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newLead, setNewLead] = useState({ 
+    companyName: '', 
+    contactName: '', 
+    phone: '', 
+    email: '', 
+    department: '', 
+    services: ''
+  });
 
   const totalLeads = stages.reduce((sum, stage) => sum + stage.leads.length, 0);
   const todayActions = stages.reduce((sum, stage) => 
     sum + stage.leads.filter(l => l.nextActionDate === 'Today').length, 0
   );
+
+  const handleExport = () => {
+    const allLeads = stages.flatMap(stage => 
+      stage.leads.map(lead => ({ stage: stage.name, ...lead }))
+    );
+    const csvContent = [
+      ['Stage', 'Company', 'Contact', 'Phone', 'Email', 'Department', 'Services', 'Score'].join(','),
+      ...allLeads.map(l => [l.stage, l.companyName, l.contactName, l.phone, l.email, l.department, l.services.join(';'), l.score].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = globalThis.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pipeline-export.csv';
+    a.click();
+    globalThis.URL.revokeObjectURL(url);
+    toast.success('Pipeline exported to CSV');
+  };
+
+  const handleAddLead = () => {
+    if (!newLead.companyName || !newLead.contactName || !newLead.phone) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+    const lead: Lead = {
+      id: String(Date.now()),
+      companyName: newLead.companyName,
+      contactName: newLead.contactName,
+      phone: newLead.phone,
+      email: newLead.email,
+      department: newLead.department || 'Unknown',
+      services: newLead.services.split(',').map(s => s.trim()).filter(Boolean),
+      lastContact: 'Never',
+      score: 20,
+      notes: '',
+      nextAction: 'Initial contact',
+      nextActionDate: 'Today',
+    };
+    setStages(prev => prev.map(stage => 
+      stage.id === 'prospecting' 
+        ? { ...stage, leads: [...stage.leads, lead] }
+        : stage
+    ));
+    setNewLead({ companyName: '', contactName: '', phone: '', email: '', department: '', services: '' });
+    setShowAddModal(false);
+    toast.success(`Lead "${lead.companyName}" added to pipeline`);
+  };
+
+  const handleCallLead = (lead: Lead) => {
+    globalThis.location.href = `tel:${lead.phone}`;
+    toast.success(`Calling ${lead.contactName}...`);
+  };
+
+  const handleLogActivity = (lead: Lead) => {
+    toast.success(`Activity logged for ${lead.companyName}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -299,11 +366,17 @@ export default function PSMPipelinePage() {
           </div>
           
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
+            <button 
+              onClick={handleExport}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+            >
               <FileText className="w-4 h-4" />
               Export
             </button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
               <Building2 className="w-4 h-4" />
               Add Lead
             </button>
@@ -394,11 +467,17 @@ export default function PSMPipelinePage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center gap-1">
+                    <button 
+                      onClick={() => handleCallLead(lead)}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors flex items-center gap-1"
+                    >
                       <Phone className="w-3 h-3" />
                       Call
                     </button>
-                    <button className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center gap-1">
+                    <button 
+                      onClick={() => handleLogActivity(lead)}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center gap-1"
+                    >
                       <MessageSquare className="w-3 h-3" />
                       Log
                     </button>
@@ -408,6 +487,102 @@ export default function PSMPipelinePage() {
           )}
         </div>
       </div>
+
+      {/* Add Lead Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Add New Lead</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="leadCompany" className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                <input
+                  id="leadCompany"
+                  type="text"
+                  value={newLead.companyName}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, companyName: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Électricité Plus"
+                />
+              </div>
+              <div>
+                <label htmlFor="leadContact" className="block text-sm font-medium text-gray-700 mb-1">Contact Name *</label>
+                <input
+                  id="leadContact"
+                  type="text"
+                  value={newLead.contactName}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, contactName: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Jean Dupont"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="leadPhone" className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                  <input
+                    id="leadPhone"
+                    type="tel"
+                    value={newLead.phone}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="+33 6 12 34 56 78"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="leadEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    id="leadEmail"
+                    type="email"
+                    value={newLead.email}
+                    onChange={(e) => setNewLead(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="contact@company.fr"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="leadDepartment" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <input
+                  id="leadDepartment"
+                  type="text"
+                  value={newLead.department}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, department: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="69 - Rhône"
+                />
+              </div>
+              <div>
+                <label htmlFor="leadServices" className="block text-sm font-medium text-gray-700 mb-1">Services (comma-separated)</label>
+                <input
+                  id="leadServices"
+                  type="text"
+                  value={newLead.services}
+                  onChange={(e) => setNewLead(prev => ({ ...prev, services: e.target.value }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Électricité, Plomberie"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => {
+                  setNewLead({ companyName: '', contactName: '', phone: '', email: '', department: '', services: '' });
+                  setShowAddModal(false);
+                }}
+                className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddLead}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Add Lead
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,3 +9,4 @@ export { default as AdminUserDetailPage } from './AdminUserDetailPage';
 export { default as AdminConfigPage } from './AdminConfigPage';
 export { default as AdminRolesPage } from './AdminRolesPage';
 export { default as AdminAuditPage } from './AdminAuditPage';
+export { default as AdminNotificationsPage } from './AdminNotificationsPage';
