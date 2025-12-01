@@ -186,7 +186,13 @@ async function main() {
   const operatorPassword = await bcrypt.hash('Operator123!', 10);
   const operatorUser = await prisma.user.upsert({
     where: { email: 'operator@adeo.com' },
-    update: {},
+    update: {
+      password: operatorPassword, // Always update password to ensure it's correct
+      firstName: 'Test',
+      lastName: 'Operator',
+      isActive: true,
+      isVerified: true,
+    },
     create: {
       email: 'operator@adeo.com',
       password: operatorPassword,
@@ -455,8 +461,8 @@ async function main() {
   const createdStores: Record<string, any> = {};
   for (const storeData of storesData) {
     const createdStore = await prisma.store.upsert({
-      where: { externalStoreId: storeData.externalStoreId },
-      update: { name: storeData.name, buCode: storeData.buCode, phone: storeData.phone, email: storeData.email, isActive: storeData.isActive },
+      where: { countryCode_buCode: { countryCode: storeData.countryCode, buCode: storeData.buCode } },
+      update: { name: storeData.name, externalStoreId: storeData.externalStoreId, phone: storeData.phone, email: storeData.email, isActive: storeData.isActive },
       create: storeData,
     });
     createdStores[storeData.buCode] = createdStore;
@@ -1049,30 +1055,31 @@ async function main() {
   console.log('\n👷 Seeding providers...');
 
   const providers = [
+    // France - Professional installer companies
     {
       externalId: 'PROV_FR_001',
       countryCode: 'FR',
       businessUnit: 'LEROY_MERLIN',
-      name: 'Paris Installers SARL',
-      legalName: 'Paris Installers SARL',
-      taxId: 'FR123456789',
-      email: 'contact@paris-installers.fr',
-      phone: '+33123456789',
+      name: 'ProHabitat Bordeaux',
+      legalName: 'ProHabitat Bordeaux SARL',
+      taxId: 'FR12345678901',
+      email: 'contact@prohabitat-bordeaux.fr',
+      phone: '+33 5 56 12 34 56',
       status: ProviderStatus.ACTIVE,
       providerType: ProviderTypeEnum.P1,
       riskLevel: RiskLevel.NONE,
-      addressStreet: '123 Rue de Paris',
-      addressCity: 'Paris',
-      addressPostalCode: '75001',
-      addressRegion: 'Île-de-France',
+      addressStreet: '45 Cours de l\'Intendance',
+      addressCity: 'Bordeaux',
+      addressPostalCode: '33000',
+      addressRegion: 'Nouvelle-Aquitaine',
       addressCountry: 'FR',
-      coordinates: { lat: 48.8566, lng: 2.3522 },
+      coordinates: { lat: 44.8378, lng: -0.5792 },
       contractStartDate: new Date('2023-01-01'),
       paymentTermsDays: 30,
       address: {
-        street: '123 Rue de Paris',
-        city: 'Paris',
-        postalCode: '75001',
+        street: '45 Cours de l\'Intendance',
+        city: 'Bordeaux',
+        postalCode: '33000',
         country: 'FR',
       },
     },
@@ -1080,38 +1087,93 @@ async function main() {
       externalId: 'PROV_FR_002',
       countryCode: 'FR',
       businessUnit: 'LEROY_MERLIN',
-      name: 'FastFix France',
-      legalName: 'FastFix France SAS',
-      taxId: 'FR987654321',
-      email: 'support@fastfix.fr',
-      phone: '+33987654321',
+      name: 'TechniService Marseille',
+      legalName: 'TechniService Marseille SAS',
+      taxId: 'FR98765432109',
+      email: 'contact@techniservice-marseille.fr',
+      phone: '+33 4 91 23 45 67',
       status: ProviderStatus.ACTIVE,
       providerType: ProviderTypeEnum.P1,
       riskLevel: RiskLevel.LOW,
-      addressStreet: '456 Avenue de Lyon',
-      addressCity: 'Lyon',
-      addressPostalCode: '69001',
-      addressRegion: 'Auvergne-Rhône-Alpes',
+      addressStreet: '12 La Canebière',
+      addressCity: 'Marseille',
+      addressPostalCode: '13001',
+      addressRegion: 'Provence-Alpes-Côte d\'Azur',
       addressCountry: 'FR',
-      coordinates: { lat: 45.7640, lng: 4.8357 },
+      coordinates: { lat: 43.2965, lng: 5.3698 },
       contractStartDate: new Date('2022-06-15'),
       paymentTermsDays: 45,
       address: {
-        street: '456 Avenue de Lyon',
-        city: 'Lyon',
-        postalCode: '69001',
+        street: '12 La Canebière',
+        city: 'Marseille',
+        postalCode: '13001',
         country: 'FR',
       },
     },
     {
+      externalId: 'PROV_FR_003',
+      countryCode: 'FR',
+      businessUnit: 'LEROY_MERLIN',
+      name: 'InstallPlus Lyon',
+      legalName: 'InstallPlus Lyon SARL',
+      taxId: 'FR45678901234',
+      email: 'info@installplus-lyon.fr',
+      phone: '+33 4 72 34 56 78',
+      status: ProviderStatus.ACTIVE,
+      providerType: ProviderTypeEnum.P1,
+      riskLevel: RiskLevel.NONE,
+      addressStreet: '78 Rue de la République',
+      addressCity: 'Lyon',
+      addressPostalCode: '69002',
+      addressRegion: 'Auvergne-Rhône-Alpes',
+      addressCountry: 'FR',
+      coordinates: { lat: 45.7640, lng: 4.8357 },
+      contractStartDate: new Date('2021-09-01'),
+      paymentTermsDays: 30,
+      address: {
+        street: '78 Rue de la République',
+        city: 'Lyon',
+        postalCode: '69002',
+        country: 'FR',
+      },
+    },
+    {
+      externalId: 'PROV_FR_004',
+      countryCode: 'FR',
+      businessUnit: 'LEROY_MERLIN',
+      name: 'Services Pro Paris',
+      legalName: 'Services Pro Paris SAS',
+      taxId: 'FR78901234567',
+      email: 'contact@servicespro-paris.fr',
+      phone: '+33 1 42 56 78 90',
+      status: ProviderStatus.ACTIVE,
+      providerType: ProviderTypeEnum.P1,
+      riskLevel: RiskLevel.NONE,
+      addressStreet: '156 Boulevard Haussmann',
+      addressCity: 'Paris',
+      addressPostalCode: '75008',
+      addressRegion: 'Île-de-France',
+      addressCountry: 'FR',
+      coordinates: { lat: 48.8738, lng: 2.3079 },
+      contractStartDate: new Date('2020-03-15'),
+      paymentTermsDays: 30,
+      address: {
+        street: '156 Boulevard Haussmann',
+        city: 'Paris',
+        postalCode: '75008',
+        country: 'FR',
+      },
+    },
+    // Spain
+    {
       externalId: 'PROV_ES_001',
       countryCode: 'ES',
       businessUnit: 'LEROY_MERLIN',
-      name: 'Madrid Servicios SL',
-      legalName: 'Madrid Servicios SL',
+      name: 'Instalaciones Madrid Centro',
+      legalName: 'Instalaciones Madrid Centro SL',
       taxId: 'ESB12345678',
-      email: 'info@madrid-servicios.es',
-      phone: '+34912345678',
+      email: 'info@instalaciones-madrid.es',
+      phone: '+34 91 234 56 78',
       status: ProviderStatus.ACTIVE,
       providerType: ProviderTypeEnum.P1,
       riskLevel: RiskLevel.NONE,
@@ -1702,11 +1764,20 @@ async function main() {
   console.log(`✅ Created/Verified ${workTeams.length} work teams with calendars, technicians, and certifications`);
 
   // Create Service Orders & Bookings for Heatmap/Calendar
-  // We'll create orders around the major cities we seeded
+  // We'll create orders around the major cities - focusing on France for demo
   const locations = [
+    // France - primary focus
+    { city: 'Paris', lat: 48.8566, lon: 2.3522, country: 'FR', province: '75' },
+    { city: 'Lyon', lat: 45.7640, lon: 4.8357, country: 'FR', province: '69' },
+    { city: 'Marseille', lat: 43.2965, lon: 5.3698, country: 'FR', province: '13' },
+    { city: 'Bordeaux', lat: 44.8378, lon: -0.5792, country: 'FR', province: '33' },
+    { city: 'Toulouse', lat: 43.6047, lon: 1.4442, country: 'FR', province: '31' },
+    { city: 'Nice', lat: 43.7102, lon: 7.2620, country: 'FR', province: '06' },
+    { city: 'Nantes', lat: 47.2184, lon: -1.5536, country: 'FR', province: '44' },
+    // Other countries
     { city: 'Madrid', lat: 40.4168, lon: -3.7038, country: 'ES', province: '28' },
     { city: 'Barcelona', lat: 41.3851, lon: 2.1734, country: 'ES', province: '08' },
-    { city: 'Milan', lat: 45.4642, lon: 9.1900, country: 'IT', province: 'MI' },
+    { city: 'Milan', lat: 45.4642, lon: 9.19, country: 'IT', province: 'MI' },
     { city: 'Rome', lat: 41.9028, lon: 12.4964, country: 'IT', province: 'RM' },
     { city: 'Lisbon', lat: 38.7223, lon: -9.1393, country: 'PT', province: '11' },
   ];
@@ -1722,9 +1793,7 @@ async function main() {
     await prisma.serviceOrderContact.deleteMany({});
     await prisma.booking.deleteMany({});
     await prisma.assignment.deleteMany({});
-    await prisma.serviceOrder.deleteMany({
-      where: { externalServiceOrderId: { startsWith: 'ORD-' } }
-    });
+    await prisma.serviceOrder.deleteMany({}); // Delete ALL orders for clean slate
 
     let orderCount = 0;
     let bookingCount = 0;
@@ -1808,15 +1877,43 @@ async function main() {
         const providerTotalCost = providerProductCost + providerServiceCost;
         
         // Customer names by country
-        const customerNames: Record<string, string[]> = {
-          'ES': ['María García', 'Juan Martínez', 'Carmen López', 'Carlos Rodríguez', 'Ana Fernández'],
-          'FR': ['Marie Dupont', 'Jean Martin', 'Sophie Bernard', 'Pierre Durand', 'Isabelle Moreau'],
-          'IT': ['Maria Rossi', 'Giuseppe Russo', 'Anna Ferrari', 'Marco Esposito', 'Francesca Romano'],
-          'PT': ['Maria Silva', 'João Santos', 'Ana Oliveira', 'Pedro Costa', 'Catarina Ferreira'],
-        };
-        const names = customerNames[loc.country] || customerNames['ES'];
-        const customerName = names[i % names.length];
-        const [firstName, lastName] = customerName.split(' ');
+        // Realistic French customer names with full details
+    const customerData: Record<string, Array<{firstName: string, lastName: string, email: string, phone: string}>> = {
+      'FR': [
+        { firstName: 'Marie', lastName: 'Dupont', email: 'marie.dupont@gmail.com', phone: '+33 6 12 34 56 78' },
+        { firstName: 'Jean-Pierre', lastName: 'Martin', email: 'jp.martin@orange.fr', phone: '+33 6 23 45 67 89' },
+        { firstName: 'Sophie', lastName: 'Bernard', email: 'sophie.bernard@free.fr', phone: '+33 6 34 56 78 90' },
+        { firstName: 'Pierre', lastName: 'Durand', email: 'p.durand@wanadoo.fr', phone: '+33 6 45 67 89 01' },
+        { firstName: 'Isabelle', lastName: 'Moreau', email: 'i.moreau@gmail.com', phone: '+33 6 56 78 90 12' },
+        { firstName: 'François', lastName: 'Leroy', email: 'f.leroy@outlook.fr', phone: '+33 6 67 89 01 23' },
+        { firstName: 'Nathalie', lastName: 'Petit', email: 'n.petit@gmail.com', phone: '+33 6 78 90 12 34' },
+        { firstName: 'Laurent', lastName: 'Roux', email: 'l.roux@sfr.fr', phone: '+33 6 89 01 23 45' },
+      ],
+      'ES': [
+        { firstName: 'María', lastName: 'García López', email: 'maria.garcia@gmail.com', phone: '+34 612 345 678' },
+        { firstName: 'Juan', lastName: 'Martínez', email: 'j.martinez@hotmail.es', phone: '+34 623 456 789' },
+        { firstName: 'Carmen', lastName: 'López Rodríguez', email: 'c.lopez@gmail.com', phone: '+34 634 567 890' },
+        { firstName: 'Carlos', lastName: 'Rodríguez', email: 'c.rodriguez@yahoo.es', phone: '+34 645 678 901' },
+        { firstName: 'Ana', lastName: 'Fernández', email: 'ana.fernandez@gmail.com', phone: '+34 656 789 012' },
+      ],
+      'IT': [
+        { firstName: 'Maria', lastName: 'Rossi', email: 'maria.rossi@gmail.com', phone: '+39 320 123 4567' },
+        { firstName: 'Giuseppe', lastName: 'Russo', email: 'g.russo@libero.it', phone: '+39 330 234 5678' },
+        { firstName: 'Anna', lastName: 'Ferrari', email: 'anna.ferrari@gmail.com', phone: '+39 340 345 6789' },
+        { firstName: 'Marco', lastName: 'Esposito', email: 'm.esposito@virgilio.it', phone: '+39 350 456 7890' },
+        { firstName: 'Francesca', lastName: 'Romano', email: 'f.romano@gmail.com', phone: '+39 360 567 8901' },
+      ],
+      'PT': [
+        { firstName: 'Maria', lastName: 'Silva', email: 'maria.silva@gmail.com', phone: '+351 912 345 678' },
+        { firstName: 'João', lastName: 'Santos', email: 'j.santos@sapo.pt', phone: '+351 923 456 789' },
+        { firstName: 'Ana', lastName: 'Oliveira', email: 'ana.oliveira@gmail.com', phone: '+351 934 567 890' },
+        { firstName: 'Pedro', lastName: 'Costa', email: 'p.costa@hotmail.pt', phone: '+351 945 678 901' },
+        { firstName: 'Catarina', lastName: 'Ferreira', email: 'c.ferreira@gmail.com', phone: '+351 956 789 012' },
+      ],
+    };
+    const customers = customerData[loc.country] || customerData['FR'];
+    const customer = customers[i % customers.length];
+    const customerName = `${customer.firstName} ${customer.lastName}`;
         
         const order = await prisma.serviceOrder.create({
           data: {
@@ -1858,12 +1955,14 @@ async function main() {
             // Preserved: Legacy JSON fields for backward compatibility
             customerInfo: {
               name: customerName,
-              email: `${customerName.toLowerCase().replace(' ', '.')}@email.com`,
-              phone: `+34 ${Math.floor(600000000 + Math.random() * 99999999)}`,
+              firstName: customer.firstName,
+              lastName: customer.lastName,
+              email: customer.email,
+              phone: customer.phone,
               address: {
-                street: 'Main St',
+                street: `${Math.floor(Math.random() * 100) + 1} ${loc.country === 'FR' ? 'Rue de la République' : loc.country === 'ES' ? 'Calle Mayor' : loc.country === 'IT' ? 'Via Roma' : 'Rua Augusta'}`,
                 city: loc.city,
-                postalCode: '12345',
+                postalCode: `${loc.country === 'PT' ? '1000-' : ''}${Math.floor(10000 + Math.random() * 89999)}`,
                 country: loc.country
               }
             },
@@ -1937,19 +2036,19 @@ async function main() {
             {
               serviceOrderId: order.id,
               contactType: ContactType.CUSTOMER,
-              firstName: firstName,
-              lastName: lastName,
-              email: `${customerName.toLowerCase().replace(' ', '.')}@email.com`,
-              phone: `+${loc.country === 'ES' ? '34' : loc.country === 'FR' ? '33' : loc.country === 'IT' ? '39' : '351'} ${Math.floor(600000000 + Math.random() * 99999999)}`,
+              firstName: customer.firstName,
+              lastName: customer.lastName,
+              email: customer.email,
+              phone: customer.phone,
               preferredMethod: ContactMethod.PHONE,
               isPrimary: true,
             },
             {
               serviceOrderId: order.id,
               contactType: ContactType.SITE_CONTACT,
-              firstName: `Site`,
-              lastName: firstName,
-              phone: `+${loc.country === 'ES' ? '34' : loc.country === 'FR' ? '33' : loc.country === 'IT' ? '39' : '351'} ${Math.floor(600000000 + Math.random() * 99999999)}`,
+              firstName: 'Site',
+              lastName: customer.lastName,
+              phone: customer.phone,
               preferredMethod: ContactMethod.SMS,
               isPrimary: false,
               availabilityNotes: 'Contact at service location',
