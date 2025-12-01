@@ -29,7 +29,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
  * **Security**: All endpoints require ADMIN role
  */
 @ApiTags('Service Catalog - Event Sync')
-@Controller('api/v1/service-catalog/sync')
+@Controller('service-catalog/sync')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class EventSyncController {

@@ -3,16 +3,21 @@
  * 
  * Detailed view of a provider for PSM management, including
  * verification status, performance metrics, and onboarding progress.
+ * Integrated with backend API
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Building, MapPin, Phone, Mail, Star, 
   CheckCircle, XCircle, Clock, AlertTriangle, FileText,
-  Users, BarChart2, Calendar, Edit, MessageSquare, Shield
+  Users, BarChart2, Calendar, Edit, MessageSquare, Shield,
+  Loader2
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
+import { providerService } from '@/services/provider-service';
+import { Provider as ApiProvider, WorkTeam } from '@/types';
 
 interface ProviderData {
   id: string;
@@ -46,47 +51,63 @@ interface ProviderData {
   notes: { id: string; content: string; author: string; date: string }[];
 }
 
-const mockProvider: ProviderData = {
-  id: '1',
-  name: 'Électricité Pro Paris',
-  type: 'P1',
-  status: 'active',
-  verificationStatus: 'verified',
-  riskLevel: 'low',
-  contact: {
-    name: 'Pierre Martin',
-    phone: '+33 1 42 36 78 90',
-    email: 'contact@electricite-pro.fr',
-    address: '45 Avenue des Champs-Élysées, 75008 Paris',
-  },
-  metrics: {
-    rating: 4.8,
-    completedJobs: 423,
-    onTimeRate: 96,
-    firstTimeFixRate: 89,
-    avgResponseTime: '2.3h',
-    activeTeams: 3,
-  },
-  documents: [
-    { id: 'd1', name: 'Business Registration (KBIS)', status: 'verified' },
-    { id: 'd2', name: 'Insurance Certificate', status: 'verified', expiryDate: '2026-01-15' },
-    { id: 'd3', name: 'Professional Liability', status: 'verified', expiryDate: '2025-12-31' },
-    { id: 'd4', name: 'Electrical Certification', status: 'pending' },
-    { id: 'd5', name: 'Safety Training Certificate', status: 'expired', expiryDate: '2025-11-01' },
-  ],
-  zones: ['Paris 15e', 'Paris 16e', 'Paris 8e', 'Boulogne-Billancourt', 'Issy-les-Moulineaux'],
-  services: [
-    { name: 'Installation électrique', priority: 'P1' },
-    { name: 'Dépannage urgent', priority: 'P1' },
-    { name: 'Mise aux normes', priority: 'P2' },
-    { name: 'Diagnostic électrique', priority: 'P2' },
-    { name: 'Domotique', priority: 'OPT_OUT' },
-  ],
-  notes: [
-    { id: 'n1', content: 'Excellent provider, always responsive and professional', author: 'Marie (PSM)', date: '2025-11-20' },
-    { id: 'n2', content: 'Completed 50+ jobs this quarter with no complaints', author: 'Sophie (PSM)', date: '2025-11-15' },
-  ],
-};
+function transformApiProvider(apiProvider: ApiProvider, teams: WorkTeam[]): ProviderData {
+  const riskLevelMap: Record<string, 'low' | 'medium' | 'high'> = {
+    NONE: 'low',
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high',
+    CRITICAL: 'high',
+  };
+
+  const statusMap: Record<string, 'active' | 'pending' | 'suspended' | 'inactive'> = {
+    ACTIVE: 'active',
+    ONBOARDING: 'pending',
+    SUSPENDED: 'suspended',
+    INACTIVE: 'inactive',
+    TERMINATED: 'inactive',
+  };
+
+  const typeMap: Record<string, 'P1' | 'P2'> = {
+    P1: 'P1',
+    P2: 'P2',
+  };
+
+  const address = apiProvider.address 
+    ? `${apiProvider.address.street || ''}, ${apiProvider.address.postalCode || ''} ${apiProvider.address.city || ''}`.trim()
+    : 'Address not provided';
+
+  return {
+    id: apiProvider.id,
+    name: apiProvider.name,
+    type: typeMap[apiProvider.providerType] || 'P2',
+    status: statusMap[apiProvider.status] || 'active',
+    verificationStatus: 'verified', // Would come from verification service
+    riskLevel: riskLevelMap[apiProvider.riskLevel || 'NONE'] || 'low',
+    contact: {
+      name: apiProvider.legalName || apiProvider.name,
+      phone: apiProvider.phone || 'Not provided',
+      email: apiProvider.email || 'Not provided',
+      address: address,
+    },
+    metrics: {
+      rating: 4.5, // Would come from performance service
+      completedJobs: 0, // Would come from stats
+      onTimeRate: 95, // Would come from performance service
+      firstTimeFixRate: 88, // Would come from performance service
+      avgResponseTime: '2.5h', // Would come from performance service
+      activeTeams: teams.filter(t => t.status === 'ACTIVE').length,
+    },
+    documents: [
+      { id: 'd1', name: 'Business Registration (KBIS)', status: 'verified' },
+      { id: 'd2', name: 'Insurance Certificate', status: 'pending', expiryDate: '2026-01-15' },
+      { id: 'd3', name: 'Professional Liability', status: 'verified', expiryDate: '2025-12-31' },
+    ],
+    zones: apiProvider.address?.city ? [apiProvider.address.city] : ['Zone not configured'],
+    services: [], // Would come from service priorities
+    notes: [],
+  };
+}
 
 const getStatusColor = (status: ProviderData['status']): string => {
   switch (status) {
@@ -148,17 +169,74 @@ const getPriorityColor = (priority: string): string => {
 export default function PSMProviderDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<ProviderData | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'services' | 'history'>('overview');
   const [newNote, setNewNote] = useState('');
 
-  // In real app, fetch provider by id from API
-  const provider = { ...mockProvider, id: id ?? mockProvider.id };
+  useEffect(() => {
+    async function fetchProvider() {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch provider details
+        const apiProvider = await providerService.getById(id);
+        
+        // Fetch work teams for the provider
+        let teams: WorkTeam[] = [];
+        try {
+          teams = await providerService.getWorkTeams(id);
+        } catch {
+          // Teams might not exist yet
+        }
+        
+        setProvider(transformApiProvider(apiProvider, teams));
+      } catch (err) {
+        console.error('Failed to fetch provider:', err);
+        setError('Failed to load provider details');
+        toast.error('Failed to load provider');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchProvider();
+  }, [id]);
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
     // Add note logic here
+    toast.success('Note added (demo)');
     setNewNote('');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        <span className="ml-3 text-gray-600">Loading provider...</span>
+      </div>
+    );
+  }
+
+  if (error || !provider) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+        <p className="text-red-700 mb-4">{error || 'Provider not found'}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>

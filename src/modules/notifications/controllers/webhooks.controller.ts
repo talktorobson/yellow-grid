@@ -12,7 +12,7 @@ import { PrismaService } from '@/common/prisma/prisma.service';
 import { Public } from '@/common/decorators/public.decorator';
 
 @ApiTags('Notification Webhooks')
-@Controller('api/v1/notifications/webhooks')
+@Controller('notifications/webhooks')
 @Public() // Webhooks need to be public
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);

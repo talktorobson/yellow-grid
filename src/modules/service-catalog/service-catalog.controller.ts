@@ -33,7 +33,7 @@ import { ServiceStatus, ServiceType, ServiceCategory } from '@prisma/client';
  * Provides access to services, pricing, geographic data, and provider specialties.
  */
 @ApiTags('Service Catalog')
-@Controller('api/v1/service-catalog')
+@Controller('service-catalog')
 export class ServiceCatalogController {
   constructor(
     private readonly serviceCatalogService: ServiceCatalogService,

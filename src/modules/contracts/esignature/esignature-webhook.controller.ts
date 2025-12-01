@@ -10,7 +10,7 @@ import { ContractStatus, SignatureStatus } from '@prisma/client';
  * Handles webhook callbacks from e-signature providers (DocuSign, Adobe Sign).
  * Updates contract and signature status based on events.
  */
-@Controller('api/v1/webhooks/esignature')
+@Controller('webhooks/esignature')
 export class ESignatureWebhookController {
   private readonly logger = new Logger(ESignatureWebhookController.name);
 

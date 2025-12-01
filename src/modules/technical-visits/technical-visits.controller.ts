@@ -27,7 +27,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Technical Visits')
 @ApiBearerAuth()
-@Controller('api/v1/technical-visits')
+@Controller('technical-visits')
 @UseGuards(JwtAuthGuard)
 export class TechnicalVisitsController {
   constructor(

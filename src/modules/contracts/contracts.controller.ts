@@ -7,7 +7,7 @@ import { SignContractDto } from './dto/sign-contract.dto';
 import { ContractQueryDto } from './dto/filter-contracts.dto';
 
 @ApiTags('contracts')
-@Controller('api/v1/contracts')
+@Controller('contracts')
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
 

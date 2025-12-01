@@ -34,7 +34,7 @@ import {
 import { IntegrationContext } from '../interfaces';
 
 @ApiTags('Sales Integration')
-@Controller('api/v1/integrations/sales')
+@Controller('integrations/sales')
 export class SalesIntegrationController {
   private readonly logger = new Logger(SalesIntegrationController.name);
 

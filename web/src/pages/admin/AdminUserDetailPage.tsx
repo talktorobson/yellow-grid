@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -21,8 +21,11 @@ import {
   UserCog,
   Building,
   MapPin,
+  Loader2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
+import { userService, User as ApiUser } from '@/services/user-service';
 
 interface ActivityLog {
   id: string;
@@ -42,98 +45,74 @@ interface Session {
   current: boolean;
 }
 
-// Mock user data
-const mockUser = {
-  id: '1',
-  email: 'jean.dupont@example.com',
-  firstName: 'Jean',
-  lastName: 'Dupont',
-  phone: '+33 6 12 34 56 78',
-  role: 'PSM',
-  status: 'active',
-  emailVerified: true,
-  phoneVerified: true,
-  mfaEnabled: true,
-  createdAt: '2024-01-15',
-  lastLogin: '2025-01-13T14:30:00',
-  loginCount: 156,
-  organization: 'AHS France',
-  department: 'Service Management',
-  location: 'Paris, France',
-  avatar: null,
-  permissions: [
-    'providers:read',
-    'providers:write',
-    'service_orders:read',
-    'service_orders:write',
-    'calendar:manage',
-    'reports:view',
-  ],
-};
+interface UserData {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  mfaEnabled: boolean;
+  createdAt: string;
+  lastLogin: string;
+  loginCount: number;
+  organization: string;
+  department: string;
+  location: string;
+  avatar: string | null;
+  permissions: string[];
+}
 
+function transformApiUser(apiUser: ApiUser): UserData {
+  return {
+    id: apiUser.id,
+    email: apiUser.email,
+    firstName: apiUser.firstName,
+    lastName: apiUser.lastName,
+    phone: '', // Not in API response
+    role: apiUser.roles[0] || 'OPERATOR',
+    status: apiUser.isActive ? 'active' : 'inactive',
+    emailVerified: true,
+    phoneVerified: false,
+    mfaEnabled: false,
+    createdAt: apiUser.createdAt,
+    lastLogin: apiUser.lastLoginAt || '',
+    loginCount: 0,
+    organization: apiUser.businessUnit || 'AHS',
+    department: apiUser.countryCode || 'FR',
+    location: apiUser.countryCode === 'FR' ? 'France' : apiUser.countryCode,
+    avatar: null,
+    permissions: [],
+  };
+}
+
+// Mock activity data (no backend API for this yet)
 const mockActivityLog: ActivityLog[] = [
   {
     id: '1',
     action: 'LOGIN',
-    details: 'Connexion réussie',
-    timestamp: '2025-01-13T14:30:00',
+    details: 'Successful login',
+    timestamp: new Date().toISOString(),
     ip: '192.168.1.100',
-    userAgent: 'Chrome/120.0.0.0 (Windows)',
-  },
-  {
-    id: '2',
-    action: 'UPDATE_PROVIDER',
-    details: 'Mise à jour du provider PRV-2024-0045',
-    timestamp: '2025-01-13T10:15:00',
-    ip: '192.168.1.100',
-    userAgent: 'Chrome/120.0.0.0 (Windows)',
-  },
-  {
-    id: '3',
-    action: 'APPROVE_SO',
-    details: 'Approbation de l\'ordre SO-2025-0001',
-    timestamp: '2025-01-12T16:45:00',
-    ip: '192.168.1.100',
-    userAgent: 'Chrome/120.0.0.0 (Windows)',
-  },
-  {
-    id: '4',
-    action: 'EXPORT_REPORT',
-    details: 'Export du rapport mensuel',
-    timestamp: '2025-01-12T09:00:00',
-    ip: '192.168.1.100',
-    userAgent: 'Chrome/120.0.0.0 (Windows)',
-  },
-  {
-    id: '5',
-    action: 'LOGIN',
-    details: 'Connexion réussie',
-    timestamp: '2025-01-12T08:30:00',
-    ip: '192.168.1.100',
-    userAgent: 'Chrome/120.0.0.0 (Windows)',
+    userAgent: 'Chrome/120.0.0.0',
   },
 ];
 
 const mockSessions: Session[] = [
   {
     id: '1',
-    device: 'Chrome sur Windows',
+    device: 'Chrome on Windows',
     location: 'Paris, France',
     ip: '192.168.1.100',
-    lastActive: '2025-01-13T14:30:00',
+    lastActive: new Date().toISOString(),
     current: true,
-  },
-  {
-    id: '2',
-    device: 'Safari sur iPhone',
-    location: 'Paris, France',
-    ip: '192.168.1.101',
-    lastActive: '2025-01-13T10:00:00',
-    current: false,
   },
 ];
 
-const availableRoles = ['Admin', 'PSM', 'Operator', 'Provider', 'Seller'];
+const availableRoles = ['ADMIN', 'PSM', 'OPERATOR', 'PROVIDER', 'SELLER', 'OFFER_MANAGER'];
 
 function getStatusColor(status: string): string {
   switch (status) {
@@ -152,10 +131,10 @@ function getStatusColor(status: string): string {
 
 function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
-    active: 'Actif',
-    inactive: 'Inactif',
-    suspended: 'Suspendu',
-    pending: 'En attente',
+    active: 'Active',
+    inactive: 'Inactive',
+    suspended: 'Suspended',
+    pending: 'Pending',
   };
   return labels[status] || status;
 }
@@ -179,15 +158,40 @@ function getActionColor(action: string): string {
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'security' | 'permissions'>('profile');
   const [isEditingRole, setIsEditingRole] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(mockUser.role);
+  const [selectedRole, setSelectedRole] = useState('');
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 
-  const user = mockUser; // In real app, fetch by id
+  useEffect(() => {
+    async function fetchUser() {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        const apiUser = await userService.getById(id);
+        const userData = transformApiUser(apiUser);
+        setUser(userData);
+        setSelectedRole(userData.role);
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
+        setError('Failed to load user details');
+        toast.error('Failed to load user');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchUser();
+  }, [id]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -195,7 +199,8 @@ export default function AdminUserDetailPage() {
   };
 
   const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('fr-FR', {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -205,11 +210,35 @@ export default function AdminUserDetailPage() {
   };
 
   const tabs = [
-    { id: 'profile' as const, label: 'Profil', icon: User },
-    { id: 'activity' as const, label: 'Activité', icon: Activity },
-    { id: 'security' as const, label: 'Sécurité', icon: Shield },
+    { id: 'profile' as const, label: 'Profile', icon: User },
+    { id: 'activity' as const, label: 'Activity', icon: Activity },
+    { id: 'security' as const, label: 'Security', icon: Shield },
     { id: 'permissions' as const, label: 'Permissions', icon: Key },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        <span className="ml-3 text-gray-600">Loading user...</span>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+        <p className="text-red-700 mb-4">{error || 'User not found'}</p>
+        <button
+          onClick={() => navigate('/admin/users')}
+          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+        >
+          Back to Users
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,9 +1,10 @@
 /**
  * PSM Providers Page
- * Manage onboarded providers
+ * Manage onboarded providers - Integrated with backend API
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   MapPin,
@@ -21,8 +22,13 @@ import {
   Edit,
   Pause,
   XCircle,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { toast } from 'sonner';
+import { providerService } from '@/services/provider-service';
+import { Provider as ApiProvider } from '@/types';
 
 interface Provider {
   id: string;
@@ -43,121 +49,137 @@ interface Provider {
   commission: number;
 }
 
-const mockProviders: Provider[] = [
-  {
-    id: '1',
-    companyName: 'Électricité Plus SARL',
-    contactName: 'Marc Lefebvre',
-    phone: '+33 6 12 34 56 78',
-    email: 'm.lefebvre@elec-plus.fr',
-    department: '69 - Rhône',
-    services: ['Électricité', 'Domotique'],
-    status: 'active',
-    rating: 4.8,
-    totalJobs: 342,
-    monthlyJobs: 28,
-    trend: 'up',
-    onboardedDate: '2024-03-15',
-    lastActivity: '2 hours ago',
-    riskLevel: 'low',
-    commission: 12,
-  },
-  {
-    id: '2',
-    companyName: 'Plomberie Express Lyon',
-    contactName: 'Pierre Martin',
-    phone: '+33 6 23 45 67 89',
-    email: 'p.martin@plomb-express.fr',
-    department: '69 - Rhône',
-    services: ['Plomberie', 'Chauffage'],
-    status: 'active',
-    rating: 4.5,
-    totalJobs: 215,
-    monthlyJobs: 18,
+// Transform API provider to UI provider
+function transformProvider(apiProvider: ApiProvider): Provider {
+  const riskLevelMap: Record<string, 'low' | 'medium' | 'high'> = {
+    NONE: 'low',
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high',
+    CRITICAL: 'high',
+  };
+
+  const statusMap: Record<string, 'active' | 'onboarding' | 'suspended' | 'churned'> = {
+    ACTIVE: 'active',
+    ONBOARDING: 'onboarding',
+    SUSPENDED: 'suspended',
+    INACTIVE: 'churned',
+    TERMINATED: 'churned',
+  };
+
+  return {
+    id: apiProvider.id,
+    companyName: apiProvider.name,
+    contactName: apiProvider.legalName || apiProvider.name,
+    phone: apiProvider.phone || '',
+    email: apiProvider.email || '',
+    department: apiProvider.address?.city 
+      ? `${apiProvider.address.postalCode?.substring(0, 2) || ''} - ${apiProvider.address.city}` 
+      : apiProvider.countryCode,
+    services: [], // Services loaded separately if needed
+    status: statusMap[apiProvider.status] || 'active',
+    rating: 4.5, // Placeholder - would come from performance service
+    totalJobs: 0, // Placeholder - would come from stats
+    monthlyJobs: 0, // Placeholder - would come from stats
     trend: 'stable',
-    onboardedDate: '2024-06-01',
-    lastActivity: '1 day ago',
-    riskLevel: 'low',
-    commission: 10,
-  },
-  {
-    id: '3',
-    companyName: 'Chauffage Plus',
-    contactName: 'Marc Leroy',
-    phone: '+33 6 67 89 01 23',
-    email: 'm.leroy@chauffage-plus.fr',
-    department: '44 - Loire-Atlantique',
-    services: ['Chauffage', 'Pompe à chaleur'],
-    status: 'onboarding',
-    rating: 0,
-    totalJobs: 0,
-    monthlyJobs: 0,
-    trend: 'stable',
-    onboardedDate: '2025-11-28',
-    lastActivity: 'Just now',
-    riskLevel: 'medium',
-    commission: 11,
-  },
-  {
-    id: '4',
-    companyName: 'Isolation Pro 33',
-    contactName: 'Jean-Luc Bernard',
-    phone: '+33 6 34 56 78 90',
-    email: 'jl.bernard@iso-pro.fr',
-    department: '33 - Gironde',
-    services: ['Isolation', 'Menuiserie'],
-    status: 'active',
-    rating: 3.9,
-    totalJobs: 89,
-    monthlyJobs: 5,
-    trend: 'down',
-    onboardedDate: '2024-09-10',
-    lastActivity: '1 week ago',
-    riskLevel: 'high',
-    commission: 10,
-  },
-  {
-    id: '5',
-    companyName: 'Dépannage 24h',
-    contactName: 'André Duval',
-    phone: '+33 6 78 90 12 34',
-    email: 'a.duval@depannage24.fr',
-    department: '13 - Bouches-du-Rhône',
-    services: ['Serrurerie', 'Vitrerie'],
-    status: 'suspended',
-    rating: 2.8,
-    totalJobs: 45,
-    monthlyJobs: 0,
-    trend: 'down',
-    onboardedDate: '2024-07-20',
-    lastActivity: '2 weeks ago',
-    riskLevel: 'high',
-    commission: 8,
-  },
-];
+    onboardedDate: apiProvider.contractStartDate 
+      ? new Date(apiProvider.contractStartDate).toLocaleDateString() 
+      : new Date(apiProvider.createdAt).toLocaleDateString(),
+    lastActivity: apiProvider.updatedAt 
+      ? formatLastActivity(new Date(apiProvider.updatedAt)) 
+      : 'Unknown',
+    riskLevel: riskLevelMap[apiProvider.riskLevel || 'NONE'] || 'low',
+    commission: 10, // Placeholder - would come from contract terms
+  };
+}
+
+function formatLastActivity(date: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  
+  if (hours < 1) return 'Just now';
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (days < 30) return `${Math.floor(days / 7)} week${days > 7 ? 's' : ''} ago`;
+  return `${Math.floor(days / 30)} month${days > 30 ? 's' : ''} ago`;
+}
 
 type StatusFilter = 'all' | 'active' | 'onboarding' | 'suspended' | 'churned';
 
 export default function PSMProvidersPage() {
+  const navigate = useNavigate();
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showActions, setShowActions] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const filteredProviders = mockProviders.filter(provider => {
-    const matchesSearch = provider.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      provider.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      provider.services.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'all' || provider.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const fetchProviders = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const filters: Record<string, unknown> = {
+        page,
+        limit: 20,
+      };
+      
+      if (searchQuery) filters.search = searchQuery;
+      if (statusFilter !== 'all') {
+        const statusMap: Record<StatusFilter, string> = {
+          all: '',
+          active: 'ACTIVE',
+          onboarding: 'ONBOARDING',
+          suspended: 'SUSPENDED',
+          churned: 'INACTIVE',
+        };
+        filters.status = statusMap[statusFilter];
+      }
+      
+      const response = await providerService.getAll(filters);
+      
+      setProviders(response.data.map(transformProvider));
+      setTotalPages(response.pagination?.totalPages || 1);
+      setTotalCount(response.pagination?.total || response.data.length);
+    } catch (err) {
+      console.error('Failed to fetch providers:', err);
+      setError('Failed to load providers. Please try again.');
+      toast.error('Failed to load providers');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const filteredProviders = providers;
 
   const stats = {
-    total: mockProviders.length,
-    active: mockProviders.filter(p => p.status === 'active').length,
-    onboarding: mockProviders.filter(p => p.status === 'onboarding').length,
-    atRisk: mockProviders.filter(p => p.riskLevel === 'high').length,
+    total: totalCount,
+    active: providers.filter(p => p.status === 'active').length,
+    onboarding: providers.filter(p => p.status === 'onboarding').length,
+    atRisk: providers.filter(p => p.riskLevel === 'high').length,
+  };
+
+  const handleViewDetails = (provider: Provider) => {
+    navigate(`/psm/providers/${provider.id}`);
+    setShowActions(null);
   };
 
   return (
@@ -248,12 +270,53 @@ export default function PSMProvidersPage() {
             <Download className="w-4 h-4" />
             Export
           </button>
+
+          <button
+            onClick={fetchProviders}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
+            Refresh
+          </button>
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+          <span className="ml-3 text-gray-600">Loading providers...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 text-center">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={fetchProviders}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && !error && filteredProviders.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+          <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No providers found</p>
+          <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or search query</p>
+        </div>
+      )}
+
       {/* Providers Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      {!loading && !error && filteredProviders.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -351,7 +414,10 @@ export default function PSMProvidersPage() {
                     
                     {showActions === provider.id && (
                       <div className="absolute right-4 top-12 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[160px]">
-                        <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                        <button 
+                          onClick={() => handleViewDetails(provider)}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
                           <Eye className="w-4 h-4" />
                           View Details
                         </button>
@@ -387,7 +453,36 @@ export default function PSMProvidersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Showing {filteredProviders.length} of {totalCount} providers
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <span className="px-3 py-1 text-sm text-gray-600">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      )}
     </div>
   );
 }

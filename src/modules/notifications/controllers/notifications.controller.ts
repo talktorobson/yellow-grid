@@ -27,7 +27,7 @@ import { UpdateNotificationPreferencesDto } from '../dto/update-preferences.dto'
 import { QueryNotificationsDto } from '../dto/query-notifications.dto';
 
 @ApiTags('Notifications')
-@Controller('api/v1/notifications')
+@Controller('notifications')
 // @UseGuards(JwtAuthGuard) // Uncomment when auth is ready
 @ApiBearerAuth()
 export class NotificationsController {
