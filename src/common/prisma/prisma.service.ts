@@ -1,22 +1,60 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { ClsService } from 'nestjs-cls';
+import { tenancyExtension } from './prisma-tenancy.extension';
 
 /**
  * Service that extends PrismaClient to provide database access.
  *
  * Handles database connection lifecycle (connect/disconnect) and logging.
+ * Uses a Proxy to delegate queries to an extended client with multi-tenancy support.
  */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+  private readonly extendedClient: any;
 
-  constructor() {
+  constructor(private readonly cls: ClsService) {
     super({
       log: [
         { level: 'query', emit: 'event' },
         { level: 'error', emit: 'stdout' },
         { level: 'warn', emit: 'stdout' },
       ],
+    });
+
+    this.extendedClient = this.$extends(tenancyExtension(this.cls));
+
+    return new Proxy(this, {
+      get: (target, prop, receiver) => {
+        // Pass through lifecycle methods and specific properties to the original instance
+        if (
+          [
+            'onModuleInit',
+            'onModuleDestroy',
+            '$connect',
+            '$disconnect',
+            'cleanDatabase',
+            'logger',
+            'cls',
+            'extendedClient',
+            // Private/Internal Prisma properties that might be accessed
+            '_activeProvider',
+            '_clientVersion',
+            '_engine',
+            '_engineConfig',
+            '_errorFormat',
+            '_fetcher',
+            '_middlewares',
+            '_previewFeatures',
+          ].includes(prop as string) ||
+          typeof prop === 'symbol'
+        ) {
+          return Reflect.get(target, prop, receiver);
+        }
+        // Delegate everything else (models like .user, .serviceOrder) to the extended client
+        return Reflect.get(this.extendedClient, prop, receiver);
+      },
     });
   }
 

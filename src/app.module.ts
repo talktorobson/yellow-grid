@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ClsModule } from 'nestjs-cls';
 
 // Common modules
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -55,6 +56,12 @@ import { AppController } from './app.controller';
     // Scheduled tasks
     ScheduleModule.forRoot(),
 
+    // Context Local Storage (for Multi-tenancy)
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true },
+    }),
+
     // Common modules
     PrismaModule,
     RedisModule,
@@ -90,4 +97,4 @@ import { AppController } from './app.controller';
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule { }

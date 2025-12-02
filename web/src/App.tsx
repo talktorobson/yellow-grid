@@ -11,37 +11,10 @@ import CallbackPage from './pages/auth/CallbackPage';
 import UnifiedPortalLayout from './components/layout/UnifiedPortalLayout';
 import CustomerLayout from './layouts/CustomerLayout';
 
-// Pages - Service Operator (default) Experience
-import DashboardPage from './pages/DashboardPage';
-import AnalyticsPage from './pages/analytics/AnalyticsPage';
-import ServiceOrdersPage from './pages/service-orders/ServiceOrdersPage';
-import ServiceOrderDetailPage from './pages/service-orders/ServiceOrderDetailPage';
-import AssignmentsPage from './pages/assignments/AssignmentsPage';
-import AssignmentDetailPage from './pages/assignments/AssignmentDetailPage';
-import ProvidersPage from './pages/providers/ProvidersPage';
-import ProviderDetailPage from './pages/providers/ProviderDetailPage';
-import CreateProviderPage from './pages/providers/CreateProviderPage';
-import CalendarPage from './pages/calendar/CalendarPage';
-import TasksPage from './pages/tasks/TasksPage';
-import PerformanceDashboardPage from './pages/performance/PerformanceDashboardPage';
-import { OperationsGridPage } from './pages/operations';
+// Pages
 import NotFoundPage from './pages/NotFoundPage';
 
-// Provider Portal Pages
-import {
-  ProviderDashboardPage,
-  ProviderJobsPage,
-  ProviderTeamsPage,
-  ProviderFinancialPage,
-  ProviderCalendarPage,
-  ProviderPerformancePage,
-  ProviderSettingsPage,
-  ProviderJobDetailPage,
-  ProviderTeamDetailPage,
-  ProviderMessagesPage,
-} from './pages/provider';
-
-// Customer Portal Pages
+// Customer Portal Pages (Keep here as they are separate layout)
 import {
   CustomerStatusPage,
   CustomerSchedulePage,
@@ -51,43 +24,15 @@ import {
   CustomerEvaluatePage,
 } from './pages/customer';
 
-// PSM Portal Pages
+// Modular Routes
 import {
-  PSMDashboardPage,
-  PSMPipelinePage,
-  PSMProvidersPage,
-  PSMCoveragePage,
-  PSMProviderDetailPage,
-  PSMVerificationPage,
-} from './pages/psm';
-
-// Seller Portal Pages
-import {
-  SellerDashboardPage,
-  SellerAvailabilityPage,
-  SellerTVReportPage,
-  SellerProjectsPage,
-  SellerQuotationsPage,
-} from './pages/seller';
-
-// Admin Portal Pages
-import {
-  AdminDashboardPage,
-  AdminUsersPage,
-  AdminConfigPage,
-  AdminRolesPage,
-  AdminAuditPage,
-  AdminUserDetailPage,
-  AdminNotificationsPage,
-} from './pages/admin';
-
-// Offer Manager / Catalog Pages
-import {
-  OfferManagerServicesPage,
-  OfferManagerPricingPage,
-  OfferManagerChecklistsPage,
-  CatalogServiceDetailPage,
-} from './pages/catalog';
+  OperatorRoutes,
+  ProviderRoutes,
+  AdminRoutes,
+  PSMRoutes,
+  SellerRoutes,
+  CatalogRoutes,
+} from './routes';
 
 function App() {
   return (
@@ -98,16 +43,16 @@ function App() {
           {/* ============================================================ */}
           {/* PUBLIC ROUTES - Portal Selection & Login */}
           {/* ============================================================ */}
-          
+
           {/* Main portal selector */}
           <Route path="/login" element={<PortalSelectorPage />} />
-          
+
           {/* Individual portal logins */}
           <Route path="/login/:portal" element={<PortalLoginPage />} />
-          
+
           {/* Legacy login (redirects to selector) */}
           <Route path="/auth/login" element={<Navigate to="/login" replace />} />
-          
+
           {/* SSO callback */}
           <Route path="/auth/callback" element={<CallbackPage />} />
 
@@ -132,81 +77,26 @@ function App() {
             <Route path="service-orders/:id" element={<Navigate to="/operator/orders" replace />} />
 
             {/* ============================================================ */}
-            {/* SERVICE OPERATOR / CONTROL TOWER */}
+            {/* MODULAR ROUTES */}
             {/* ============================================================ */}
-            <Route path="operator/dashboard" element={<DashboardPage />} />
-            <Route path="operator/grid" element={<OperationsGridPage />} />
-            <Route path="operator/orders" element={<ServiceOrdersPage />} />
-            <Route path="operator/orders/:id" element={<ServiceOrderDetailPage />} />
-            <Route path="operator/assignments" element={<AssignmentsPage />} />
-            <Route path="operator/assignments/:id" element={<AssignmentDetailPage />} />
-            <Route path="operator/providers" element={<ProvidersPage />} />
-            <Route path="operator/providers/new" element={<CreateProviderPage />} />
-            <Route path="operator/providers/:id" element={<ProviderDetailPage />} />
-            <Route path="operator/calendar" element={<CalendarPage />} />
-            <Route path="operator/tasks" element={<TasksPage />} />
-            <Route path="operator/analytics" element={<AnalyticsPage />} />
-            <Route path="operator/performance" element={<PerformanceDashboardPage />} />
 
-            {/* ============================================================ */}
-            {/* PROVIDER PORTAL */}
-            {/* ============================================================ */}
-            <Route path="provider/dashboard" element={<ProviderDashboardPage />} />
-            <Route path="provider/jobs" element={<ProviderJobsPage />} />
-            <Route path="provider/jobs/:id" element={<ProviderJobDetailPage />} />
-            <Route path="provider/calendar" element={<ProviderCalendarPage />} />
-            <Route path="provider/teams" element={<ProviderTeamsPage />} />
-            <Route path="provider/teams/:id" element={<ProviderTeamDetailPage />} />
-            <Route path="provider/financial" element={<ProviderFinancialPage />} />
-            <Route path="provider/performance" element={<ProviderPerformancePage />} />
-            <Route path="provider/settings" element={<ProviderSettingsPage />} />
-            <Route path="provider/messages" element={<ProviderMessagesPage />} />
+            {/* Service Operator / Control Tower */}
+            <Route path="operator/*" element={<OperatorRoutes />} />
 
-            {/* ============================================================ */}
-            {/* PSM (Provider Success Manager) PORTAL */}
-            {/* ============================================================ */}
-            <Route path="psm/dashboard" element={<PSMDashboardPage />} />
-            <Route path="psm/pipeline" element={<PSMPipelinePage />} />
-            <Route path="psm/providers" element={<PSMProvidersPage />} />
-            <Route path="psm/providers/:id" element={<PSMProviderDetailPage />} />
-            <Route path="psm/coverage" element={<PSMCoveragePage />} />
-            <Route path="psm/verification" element={<PSMVerificationPage />} />
-            <Route path="psm/analytics" element={<AnalyticsPage />} />
+            {/* Provider Portal */}
+            <Route path="provider/*" element={<ProviderRoutes />} />
 
-            {/* ============================================================ */}
-            {/* SELLER PORTAL */}
-            {/* ============================================================ */}
-            <Route path="seller/dashboard" element={<SellerDashboardPage />} />
-            <Route path="seller/availability" element={<SellerAvailabilityPage />} />
-            <Route path="seller/projects" element={<SellerProjectsPage />} />
-            <Route path="seller/projects/:id" element={<SellerProjectsPage />} />
-            <Route path="seller/reports" element={<SellerTVReportPage />} />
-            <Route path="seller/reports/:id" element={<SellerTVReportPage />} />
-            <Route path="seller/quotations" element={<SellerQuotationsPage />} />
-            <Route path="seller/quotations/:id" element={<SellerQuotationsPage />} />
+            {/* PSM (Provider Success Manager) Portal */}
+            <Route path="psm/*" element={<PSMRoutes />} />
 
-            {/* ============================================================ */}
-            {/* ADMIN PORTAL */}
-            {/* ============================================================ */}
-            <Route path="admin/dashboard" element={<AdminDashboardPage />} />
-            <Route path="admin/users" element={<AdminUsersPage />} />
-            <Route path="admin/users/:id" element={<AdminUserDetailPage />} />
-            <Route path="admin/roles" element={<AdminRolesPage />} />
-            <Route path="admin/notifications" element={<AdminNotificationsPage />} />
-            <Route path="admin/config" element={<AdminConfigPage />} />
-            <Route path="admin/audit" element={<AdminAuditPage />} />
-            <Route path="admin/analytics" element={<AnalyticsPage />} />
+            {/* Seller Portal */}
+            <Route path="seller/*" element={<SellerRoutes />} />
 
-            {/* ============================================================ */}
-            {/* OFFER MANAGER / CATALOG */}
-            {/* ============================================================ */}
-            <Route path="catalog" element={<Navigate to="/catalog/services" replace />} />
-            <Route path="catalog/dashboard" element={<Navigate to="/catalog/services" replace />} />
-            <Route path="catalog/services" element={<OfferManagerServicesPage />} />
-            <Route path="catalog/services/:id" element={<CatalogServiceDetailPage />} />
-            <Route path="catalog/pricing" element={<OfferManagerPricingPage />} />
-            <Route path="catalog/checklists" element={<OfferManagerChecklistsPage />} />
-            <Route path="catalog/analytics" element={<AnalyticsPage />} />
+            {/* Admin Portal */}
+            <Route path="admin/*" element={<AdminRoutes />} />
+
+            {/* Offer Manager / Catalog */}
+            <Route path="catalog/*" element={<CatalogRoutes />} />
           </Route>
 
           {/* ============================================================ */}
