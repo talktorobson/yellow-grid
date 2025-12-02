@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType, TaskType, TaskPriority, TaskStatus } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -1847,13 +1847,42 @@ async function main() {
       const countryStores = storesByCountry[loc.country] || [];
       const store = countryStores[Math.floor(Math.random() * countryStores.length)];
 
-      // Create 5 orders per location
+      // Create 5 orders per location with VARIETY for demo
       for (let i = 0; i < 5; i++) {
         // Jitter location slightly for heatmap
         const lat = loc.lat + (Math.random() - 0.5) * 0.1;
         const lon = loc.lon + (Math.random() - 0.5) * 0.1;
         
-        const status = i < 3 ? ServiceOrderState.ASSIGNED : ServiceOrderState.CREATED;
+        // ENHANCED: Variety in states for demo
+        const stateOptions = [
+          ServiceOrderState.CREATED,
+          ServiceOrderState.SCHEDULED,
+          ServiceOrderState.ASSIGNED,
+          ServiceOrderState.SCHEDULED,
+          ServiceOrderState.CREATED,
+        ];
+        const status = stateOptions[i];
+        
+        // ENHANCED: Mix of P1 (urgent) and P2 priorities
+        const priority = i === 0 ? ServicePriority.P1 : ServicePriority.P2;
+        
+        // ENHANCED: Variety of service types
+        const serviceTypes = [
+          ServiceType.INSTALLATION,
+          ServiceType.CONFIRMATION_TV,
+          ServiceType.INSTALLATION,
+          ServiceType.MAINTENANCE,
+          ServiceType.INSTALLATION,
+        ];
+        const orderServiceType = serviceTypes[i];
+        
+        // ENHANCED: Sales potential for demo visibility
+        const salesPotentials = ['LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH', 'MEDIUM'];
+        const salesPotential = salesPotentials[i];
+        
+        // ENHANCED: Risk levels for demo
+        const riskLevels = [RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.LOW, RiskLevel.HIGH, RiskLevel.LOW];
+        const riskLevel = riskLevels[i];
         
         // Determine sales channel and system
         const isOnline = i % 3 === 0;
@@ -1928,11 +1957,13 @@ async function main() {
             externalServiceOrderId: `ORD-${loc.country}-${Date.now()}-${i}-${Math.floor(Math.random() * 1000)}`,
             serviceId: service.id,
             state: status,
-            serviceType: service.serviceType,
-            priority: ServicePriority.P2,
+            serviceType: orderServiceType, // ENHANCED: Use varied service type
+            priority: priority, // ENHANCED: Use varied priority (P1/P2)
             estimatedDurationMinutes: 120,
             countryCode: loc.country,
             businessUnit: 'LEROY_MERLIN',
+            riskLevel: riskLevel, // ENHANCED: Varied risk levels
+            salesPotential: salesPotential, // ENHANCED: Sales potential rating
             
             // NEW: Sales context fields
             salesSystemId: salesSystem?.id,
@@ -2144,6 +2175,76 @@ async function main() {
     }
     
     console.log(`✅ Created ${orderCount} service orders and ${bookingCount} bookings for visualization`);
+    
+    // ============================================================================
+    // SEED TASKS FOR DEMO - Critical Actions & Priority Tasks
+    // ============================================================================
+    console.log('\n📋 Seeding tasks for demo...');
+    
+    // Delete existing tasks
+    await prisma.taskAuditLog.deleteMany({});
+    await prisma.task.deleteMany({});
+    
+    // Get all created orders to add tasks
+    const allOrders = await prisma.serviceOrder.findMany({
+      take: 30, // Add tasks to first 30 orders
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    const taskTypes = [
+      { type: TaskType.UNASSIGNED_JOB, priority: TaskPriority.URGENT, slaDays: 0.5 },
+      { type: TaskType.CONTRACT_NOT_SIGNED, priority: TaskPriority.HIGH, slaDays: 1 },
+      { type: TaskType.WCF_NOT_SIGNED, priority: TaskPriority.HIGH, slaDays: 1 },
+      { type: TaskType.PRE_FLIGHT_FAILURE, priority: TaskPriority.CRITICAL, slaDays: 0.25 },
+      { type: TaskType.PAYMENT_FAILED, priority: TaskPriority.URGENT, slaDays: 0.5 },
+      { type: TaskType.DOCUMENT_REVIEW, priority: TaskPriority.MEDIUM, slaDays: 2 },
+      { type: TaskType.QUALITY_ALERT, priority: TaskPriority.HIGH, slaDays: 1 },
+      { type: TaskType.SERVICE_ORDER_RISK_REVIEW, priority: TaskPriority.MEDIUM, slaDays: 2 },
+    ];
+    
+    let taskCount = 0;
+    const now = new Date();
+    
+    for (let i = 0; i < Math.min(allOrders.length, 20); i++) {
+      const order = allOrders[i];
+      const taskConfig = taskTypes[i % taskTypes.length];
+      
+      // Create SLA deadline based on task priority
+      const slaDeadline = new Date(now);
+      slaDeadline.setHours(slaDeadline.getHours() + Math.floor(taskConfig.slaDays * 24));
+      
+      // Make some tasks overdue for demo
+      const isOverdue = i < 5;
+      if (isOverdue) {
+        slaDeadline.setHours(slaDeadline.getHours() - 48); // 2 days overdue
+      }
+      
+      // Make some tasks assigned
+      const isAssigned = i >= 5 && i < 10;
+      
+      await prisma.task.create({
+        data: {
+          taskType: taskConfig.type,
+          priority: taskConfig.priority,
+          status: isAssigned ? TaskStatus.ASSIGNED : TaskStatus.OPEN,
+          serviceOrderId: order.id,
+          context: {
+            orderNumber: order.externalServiceOrderId,
+            customerName: (order.customerInfo as any)?.name || 'Unknown',
+            city: (order.serviceAddress as any)?.city || 'Unknown',
+            reason: `Demo task for ${taskConfig.type.replace(/_/g, ' ').toLowerCase()}`,
+          },
+          assignedTo: isAssigned ? 'operator.fr@adeo.com' : null,
+          assignedAt: isAssigned ? new Date() : null,
+          slaDeadline: slaDeadline,
+          countryCode: order.countryCode,
+          businessUnit: order.businessUnit,
+        }
+      });
+      taskCount++;
+    }
+    
+    console.log(`✅ Created ${taskCount} demo tasks (5 overdue, 5 assigned, 10 open)`);
   }
 
   console.log(`✅ Created ${calendarConfigs.length} calendar configurations`);
