@@ -109,7 +109,7 @@ export class ServiceOrdersEventHandler {
       `📥 Received order.created event | order: ${event.orderId} | type: ${event.orderType}`,
     );
 
-    const { orderId, orderType, priority, tenantId } = event;
+    const { orderId, orderType, urgency, tenantId } = event;
 
     try {
       // Perform initial validations
@@ -118,13 +118,13 @@ export class ServiceOrdersEventHandler {
       // TODO: Validate order data, check for duplicates, etc.
       // await this.serviceOrdersService.validateOrder(orderId);
 
-      // Route high-priority orders differently
-      if (priority === 'URGENT' || priority === 'EMERGENCY') {
+      // Route urgent orders differently
+      if (urgency === 'URGENT') {
         this.logger.log(
-          `🚨 High-priority order detected | order: ${orderId} | priority: ${priority}`,
+          `🚨 Urgent order detected | order: ${orderId} | urgency: ${urgency}`,
         );
 
-        // TODO: Trigger priority routing
+        // TODO: Trigger urgent routing
         // await this.assignmentService.initiateUrgentAssignment(orderId);
       }
 

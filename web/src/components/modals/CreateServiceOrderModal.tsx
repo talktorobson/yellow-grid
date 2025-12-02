@@ -18,7 +18,7 @@ interface CreateServiceOrderModalProps {
 }
 
 type ServiceType = 'INSTALLATION' | 'REPAIR' | 'MAINTENANCE' | 'TECHNICAL_VISIT' | 'QUOTATION';
-type Priority = 'P1' | 'P2';
+type Urgency = 'URGENT' | 'STANDARD' | 'LOW';
 
 interface FormData {
   // Customer Info
@@ -32,7 +32,7 @@ interface FormData {
   // Service Info
   serviceId: string;
   serviceType: ServiceType;
-  priority: Priority;
+  urgency: Urgency;
   estimatedDurationMinutes: number;
   // Service Address (can be different from customer address)
   sameAsCustomerAddress: boolean;
@@ -60,7 +60,7 @@ const initialFormData: FormData = {
   customerCountry: 'ES',
   serviceId: '',
   serviceType: 'INSTALLATION',
-  priority: 'P2',
+  urgency: 'STANDARD',
   estimatedDurationMinutes: 120,
   sameAsCustomerAddress: true,
   serviceStreet: '',
@@ -118,7 +118,7 @@ export function CreateServiceOrderModal({ isOpen, onClose, onSuccess }: CreateSe
           },
         },
         serviceType: formData.serviceType,
-        priority: formData.priority,
+        urgency: formData.urgency,
         estimatedDurationMinutes: formData.estimatedDurationMinutes,
         serviceAddress,
         requestedStartDate: new Date(formData.requestedStartDate).toISOString(),
@@ -152,7 +152,7 @@ export function CreateServiceOrderModal({ isOpen, onClose, onSuccess }: CreateSe
       case 1:
         return !!(formData.customerName && formData.customerStreet && formData.customerCity && formData.customerPostalCode);
       case 2:
-        return !!(formData.serviceType && formData.priority);
+        return !!(formData.serviceType && formData.urgency);
       case 3:
         return !!(formData.requestedStartDate && formData.requestedEndDate);
       default:
@@ -372,15 +372,16 @@ export function CreateServiceOrderModal({ isOpen, onClose, onSuccess }: CreateSe
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Priority <span className="text-red-500">*</span>
+                      Urgency <span className="text-red-500">*</span>
                     </label>
                     <select
                       className="input w-full"
-                      value={formData.priority}
-                      onChange={(e) => handleInputChange('priority', e.target.value as Priority)}
+                      value={formData.urgency}
+                      onChange={(e) => handleInputChange('urgency', e.target.value as Urgency)}
                     >
-                      <option value="P1">P1 - Urgent (24-48h)</option>
-                      <option value="P2">P2 - Standard (3-7 days)</option>
+                      <option value="URGENT">Urgent (24-48h)</option>
+                      <option value="STANDARD">Standard (3-7 days)</option>
+                      <option value="LOW">Low (flexible)</option>
                     </select>
                   </div>
                 </div>
@@ -592,7 +593,7 @@ export function CreateServiceOrderModal({ isOpen, onClose, onSuccess }: CreateSe
                     <h4 className="text-sm font-medium text-gray-500">Service</h4>
                     <p className="text-gray-900">{formData.serviceType.replace('_', ' ')}</p>
                     <p className="text-sm text-gray-600">
-                      Priority: {formData.priority} • Duration: {formData.estimatedDurationMinutes} min
+                      Urgency: {formData.urgency} • Duration: {formData.estimatedDurationMinutes} min
                     </p>
                     <p className="text-sm text-gray-600">
                       {formData.countryCode} • {formData.businessUnit.replace('_', ' ')}

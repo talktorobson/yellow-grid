@@ -21,7 +21,7 @@ export default function ServiceOrdersPage() {
   const [filters, setFilters] = useState({
     status: '',
     serviceType: '',
-    priority: '',
+    urgency: '',
     salesPotential: '',
     riskLevel: '',
     countryCode: '',
@@ -88,7 +88,7 @@ export default function ServiceOrdersPage() {
     setFilters({
       status: '',
       serviceType: '',
-      priority: '',
+      urgency: '',
       salesPotential: '',
       riskLevel: '',
       countryCode: '',
@@ -105,7 +105,7 @@ export default function ServiceOrdersPage() {
   const activeFiltersCount = [
     filters.status,
     filters.serviceType,
-    filters.priority,
+    filters.urgency,
     filters.salesPotential,
     filters.riskLevel,
     filters.countryCode,
@@ -224,15 +224,16 @@ export default function ServiceOrdersPage() {
             ))}
           </select>
 
-          {/* Priority filter */}
+          {/* Urgency filter */}
           <select
             className="input w-40"
-            value={filters.priority}
-            onChange={(e) => setFilters({ ...filters, priority: e.target.value, page: 1 })}
+            value={filters.urgency}
+            onChange={(e) => setFilters({ ...filters, urgency: e.target.value, page: 1 })}
           >
-            <option value="">All Priorities</option>
-            <option value="P1">P1</option>
-            <option value="P2">P2</option>
+            <option value="">All Urgency</option>
+            <option value="URGENT">Urgent</option>
+            <option value="STANDARD">Standard</option>
+            <option value="LOW">Low</option>
           </select>
 
           <button
@@ -487,7 +488,7 @@ export default function ServiceOrdersPage() {
                     </td>
                     <td className="table-cell">
                       <span className="text-sm text-gray-900">{order.serviceType}</span>
-                      <div className="text-xs text-gray-500">{order.priority}</div>
+                      <div className="text-xs text-gray-500">{order.urgency}</div>
                     </td>
                     <td className="table-cell">{getStatusBadge(order.status)}</td>
                     <td className="table-cell">
@@ -599,12 +600,13 @@ export default function ServiceOrdersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Priority Override (Optional)
+                  Urgency Override (Optional)
                 </label>
                 <select className="input w-full">
-                  <option value="">Keep current priority</option>
-                  <option value="P1">P1 - Priority</option>
-                  <option value="P2">P2 - Standard</option>
+                  <option value="">Keep current urgency</option>
+                  <option value="URGENT">Urgent</option>
+                  <option value="STANDARD">Standard</option>
+                  <option value="LOW">Low</option>
                 </select>
               </div>
 

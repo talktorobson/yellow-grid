@@ -4,7 +4,7 @@
  * Run with: npx ts-node prisma/seed-demo-data.ts
  */
 
-import { PrismaClient, ServiceCategory, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ProviderTypeEnum, RiskLevel, ZoneType, WorkTeamStatus } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServiceUrgency, ServiceOrderState, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ProviderTypeEnum, RiskLevel, ZoneType, WorkTeamStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -406,7 +406,7 @@ async function seedDemoData() {
     return ServiceOrderState.CREATED;
   }
 
-  const priorities = [ServicePriority.P1, ServicePriority.P2];
+  const urgencyLevels = [ServiceUrgency.URGENT, ServiceUrgency.STANDARD, ServiceUrgency.LOW];
   const salesChannels = [SalesChannel.IN_STORE, SalesChannel.ONLINE, SalesChannel.PHONE];
   
   const createdServiceOrders: any[] = [];
@@ -469,7 +469,7 @@ async function seedDemoData() {
           },
           
           serviceType: ServiceType.INSTALLATION,
-          priority: randomElement(priorities),
+          urgency: randomElement(urgencyLevels),
           estimatedDurationMinutes: service.estimatedDurationMinutes || 180,
           
           serviceAddress: {

@@ -126,7 +126,7 @@ export default function CalendarPage() {
       backgroundColor = '#10b981'; // green
     } else if (order?.status === 'CANCELLED') {
       backgroundColor = '#ef4444'; // red
-    } else if (order?.priority === 'P1') {
+    } else if (order?.urgency === 'URGENT') {
       backgroundColor = '#f59e0b'; // orange
     }
 

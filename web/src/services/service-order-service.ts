@@ -60,7 +60,7 @@ interface CreateServiceOrderDto {
     };
   };
   serviceType: 'INSTALLATION' | 'REPAIR' | 'MAINTENANCE' | 'TECHNICAL_VISIT' | 'QUOTATION';
-  priority: 'P1' | 'P2';
+  urgency: 'URGENT' | 'STANDARD' | 'LOW';
   estimatedDurationMinutes: number;
   serviceAddress: {
     street: string;

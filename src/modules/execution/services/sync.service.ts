@@ -395,7 +395,7 @@ export class SyncService {
         scheduledEndTime: true,
         serviceAddress: true,
         customerInfo: true,
-        priority: true,
+        urgency: true,
       },
       take: 50, // Limit to avoid large payloads
     });

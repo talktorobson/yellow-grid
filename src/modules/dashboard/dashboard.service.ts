@@ -296,9 +296,9 @@ export class DashboardService {
       failedAssignments,
       escalatedTasks,
     ] = await Promise.all([
-      // P1 = High priority (24-72h response), unassigned
+      // URGENT = High urgency (24-72h response), unassigned
       this.prisma.serviceOrder.count({
-        where: { state: ServiceOrderState.CREATED, priority: 'P1', assignedProviderId: null },
+        where: { state: ServiceOrderState.CREATED, urgency: 'URGENT', assignedProviderId: null },
       }),
       this.prisma.serviceOrder.count({
         where: { state: { in: activeStates }, requestedEndDate: { lt: now } },
@@ -317,9 +317,9 @@ export class DashboardService {
     ]);
 
     const actionConfigs = [
-      { count: unassignedHighPriority, id: 'unassigned-urgent', type: 'UNASSIGNED', title: 'Unassigned P1 Orders',
-        singular: '1 high-priority service order needs assignment', plural: `${unassignedHighPriority} high-priority service orders need assignment`,
-        priority: 'critical' as const, link: '/service-orders?state=CREATED&priority=P1' },
+      { count: unassignedHighPriority, id: 'unassigned-urgent', type: 'UNASSIGNED', title: 'Unassigned Urgent Orders',
+        singular: '1 urgent service order needs assignment', plural: `${unassignedHighPriority} urgent service orders need assignment`,
+        priority: 'critical' as const, link: '/service-orders?state=CREATED&urgency=URGENT' },
       { count: overdueServiceOrders, id: 'overdue-orders', type: 'OVERDUE', title: 'Overdue Service Orders',
         singular: '1 service order is past the scheduled date', plural: `${overdueServiceOrders} service orders are past the scheduled date`,
         priority: 'critical' as const, link: '/service-orders?overdue=true' },
@@ -367,7 +367,7 @@ export class DashboardService {
     const serviceOrderIds = [...new Set(tasks.map(t => t.serviceOrderId))];
     const serviceOrders = await this.prisma.serviceOrder.findMany({
       where: { id: { in: serviceOrderIds } },
-      select: { id: true, externalServiceOrderId: true, customerInfo: true, priority: true },
+      select: { id: true, externalServiceOrderId: true, customerInfo: true, urgency: true },
     });
     const serviceOrderMap = new Map(serviceOrders.map(so => [so.id, so]));
 

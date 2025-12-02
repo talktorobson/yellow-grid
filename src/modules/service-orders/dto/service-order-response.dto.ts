@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ServiceOrderState,
-  ServicePriority,
+  ServiceUrgency,
   ServiceType,
   SalesPotential,
   RiskLevel,
@@ -48,8 +48,8 @@ export class ServiceOrderResponseDto {
   @ApiProperty({ enum: ServiceType })
   serviceType: ServiceType;
 
-  @ApiProperty({ enum: ServicePriority })
-  priority: ServicePriority;
+  @ApiProperty({ enum: ServiceUrgency })
+  urgency: ServiceUrgency;
 
   @ApiProperty()
   estimatedDurationMinutes: number;

@@ -4,7 +4,7 @@ import { ServiceOrdersService } from './service-orders.service';
 import { ServiceOrderStateMachineService } from './service-order-state-machine.service';
 import { BufferLogicService } from '../scheduling/buffer-logic.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { ServiceOrderState, ServicePriority } from '@prisma/client';
+import { ServiceOrderState, ServiceUrgency } from '@prisma/client';
 
 describe('ServiceOrdersService', () => {
   let service: ServiceOrdersService;
@@ -101,7 +101,7 @@ describe('ServiceOrdersService', () => {
         countryCode: 'ES',
       },
       serviceType: 'INSTALLATION' as any,
-      priority: ServicePriority.P2,
+      urgency: ServiceUrgency.STANDARD,
       estimatedDurationMinutes: 120,
       requestedStartDate: '2025-01-20T08:00:00Z',
       requestedEndDate: '2025-01-25T18:00:00Z',
@@ -268,7 +268,7 @@ describe('ServiceOrdersService', () => {
       };
       const updatedOrder = {
         ...mockOrder,
-        priority: ServicePriority.P1,
+        urgency: ServiceUrgency.URGENT,
       };
 
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(mockOrder);
@@ -277,7 +277,7 @@ describe('ServiceOrdersService', () => {
 
       const result = await service.update(
         'order-id',
-        { priority: ServicePriority.P1 },
+        { urgency: ServiceUrgency.URGENT },
         'user@example.com',
       );
 

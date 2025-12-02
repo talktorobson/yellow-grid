@@ -196,7 +196,7 @@ export class TasksService {
               id: true,
               state: true,
               serviceType: true,
-              priority: true,
+              urgency: true,
             },
           },
         },

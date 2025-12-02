@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType, TaskType, TaskPriority, TaskStatus, SalesPotential, NotificationChannelType, NotificationStatusType, NotificationPriority } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServiceUrgency, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType, TaskType, TaskPriority, TaskStatus, SalesPotential, NotificationChannelType, NotificationStatusType, NotificationPriority } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -1863,8 +1863,8 @@ async function main() {
         ];
         const status = stateOptions[i];
         
-        // ENHANCED: Mix of P1 (urgent) and P2 priorities
-        const priority = i === 0 ? ServicePriority.P1 : ServicePriority.P2;
+        // ENHANCED: Mix of urgency levels (URGENT, STANDARD, LOW)
+        const urgency = i === 0 ? ServiceUrgency.URGENT : ServiceUrgency.STANDARD;
         
         // ENHANCED: Variety of service types
         const serviceTypes = [
@@ -1958,7 +1958,7 @@ async function main() {
             serviceId: service.id,
             state: status,
             serviceType: orderServiceType, // ENHANCED: Use varied service type
-            priority: priority, // ENHANCED: Use varied priority (P1/P2)
+            urgency: urgency, // ENHANCED: Use varied urgency levels (URGENT, STANDARD, LOW)
             estimatedDurationMinutes: 120,
             countryCode: loc.country,
             businessUnit: 'LEROY_MERLIN',

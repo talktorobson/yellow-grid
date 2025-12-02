@@ -72,7 +72,7 @@ export class ServiceOrdersController {
    * @param countryCode - Filter by country code.
    * @param businessUnit - Filter by business unit.
    * @param state - Filter by service order state.
-   * @param priority - Filter by priority.
+   * @param urgency - Filter by urgency level (URGENT, STANDARD, LOW).
    * @param assignedProviderId - Filter by assigned provider.
    * @param projectId - Filter by project ID.
    * @returns A list of service orders.
@@ -85,7 +85,7 @@ export class ServiceOrdersController {
   @ApiQuery({ name: 'countryCode', required: false })
   @ApiQuery({ name: 'businessUnit', required: false })
   @ApiQuery({ name: 'state', required: false, enum: ServiceOrderState })
-  @ApiQuery({ name: 'priority', required: false })
+  @ApiQuery({ name: 'urgency', required: false })
   @ApiQuery({ name: 'assignedProviderId', required: false })
   @ApiQuery({ name: 'projectId', required: false })
   @ApiResponse({
@@ -99,7 +99,7 @@ export class ServiceOrdersController {
     @Query('countryCode') countryCode?: string,
     @Query('businessUnit') businessUnit?: string,
     @Query('state') state?: ServiceOrderState,
-    @Query('priority') priority?: string,
+    @Query('urgency') urgency?: string,
     @Query('assignedProviderId') assignedProviderId?: string,
     @Query('projectId') projectId?: string,
   ) {
@@ -109,7 +109,7 @@ export class ServiceOrdersController {
       countryCode,
       businessUnit,
       state,
-      priority,
+      urgency,
       assignedProviderId,
       projectId,
     });

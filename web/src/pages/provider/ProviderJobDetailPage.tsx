@@ -82,10 +82,11 @@ function transformToJobDetail(order: ServiceOrder): JobDetail {
     'CANCELLED': 'cancelled',
   };
   
-  // Map priority
-  const priorityMap: Record<string, JobDetail['priority']> = {
-    'P1': 'urgent',
-    'P2': 'medium',
+  // Map urgency to priority display
+  const urgencyMap: Record<string, JobDetail['priority']> = {
+    'URGENT': 'urgent',
+    'STANDARD': 'medium',
+    'LOW': 'low',
   };
   
   // Extract scheduled date and time
@@ -141,7 +142,7 @@ function transformToJobDetail(order: ServiceOrder): JobDetail {
     title: serviceName,
     description: orderWithRelations.service?.description || `${serviceName} service`,
     status: statusMap[order.status] || 'pending',
-    priority: priorityMap[order.priority || 'P2'] || 'medium',
+    priority: urgencyMap[order.urgency || 'STANDARD'] || 'medium',
     scheduledDate,
     scheduledTime,
     estimatedDuration,

@@ -16,7 +16,7 @@ export interface FSMServiceOrderCreatedEvent {
   projectId?: string;
   customerId: string;
   orderType: string;
-  priority: string;
+  urgency: string;
   status: string;
   externalReferences: {
     salesOrderId: string;
@@ -63,7 +63,7 @@ export class EventMappingService {
       serviceOrderId: fsmOrderId,
       customerId: orderData.customer.customerId,
       orderType: this.mapOrderType(orderData.orderType),
-      priority: this.mapPriority(orderData.priority),
+      urgency: this.mapPriorityToUrgency(orderData.priority),
       status: 'CREATED',
       externalReferences: {
         salesOrderId: orderData.externalReferences.salesOrderId,
@@ -169,17 +169,19 @@ export class EventMappingService {
   }
 
   /**
-   * Map priority from sales system to FSM
+   * Map priority from sales system to FSM urgency level
+   * Note: Sales systems often have their own "priority" concept which maps to
+   * our "urgency" levels (URGENT, STANDARD, LOW) - NOT to P1/P2 service preferences
    */
-  private mapPriority(priority: Priority): string {
+  private mapPriorityToUrgency(priority: Priority): string {
     const mapping: Record<Priority, string> = {
-      [Priority.LOW]: 'P2',
-      [Priority.MEDIUM]: 'P2',
-      [Priority.HIGH]: 'P1',
-      [Priority.URGENT]: 'P1',
-      [Priority.EMERGENCY]: 'P1',
+      [Priority.LOW]: 'LOW',
+      [Priority.MEDIUM]: 'STANDARD',
+      [Priority.HIGH]: 'STANDARD',
+      [Priority.URGENT]: 'URGENT',
+      [Priority.EMERGENCY]: 'URGENT',
     };
-    return mapping[priority] || 'P2';
+    return mapping[priority] || 'STANDARD';
   }
 
   /**

@@ -98,7 +98,7 @@ export default function ServiceOrderDetailPage() {
             <div className="flex items-center gap-3 mt-2">
               <span className="badge badge-primary">{order.status}</span>
               <span className="text-sm text-gray-500">
-                {order.serviceType} • {order.priority} • {order.countryCode}
+                {order.serviceType} • {order.urgency} • {order.countryCode}
               </span>
             </div>
           </div>
@@ -169,8 +169,8 @@ export default function ServiceOrderDetailPage() {
                     <dd className="mt-1 text-sm text-gray-900">{order.serviceType}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">Priority</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{order.priority}</dd>
+                    <dt className="text-sm font-medium text-gray-500">Urgency</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{order.urgency}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-gray-500">Scheduled Date</dt>

@@ -1663,7 +1663,7 @@ model ServiceOrder {
 
   // Service details
   serviceType             ServiceType @map("service_type")
-  priority                ServicePriority
+  urgency                 ServiceUrgency @default(STANDARD)
   estimatedDurationMinutes Int     @map("estimated_duration_minutes")
 
   // Location
@@ -1776,7 +1776,7 @@ model ServiceOrder {
   @@index([assignedWorkTeamId])
   @@index([countryCode, businessUnit])
   @@index([state])
-  @@index([priority])
+  @@index([urgency])
   @@index([scheduledDate])
   @@index([riskLevel])
   @@index([salesSystemId])
@@ -1789,9 +1789,10 @@ model ServiceOrder {
   @@map("service_orders")
 }
 
-enum ServicePriority {
-  P1  // Priority: 24-72h response
-  P2  // Standard: 3-7 days response
+enum ServiceUrgency {
+  URGENT    // 24-72h response window
+  STANDARD  // 3-7 days response window  
+  LOW       // 7+ days, flexible scheduling
 }
 
 enum ServiceOrderState {

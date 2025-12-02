@@ -1,5 +1,5 @@
 import { User, UserRole, AuthTokens } from '@/types/auth.types';
-import { ServiceOrder, ServiceType, Priority, ServiceOrderStatus } from '@/types/service-order.types';
+import { ServiceOrder, ServiceType, Urgency, ServiceOrderStatus } from '@/types/service-order.types';
 import { CheckIn, CheckInMethod, CheckInStatus, HazardType } from '@/types/checkin-checkout.types';
 
 // Mock User Data
@@ -70,7 +70,7 @@ export const mockServiceOrder: ServiceOrder = {
   },
   estimatedDuration: 180,
   serviceType: ServiceType.INSTALLATION,
-  priority: Priority.P2,
+  urgency: Urgency.STANDARD,
   serviceDescription: 'Kitchen cabinet installation',
   products: [
     {
@@ -118,7 +118,7 @@ export const mockServiceOrders: ServiceOrder[] = [
         timestamp: '2025-01-19T09:00:00Z',
       },
     },
-    priority: Priority.P1,
+    urgency: Urgency.URGENT,
     scheduledDate: '2025-01-19',
   },
   {

@@ -254,7 +254,7 @@ export interface ServiceOrder {
   projectId: UUID;
   status: ServiceOrderStatus;
   serviceType: ServiceType;
-  priority: Priority;
+  urgency: Urgency;
   scheduledDate?: ISODateString;
   estimatedDuration?: number;
 
@@ -363,9 +363,10 @@ export enum ServiceType {
   MAINTENANCE = 'MAINTENANCE',
 }
 
-export enum Priority {
-  P1 = 'P1',
-  P2 = 'P2',
+export enum Urgency {
+  URGENT = 'URGENT',
+  STANDARD = 'STANDARD',
+  LOW = 'LOW',
 }
 
 export enum SalesPotential {

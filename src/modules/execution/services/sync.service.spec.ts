@@ -59,7 +59,7 @@ describe('SyncService', () => {
     scheduledEndTime: new Date('2025-01-10T17:00:00Z'),
     serviceAddress: { lat: 48.8566, lng: 2.3522, street: '123 Main St', city: 'Paris' },
     customerInfo: { name: 'John Doe', phone: '+33612345678' },
-    priority: 'P1',
+    urgency: 'URGENT',
   };
 
   beforeEach(async () => {

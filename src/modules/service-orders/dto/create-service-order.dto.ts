@@ -12,7 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ServiceType, ServicePriority } from '@prisma/client';
+import { ServiceType, ServiceUrgency } from '@prisma/client';
 
 class CustomerInfoDto {
   @ApiProperty({ example: 'John Doe' })
@@ -127,13 +127,13 @@ export class CreateServiceOrderDto {
   serviceType: ServiceType;
 
   @ApiProperty({
-    description: 'Service priority',
-    enum: ServicePriority,
-    example: 'P2',
+    description: 'Service urgency level',
+    enum: ServiceUrgency,
+    example: 'STANDARD',
   })
-  @IsEnum(ServicePriority)
+  @IsEnum(ServiceUrgency)
   @IsNotEmpty()
-  priority: ServicePriority;
+  urgency: ServiceUrgency;
 
   @ApiProperty({
     description: 'Estimated duration in minutes',

@@ -106,7 +106,7 @@ export class ServiceOrdersService {
     countryCode?: string;
     businessUnit?: string;
     state?: ServiceOrderState;
-    priority?: string;
+    urgency?: string;
     assignedProviderId?: string;
     projectId?: string;
   }): Promise<{ data: ServiceOrder[]; total: number }> {
@@ -126,8 +126,8 @@ export class ServiceOrdersService {
       where.state = filters.state;
     }
 
-    if (filters.priority) {
-      where.priority = filters.priority as any;
+    if (filters.urgency) {
+      where.urgency = filters.urgency as any;
     }
 
     if (filters.assignedProviderId) {

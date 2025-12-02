@@ -46,6 +46,10 @@
 - **WorkTeamCalendar**: Team-level calendar overrides with planned absences and dedicated working days
 - **TechnicianCertification**: Certification tracking with expiry dates
 
+### Service Orders
+- **ServiceOrder**: Core entity with `urgency` field (URGENT, STANDARD, LOW) for response time requirements
+- **Note on P1/P2**: P1/P2 terminology ONLY applies to provider service preferences (ServicePriorityConfig), NOT to service order urgency. Service orders use explicit urgency levels.
+
 ### Demo Data (Seeded - Dec 2025)
 - **French Customers**: Marie Dupont, Jean-Pierre Martin, Sophie Bernard, Pierre Durand, Isabelle Moreau, François Leroy, Nathalie Petit, Laurent Roux
 - **French Providers**: Services Pro Paris, TechniService Marseille, InstallPlus Lyon, ProHabitat Bordeaux
@@ -54,10 +58,11 @@
 - **Demo Credentials**: operator@adeo.com / Operator123!, admin-fr@adeo.com / Admin123!
 
 ### Key Enums
-- `ProviderTypeEnum`: P1, P2
+- `ProviderTypeEnum`: P1, P2 (provider hierarchy type)
+- `ServicePriorityType`: P1, P2, OPT_OUT (provider service preferences per specialty)
+- `ServiceUrgency`: URGENT, STANDARD, LOW (service order response time requirements)
 - `RiskLevel`: NONE, LOW, MEDIUM, HIGH, CRITICAL
 - `ZoneType`: PRIMARY, SECONDARY, OVERFLOW
-- `ServicePriorityType`: P1, P2, OPT_OUT
 - `WorkTeamStatus`: ACTIVE, INACTIVE, ON_VACATION, SUSPENDED
 
 ## Coding Style & Conventions

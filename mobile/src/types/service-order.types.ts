@@ -4,7 +4,7 @@ export interface ServiceOrder {
   projectId: string;
   projectName: string;
   serviceType: ServiceType;
-  priority: Priority;
+  urgency: Urgency;
   status: ServiceOrderStatus;
   scheduledDate: string;
   scheduledTimeSlot: TimeWindow;
@@ -42,9 +42,10 @@ export enum ServiceType {
   REPAIR = 'REPAIR',
 }
 
-export enum Priority {
-  P1 = 'P1', // 24-72h
-  P2 = 'P2', // 3-7 days
+export enum Urgency {
+  URGENT = 'URGENT',   // 24-48h response
+  STANDARD = 'STANDARD', // 3-7 days
+  LOW = 'LOW',         // flexible
 }
 
 export enum ServiceOrderStatus {
