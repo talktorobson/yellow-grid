@@ -9,6 +9,90 @@
 - **Legacy/Reference**: `roadshow-mockup/` is archived. `business-requirements/` are read-only source materials.
 - **Live Demo**: https://135.181.96.93
 
+## Remote Server (VPS) - Quick Reference
+
+### Connection Details
+- **IP**: `135.181.96.93`
+- **SSH**: `ssh -i deploy/vps_key root@135.181.96.93`
+- **HTTPS**: Self-signed certificate - use `curl -sk` (skip certificate verification)
+- **Deployment Directory**: `/root/yellow-grid` (NOT `/root/yellow-grid-demo`)
+
+### API Access (curl examples)
+```bash
+# Health check
+curl -sk "https://135.181.96.93/api/v1/health"
+
+# Login (get token)
+curl -sk "https://135.181.96.93/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"operator.fr@adeo.com","password":"Admin123!"}'
+
+# Authenticated request (use token from login)
+TOKEN=$(curl -sk "https://135.181.96.93/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"operator.fr@adeo.com","password":"Admin123!"}' | jq -r '.data.accessToken')
+curl -sk "https://135.181.96.93/api/v1/service-orders?take=5" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Docker Commands (run via SSH)
+```bash
+# View containers
+ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker compose ps"
+
+# View API logs
+ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker compose logs api --tail 50"
+
+# Restart API
+ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker compose restart api"
+
+# Rebuild and restart (after code changes)
+ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker compose build api --no-cache && docker compose up -d api"
+
+# Run database query
+ssh -i deploy/vps_key root@135.181.96.93 'cd /root/yellow-grid/deploy && docker compose exec -T postgres psql -U postgres -d yellow_grid -c "SELECT COUNT(*) FROM service_orders;"'
+```
+
+### Database Access
+```bash
+# Interactive psql
+ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker compose exec postgres psql -U postgres -d yellow_grid"
+
+# Run SQL file
+ssh -i deploy/vps_key root@135.181.96.93 'cd /root/yellow-grid/deploy && docker compose exec -T postgres psql -U postgres -d yellow_grid < /path/to/script.sql'
+
+# Run inline SQL (use heredoc for complex queries)
+ssh -i deploy/vps_key root@135.181.96.93 'cd /root/yellow-grid/deploy && docker compose exec -T postgres psql -U postgres -d yellow_grid << "EOSQL"
+SELECT id, state, urgency FROM service_orders LIMIT 5;
+EOSQL'
+```
+
+### Demo Credentials
+| Email | Password | Role |
+|-------|----------|------|
+| `operator.fr@adeo.com` | `Admin123!` | OPERATOR |
+| `admin.fr@adeo.com` | `Admin123!` | ADMIN |
+| `psm.fr@adeo.com` | `Admin123!` | PSM |
+| `seller.fr@adeo.com` | `Admin123!` | SELLER |
+
+### Deployment
+```bash
+# Full deploy from local machine
+./deploy/deploy-remote.sh
+
+# Deploy with demo data reseed
+./deploy/deploy-remote.sh --seed-demo
+
+# Skip build (code only)
+./deploy/deploy-remote.sh --skip-build
+```
+
+### Container Names
+- `yellow-grid-demo-api` - NestJS backend
+- `yellow-grid-demo-frontend` - Caddy + React SPA
+- `yellow-grid-demo-postgres` - PostgreSQL 15
+- `yellow-grid-demo-redis` - Redis 7
+
 ## Build, Run, and Test
 
 ### Backend (`src/`)
