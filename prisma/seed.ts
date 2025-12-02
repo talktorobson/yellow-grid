@@ -2281,7 +2281,7 @@ async function main() {
     ];
     
     let notificationCount = 0;
-    const now = new Date();
+    const notifNow = new Date();
     
     for (const user of demoUsers) {
       // Give each user 3-5 notifications
@@ -2289,11 +2289,15 @@ async function main() {
       
       for (let i = 0; i < numNotifs; i++) {
         const notifEvent = notificationEvents[Math.floor(Math.random() * notificationEvents.length)];
-        const createdAt = new Date(now);
+        const createdAt = new Date(notifNow);
         createdAt.setHours(createdAt.getHours() - Math.floor(Math.random() * 72)); // Last 3 days
         
         // Some are read, some are not
         const isRead = Math.random() > 0.6;
+        
+        // Determine language from country code
+        const langMap: Record<string, string> = { 'FR': 'fr', 'ES': 'es', 'IT': 'it', 'PT': 'pt' };
+        const userLanguage = langMap[user.countryCode] || 'en';
         
         await prisma.notification.create({
           data: {
@@ -2303,7 +2307,7 @@ async function main() {
             channel: NotificationChannelType.PUSH,
             eventType: notifEvent.event,
             priority: notifEvent.priority,
-            language: user.preferredLanguage || 'fr',
+            language: userLanguage,
             subject: notifEvent.subject,
             body: notifEvent.body,
             status: isRead ? NotificationStatusType.READ : NotificationStatusType.DELIVERED,
@@ -2338,14 +2342,15 @@ async function main() {
         assignedProviderId: { not: null },
       },
       include: {
-        assignment: true,
+        assignments: true,
       },
       take: 15,
     });
     
     let additionalBookings = 0;
     for (const order of ordersNeedingBookings) {
-      if (!order.assignment || !order.assignment.workTeamId) continue;
+      const latestAssignment = order.assignments[0];
+      if (!latestAssignment || !latestAssignment.workTeamId) continue;
       
       // Check if booking already exists
       const existingBooking = await prisma.booking.findFirst({
@@ -2363,7 +2368,7 @@ async function main() {
           data: {
             serviceOrderId: order.id,
             providerId: order.assignedProviderId!,
-            workTeamId: order.assignment.workTeamId,
+            workTeamId: latestAssignment.workTeamId,
             bookingDate: bookingDate,
             startSlot: baseSlot,
             endSlot: baseSlot + 8, // 2 hours
