@@ -1,4 +1,4 @@
-import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType, TaskType, TaskPriority, TaskStatus } from '@prisma/client';
+import { PrismaClient, ServiceCategory, ContractProvider, RateType, ExperienceLevel, ServiceType, ServiceStatus, ProviderStatus, BookingType, AssignmentState, AssignmentMode, ServicePriority, ServiceOrderState, BookingStatus, SalesChannel, PaymentStatus, DeliveryStatus, LineItemType, LineExecutionStatus, ContactType, ContactMethod, ProviderTypeEnum, RiskLevel, ServicePriorityType, ZoneType, StoreAssignmentType, WorkTeamStatus, AbsenceType, AbsenceStatus, CertificationType, TaskType, TaskPriority, TaskStatus, SalesPotential } from '@prisma/client';
 // @ts-ignore
 import * as bcrypt from 'bcrypt';
 
@@ -1876,8 +1876,8 @@ async function main() {
         ];
         const orderServiceType = serviceTypes[i];
         
-        // ENHANCED: Sales potential for demo visibility
-        const salesPotentials = ['LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH', 'MEDIUM'];
+        // ENHANCED: Sales potential for demo visibility (using enum values)
+        const salesPotentials = [SalesPotential.LOW, SalesPotential.MEDIUM, SalesPotential.HIGH, SalesPotential.HIGH, SalesPotential.MEDIUM];
         const salesPotential = salesPotentials[i];
         
         // ENHANCED: Risk levels for demo
