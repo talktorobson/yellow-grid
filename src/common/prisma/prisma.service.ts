@@ -62,16 +62,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    * Initializes the database connection and sets up query logging in development.
    */
   async onModuleInit() {
+    // Set up query logging in development before connecting
+    // Note: $on is not available on extended clients, so we skip dev logging for now
+    // Query logging can be enabled via Prisma's log configuration in constructor
+
     await this.$connect();
     this.logger.log('✅ Database connected successfully');
-
-    // Log queries in development
-    if (process.env.NODE_ENV === 'development') {
-      this.$on('query' as never, (e: { query: string; duration: number }) => {
-        this.logger.debug(`Query: ${e.query}`);
-        this.logger.debug(`Duration: ${e.duration}ms`);
-      });
-    }
   }
 
   /**
