@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document tracks the implementation progress of the Yellow Grid mobile application for field service technicians.
+This document tracks the implementation progress of the Yellow Grid mobile application for work teams.
 
 ---
 

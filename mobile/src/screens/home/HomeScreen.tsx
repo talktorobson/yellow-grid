@@ -142,7 +142,7 @@ const HomeScreen: React.FC = () => {
           <View style={styles.headerContent}>
             <View>
               <Text style={styles.greeting}>{getGreeting()},</Text>
-              <Text style={styles.userName}>{user?.firstName || 'Technician'}</Text>
+              <Text style={styles.userName}>{user?.firstName || 'Team Member'}</Text>
             </View>
             <TouchableOpacity style={styles.notificationButton}>
               <Ionicons name="notifications-outline" size={24} color={colors.white} />

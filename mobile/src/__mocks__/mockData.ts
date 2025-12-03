@@ -156,7 +156,7 @@ export const mockServiceOrders: ServiceOrder[] = [
 export const mockCheckIn: CheckIn = {
   id: 'checkin-123',
   serviceOrderId: 'so-123',
-  technicianId: 'user-123',
+  workTeamMemberId: 'user-123', // ID of the work team member performing check-in
   scheduledArrivalWindow: {
     start: '2025-01-20T09:00:00Z',
     end: '2025-01-20T12:00:00Z',

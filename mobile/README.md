@@ -1,10 +1,10 @@
 # Yellow Grid Mobile App
 
-React Native mobile application for field service technicians using the Yellow Grid Platform.
+React Native mobile application for work teams using the Yellow Grid Platform.
 
 ## Overview
 
-This is the mobile companion app for Yellow Grid FSM Platform, built with React Native and Expo. It allows field technicians to:
+This is the mobile companion app for Yellow Grid FSM Platform, built with React Native and Expo. It allows work teams to:
 
 - View assigned service orders
 - Check in/out at job sites with GPS tracking

@@ -33,11 +33,11 @@ async function main() {
     { resource: 'work_teams', action: 'update', description: 'Update work teams' },
     { resource: 'work_teams', action: 'delete', description: 'Delete work teams' },
 
-    // Technicians
-    { resource: 'technicians', action: 'create', description: 'Create technicians' },
-    { resource: 'technicians', action: 'read', description: 'View technicians' },
-    { resource: 'technicians', action: 'update', description: 'Update technicians' },
-    { resource: 'technicians', action: 'delete', description: 'Delete technicians' },
+    // Work Team Certifications
+    { resource: 'work_team_certifications', action: 'create', description: 'Create work team certifications' },
+    { resource: 'work_team_certifications', action: 'read', description: 'View work team certifications' },
+    { resource: 'work_team_certifications', action: 'update', description: 'Update work team certifications' },
+    { resource: 'work_team_certifications', action: 'delete', description: 'Delete work team certifications' },
 
     // Config
     { resource: 'config', action: 'read', description: 'View configuration' },
