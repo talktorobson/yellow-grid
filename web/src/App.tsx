@@ -13,6 +13,7 @@ import CustomerLayout from './layouts/CustomerLayout';
 
 // Pages
 import NotFoundPage from './pages/NotFoundPage';
+import MobileRedirectPage from './pages/MobileRedirectPage';
 
 // Customer Portal Pages (Keep here as they are separate layout)
 import {
@@ -55,6 +56,10 @@ function App() {
 
           {/* SSO callback */}
           <Route path="/auth/callback" element={<CallbackPage />} />
+
+          {/* Mobile app redirect */}
+          <Route path="/mobile" element={<MobileRedirectPage />} />
+          <Route path="/mobile/*" element={<MobileRedirectPage />} />
 
           {/* ============================================================ */}
           {/* ALL PORTALS USE UNIFIED LAYOUT */}
