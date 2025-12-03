@@ -31,9 +31,10 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // CORS
+  // CORS - Allow multiple origins for development
+  const corsOrigins = configService.get<string>('CORS_ORIGIN', 'http://localhost:3001');
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN', 'http://localhost:3001'),
+    origin: corsOrigins.split(',').map(o => o.trim()),
     credentials: true,
   });
 

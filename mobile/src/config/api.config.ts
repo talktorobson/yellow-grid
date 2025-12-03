@@ -1,14 +1,15 @@
 // API Configuration
-// For web builds, use relative URL so it works on any host
 const getBaseUrl = () => {
+  // Development mode - use local API server
+  if (__DEV__) {
+    return 'http://localhost:3000/api/v1';
+  }
+  // Production web: use same origin
   if (globalThis.window?.location?.origin) {
-    // Web: use same origin
     return `${globalThis.window.location.origin}/api/v1`;
   }
-  // Native: use environment or fallback
-  return __DEV__
-    ? 'https://135.181.96.93/api/v1'
-    : 'https://api.yellow-grid.com/api/v1';
+  // Production native fallback
+  return 'https://api.yellow-grid.com/api/v1';
 };
 
 export const API_CONFIG = {
