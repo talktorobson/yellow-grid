@@ -46,7 +46,7 @@ const PARTICIPANT_COLORS: Record<ParticipantType, string> = {
 const PARTICIPANT_LABELS: Record<ParticipantType, string> = {
   CUSTOMER: 'Customer',
   OPERATOR: 'Control Tower',
-  WORK_TEAM: 'Technician',
+  WORK_TEAM: 'Work Team',
   PROVIDER_MANAGER: 'Provider',
   SYSTEM: 'System',
 };

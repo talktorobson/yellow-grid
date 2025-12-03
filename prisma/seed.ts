@@ -64,7 +64,7 @@ async function main() {
     { name: 'SELLER', description: 'Retail sales staff - checks availability and creates quotations' },
     { name: 'OFFER_MANAGER', description: 'Catalog manager - defines services, pricing, and checklists' },
     { name: 'PROVIDER', description: 'Provider company manager - manages jobs and teams' },
-    { name: 'TECHNICIAN', description: 'Field technician - executes service orders on-site' },
+    { name: 'WORK_TEAM', description: 'Work team member - executes service orders on-site' },
     // Legacy roles for backward compatibility
     { name: 'PROVIDER_MANAGER', description: 'Legacy: Provider company manager' },
   ];
@@ -137,7 +137,7 @@ async function main() {
     { role: 'SELLER', emailPrefix: 'seller', firstName: 'Store', lastName: 'Seller' },
     { role: 'OFFER_MANAGER', emailPrefix: 'catalog', firstName: 'Offer', lastName: 'Manager' },
     { role: 'PROVIDER', emailPrefix: 'provider', firstName: 'Provider', lastName: 'Manager' },
-    { role: 'TECHNICIAN', emailPrefix: 'technician', firstName: 'Field', lastName: 'Technician' },
+    { role: 'WORK_TEAM', emailPrefix: 'workteam', firstName: 'Work Team', lastName: 'Member' },
   ];
 
   let userCount = 0;
@@ -2261,7 +2261,7 @@ async function main() {
           in: [
             'operator.fr@adeo.com', 'operator.es@adeo.com',
             'admin-fr@adeo.com', 'psm.fr@adeo.com',
-            'provider.fr@adeo.com', 'technician.fr@adeo.com'
+            'provider.fr@adeo.com', 'workteam.fr@adeo.com'
           ]
         }
       }

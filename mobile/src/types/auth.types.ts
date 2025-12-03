@@ -36,7 +36,7 @@ export interface User {
 }
 
 export enum UserRole {
-  TECHNICIAN = 'TECHNICIAN',
+  WORK_TEAM = 'WORK_TEAM',
   TEAM_LEAD = 'TEAM_LEAD',
   PROVIDER_ADMIN = 'PROVIDER_ADMIN',
   OPERATOR = 'OPERATOR',

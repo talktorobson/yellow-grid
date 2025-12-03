@@ -117,12 +117,12 @@ describe('TechnicianAuthService', () => {
       countryCode: 'ES',
       businessUnit: 'LM_ES',
       mfaEnabled: false,
-      roles: [{ role: { name: 'TECHNICIAN' } }],
+      roles: [{ role: { name: 'WORK_TEAM' } }],
       workTeam: mockWorkTeam,
       provider: mockWorkTeam.provider,
     };
 
-    it('should register a new technician successfully', async () => {
+    it('should register a new work team member successfully', async () => {
       mockPrismaService.workTeam.findUnique.mockResolvedValue(mockWorkTeam);
       mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.user.create.mockResolvedValue(mockUser);
@@ -181,12 +181,12 @@ describe('TechnicianAuthService', () => {
       workTeamId: 'team-123',
       providerId: 'provider-123',
       mfaEnabled: false,
-      roles: [{ role: { name: 'TECHNICIAN' } }],
+      roles: [{ role: { name: 'WORK_TEAM' } }],
       provider: { status: 'ACTIVE' },
       workTeam: { name: 'Test Team' },
     };
 
-    it('should login technician successfully', async () => {
+    it('should login work team member successfully', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       mockJwtService.sign.mockReturnValueOnce('access-token').mockReturnValueOnce('refresh-token');
@@ -305,7 +305,7 @@ describe('TechnicianAuthService', () => {
         workTeamId: 'team-123',
         providerId: 'provider-123',
         mfaEnabled: false,
-        roles: [{ role: { name: 'TECHNICIAN' } }],
+        roles: [{ role: { name: 'WORK_TEAM' } }],
       },
     };
 
@@ -376,7 +376,7 @@ describe('TechnicianAuthService', () => {
         businessUnit: 'LM_ES',
         workTeamId: 'team-123',
         providerId: 'provider-123',
-        roles: [{ role: { name: 'TECHNICIAN' } }],
+        roles: [{ role: { name: 'WORK_TEAM' } }],
       },
     };
 

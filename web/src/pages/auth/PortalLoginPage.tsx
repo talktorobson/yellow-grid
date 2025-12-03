@@ -106,16 +106,16 @@ const portalConfigs: Record<string, PortalConfig> = {
     defaultEmail: 'catalog.fr@adeo.com',
     features: ['Service Definitions', 'Pricing Rules', 'Checklist Builder', 'Skill Requirements'],
   },
-  technician: {
-    id: 'technician',
-    name: 'Technician Portal',
+  workteam: {
+    id: 'workteam',
+    name: 'Work Team Portal',
     subtitle: 'Field Service Execution',
     description: 'View your schedule, execute jobs, and submit reports.',
     icon: <Wrench className="w-12 h-12" />,
     gradient: 'from-amber-600 to-amber-800',
     accentColor: 'amber',
-    defaultRedirect: '/operator/dashboard', // Technicians use mobile app, but web fallback
-    defaultEmail: 'technician.fr@adeo.com',
+    defaultRedirect: '/operator/dashboard', // Work team uses mobile app, but web fallback
+    defaultEmail: 'workteam.fr@adeo.com',
     features: ['Daily Agenda', 'Job Execution', 'Photo Capture', 'WCF Submission'],
   },
 };

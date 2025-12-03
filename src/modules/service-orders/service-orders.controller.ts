@@ -66,7 +66,7 @@ export class ServiceOrdersController {
 
   /**
    * Lists all service orders with optional filtering.
-   * WorkTeam users (technicians) can only see orders assigned to their team.
+   * Work Team users can only see orders assigned to their team.
    *
    * @param skip - Number of records to skip.
    * @param take - Number of records to take.
@@ -83,7 +83,7 @@ export class ServiceOrdersController {
    * @returns A list of service orders.
    */
   @Get()
-  @Roles('ADMIN', 'OPERATOR', 'PROVIDER_MANAGER', 'TECHNICIAN')
+  @Roles('ADMIN', 'OPERATOR', 'PROVIDER_MANAGER', 'WORK_TEAM')
   @ApiOperation({ summary: 'List all service orders with filters' })
   @ApiQuery({ name: 'skip', required: false, type: Number })
   @ApiQuery({ name: 'take', required: false, type: Number })
@@ -115,12 +115,12 @@ export class ServiceOrdersController {
     @Query('scheduledTo') scheduledTo?: string,
     @Request() req?: any,
   ) {
-    // If user is a technician (has workTeamId), automatically filter by their team
+    // If user is a work team member (has workTeamId), automatically filter by their team
     const effectiveWorkTeamId = req?.user?.workTeamId || assignedWorkTeamId;
     
-    // Technicians can ONLY see orders assigned to their team
+    // Work team members can ONLY see orders assigned to their team
     if (req?.user?.workTeamId && assignedWorkTeamId && assignedWorkTeamId !== req.user.workTeamId) {
-      // If technician tries to filter by another team, override with their own
+      // If work team member tries to filter by another team, override with their own
       return this.serviceOrdersService.findAll({
         skip: skip ? parseInt(skip, 10) : undefined,
         take: take ? parseInt(take, 10) : undefined,
@@ -158,7 +158,7 @@ export class ServiceOrdersController {
    * @returns {Promise<ServiceOrderResponseDto>} The service order details.
    */
   @Get(':id')
-  @Roles('ADMIN', 'OPERATOR', 'PROVIDER_MANAGER', 'TECHNICIAN')
+  @Roles('ADMIN', 'OPERATOR', 'PROVIDER_MANAGER', 'WORK_TEAM')
   @ApiOperation({ summary: 'Get a service order by ID' })
   @ApiResponse({
     status: 200,

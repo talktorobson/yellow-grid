@@ -5,10 +5,10 @@ import { CheckIn, CheckInMethod, CheckInStatus, HazardType } from '@/types/check
 // Mock User Data
 export const mockUser: User = {
   id: 'user-123',
-  email: 'technician@example.com',
+  email: 'workteam@example.com',
   firstName: 'John',
   lastName: 'Doe',
-  role: UserRole.TECHNICIAN,
+  role: UserRole.WORK_TEAM,
   countryCode: 'FR',
   businessUnit: 'LEROY_MERLIN',
   workTeamId: 'team-456',
@@ -18,7 +18,7 @@ export const mockUser: User = {
 
 // Mock Login Credentials
 export const mockCredentials = {
-  email: 'technician@example.com',
+  email: 'workteam@example.com',
   password: 'password123',
 };
 

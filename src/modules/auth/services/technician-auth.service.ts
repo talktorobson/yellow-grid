@@ -54,7 +54,7 @@ export class TechnicianAuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, this.SALT_ROUNDS);
 
-    // Create technician user with TECHNICIAN role
+    // Create work team user with WORK_TEAM role
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -73,10 +73,10 @@ export class TechnicianAuthService {
           create: {
             role: {
               connectOrCreate: {
-                where: { name: 'TECHNICIAN' },
+                where: { name: 'WORK_TEAM' },
                 create: {
-                  name: 'TECHNICIAN',
-                  description: 'Field service technician',
+                  name: 'WORK_TEAM',
+                  description: 'Work team member',
                 },
               },
             },
@@ -95,7 +95,7 @@ export class TechnicianAuthService {
     });
 
     this.logger.log(
-      `Technician registered: ${user.email} (${user.id}) for work team ${workTeam.name}`,
+      `Work team member registered: ${user.email} (${user.id}) for work team ${workTeam.name}`,
     );
 
     // TODO: Send email verification

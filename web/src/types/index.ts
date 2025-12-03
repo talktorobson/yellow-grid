@@ -213,7 +213,7 @@ export enum UserRole {
   SELLER = 'SELLER',         // Retail sales staff
   OFFER_MANAGER = 'OFFER_MANAGER', // Service catalog management
   PROVIDER = 'PROVIDER',     // Provider company manager
-  TECHNICIAN = 'TECHNICIAN', // Field technician (mobile)
+  WORK_TEAM = 'WORK_TEAM',   // Work team member (mobile)
   
   // Legacy
   READONLY_USER = 'READONLY_USER',

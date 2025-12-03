@@ -74,7 +74,7 @@ const mockTeam: TeamData = {
     {
       id: 'M1',
       name: 'Jean Dupont',
-      role: 'Technician',
+      role: 'Team Member',
       phone: '+33 6 22 33 44 55',
       email: 'jean.dupont@provider.fr',
       status: 'busy',
@@ -85,7 +85,7 @@ const mockTeam: TeamData = {
     {
       id: 'M2',
       name: 'Marie Leblanc',
-      role: 'Technician',
+      role: 'Team Member',
       phone: '+33 6 33 44 55 66',
       email: 'marie.leblanc@provider.fr',
       status: 'available',

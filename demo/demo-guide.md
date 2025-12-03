@@ -96,7 +96,7 @@ Admin123!
 | **Seller** | seller.fr@adeo.com | seller.es@adeo.com | seller.it@adeo.com | seller.pt@adeo.com |
 | **Catalog** | catalog.fr@adeo.com | catalog.es@adeo.com | catalog.it@adeo.com | catalog.pt@adeo.com |
 | **Provider** | provider.fr@adeo.com | provider.es@adeo.com | provider.it@adeo.com | provider.pt@adeo.com |
-| **Technician** | technician.fr@adeo.com | technician.es@adeo.com | technician.it@adeo.com | technician.pt@adeo.com |
+| **Work Team** | workteam.fr@adeo.com | workteam.es@adeo.com | workteam.it@adeo.com | workteam.pt@adeo.com |
 
 ### Quick Reference Card
 
@@ -108,7 +108,7 @@ Admin123!
 │                                                                     │
 │  Email format: {role}.{country}@adeo.com                           │
 │                                                                     │
-│  Roles: admin, operator, psm, seller, catalog, provider, technician│
+│  Roles: admin, operator, psm, seller, catalog, provider, workteam  │
 │  Countries: fr, es, it, pt                                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Examples:                                                          │

@@ -96,8 +96,8 @@ export function mapRoleToExperience(role: string | null): UserExperience {
     return UserExperience.PROVIDER;
   }
   
-  // Work Team / Technician roles
-  if (roleUpper.includes('TECHNICIAN') || roleUpper.includes('FIELD') || roleUpper.includes('WORK_TEAM')) {
+  // Work Team roles
+  if (roleUpper.includes('WORK_TEAM') || roleUpper.includes('FIELD') || roleUpper.includes('TECHNICIAN')) {
     return UserExperience.WORK_TEAM;
   }
   

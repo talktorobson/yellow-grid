@@ -82,12 +82,12 @@ const portals: PortalCard[] = [
     url: '/login/admin',
   },
   {
-    id: 'technician',
-    name: 'Technician App',
-    role: 'Field Technician',
+    id: 'workteam',
+    name: 'Work Team App',
+    role: 'Work Team Member',
     description: 'Mobile-first experience for executing jobs and submitting reports.',
     icon: <Wrench className="w-6 h-6" />,
-    url: '/login/technician',
+    url: '/login/workteam',
     badge: 'Mobile App',
   },
 ];

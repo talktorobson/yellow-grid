@@ -86,8 +86,8 @@ const ProfileScreen: React.FC = () => {
 
   const getRoleName = (role?: string) => {
     switch (role) {
-      case 'TECHNICIAN':
-        return 'Technician';
+      case 'WORK_TEAM':
+        return 'Work Team';
       case 'TEAM_LEAD':
         return 'Team Lead';
       case 'PROVIDER_ADMIN':
