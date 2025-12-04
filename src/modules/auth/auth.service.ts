@@ -1,10 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { LoginDto, RegisterDto, AuthResponseDto } from './dto';
+import { LoginDto, RegisterDto, AuthResponseDto, ChangePasswordDto, ChangePasswordResponseDto } from './dto';
 
 /**
  * Service handling authentication logic.
@@ -211,6 +211,65 @@ export class AuthService {
       // Token invalid or already expired - that's fine for logout
       this.logger.warn(`Logout with invalid token for user: ${userId}`);
     }
+  }
+
+  /**
+   * Changes a user's password after validating the current password.
+   *
+   * @param userId - The ID of the user changing password.
+   * @param dto - The change password DTO with current, new, and confirm passwords.
+   * @returns {Promise<ChangePasswordResponseDto>} Success response.
+   * @throws {UnauthorizedException} If current password is incorrect.
+   * @throws {BadRequestException} If validation fails.
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<ChangePasswordResponseDto> {
+    // Validate passwords match
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('New password and confirmation do not match');
+    }
+
+    // Validate new password is different from current
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('New password must be different from current password');
+    }
+
+    // Get user with password
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, password: true },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('User not found or password not set');
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, this.SALT_ROUNDS);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Revoke all refresh tokens for security
+    await this.prisma.refreshToken.updateMany({
+      where: { userId },
+      data: { isRevoked: true },
+    });
+
+    this.logger.log(`Password changed for user: ${user.email} (${userId})`);
+
+    return {
+      message: 'Password changed successfully',
+      requiresRelogin: true,
+    };
   }
 
   /**

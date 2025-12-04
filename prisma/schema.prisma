@@ -22,6 +22,11 @@ model User {
   lastName  String  @map("last_name")
   phone     String?
 
+  // Profile settings
+  avatarUrl          String? @map("avatar_url")
+  avatarThumbnailUrl String? @map("avatar_thumbnail_url")
+  preferredLanguage  String? @map("preferred_language") @db.VarChar(5) // en, fr, es, it, pt
+
   // Multi-tenancy (application-level)
   countryCode  String @map("country_code") @db.VarChar(3) // ES, FR, IT, PL
   businessUnit String @map("business_unit") @db.VarChar(50) // LM_ES, BD_FR

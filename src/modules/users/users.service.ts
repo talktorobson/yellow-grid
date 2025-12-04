@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { CreateUserDto, UpdateUserDto, QueryUsersDto, AssignRoleDto } from './dto';
+import { CreateUserDto, UpdateUserDto, QueryUsersDto, AssignRoleDto, UpdateProfileDto } from './dto';
 
 /**
  * Service for managing users in the system.
@@ -394,6 +394,147 @@ export class UsersService {
     this.logger.log(`Role revoked: ${roleName} from user ${userId} by ${currentUserId}`);
 
     return this.findOne(userId, currentUserCountry, currentUserBU);
+  }
+
+  // ===== PROFILE SELF-SERVICE METHODS =====
+
+  /**
+   * Get the current user's profile.
+   *
+   * @param userId - The ID of the current user.
+   * @returns {Promise<UserResponseDto>} The user profile.
+   */
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.mapToResponse(user);
+  }
+
+  /**
+   * Update the current user's profile (self-service).
+   * Only allows updating: firstName, lastName, phone
+   *
+   * @param userId - The ID of the current user.
+   * @param updateProfileDto - The profile update data.
+   * @returns {Promise<UserResponseDto>} The updated user profile.
+   */
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: updateProfileDto.firstName ?? user.firstName,
+        lastName: updateProfileDto.lastName ?? user.lastName,
+        phone: updateProfileDto.phone ?? user.phone,
+        updatedAt: new Date(),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`User ${userId} updated their profile`);
+
+    return this.mapToResponse(updatedUser);
+  }
+
+  /**
+   * Upload/update the current user's avatar.
+   * For now, stores URL directly. In production, integrate with GCS.
+   *
+   * @param userId - The ID of the current user.
+   * @param avatarUrl - The avatar URL (or base64 data for now).
+   * @param thumbnailUrl - Optional thumbnail URL.
+   * @returns {Promise<UserResponseDto>} The updated user profile.
+   */
+  async uploadAvatar(userId: string, avatarUrl: string, thumbnailUrl?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl,
+        avatarThumbnailUrl: thumbnailUrl ?? avatarUrl,
+        updatedAt: new Date(),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`User ${userId} updated their avatar`);
+
+    return this.mapToResponse(updatedUser);
+  }
+
+  /**
+   * Delete the current user's avatar.
+   *
+   * @param userId - The ID of the current user.
+   * @returns {Promise<UserResponseDto>} The updated user profile.
+   */
+  async deleteAvatar(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        avatarUrl: null,
+        avatarThumbnailUrl: null,
+        updatedAt: new Date(),
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    this.logger.log(`User ${userId} deleted their avatar`);
+
+    return this.mapToResponse(updatedUser);
   }
 
   /**

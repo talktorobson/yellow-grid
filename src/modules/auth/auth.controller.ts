@@ -1,7 +1,7 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto, AuthResponseDto } from './dto';
+import { LoginDto, RegisterDto, RefreshTokenDto, AuthResponseDto, ChangePasswordDto, ChangePasswordResponseDto } from './dto';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserPayload } from '@/common/decorators/current-user.decorator';
@@ -136,5 +136,37 @@ export class AuthController {
   })
   async getCurrentUser(@CurrentUser() user: CurrentUserPayload) {
     return user;
+  }
+
+  /**
+   * Changes the current user's password.
+   *
+   * @param user - The current authenticated user payload.
+   * @param dto - The change password data.
+   * @returns {Promise<ChangePasswordResponseDto>} Success response.
+   */
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password changed successfully',
+    type: ChangePasswordResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validation error (passwords don\'t match, same as current, etc.)',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Current password is incorrect or not authenticated',
+  })
+  async changePassword(
+    @CurrentUser() user: CurrentUserPayload,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<ChangePasswordResponseDto> {
+    return this.authService.changePassword(user.userId, dto);
   }
 }
