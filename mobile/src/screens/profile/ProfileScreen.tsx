@@ -183,7 +183,7 @@ const ProfileScreen: React.FC = () => {
               iconColor={colors.info[600]}
               title="Notifications"
               subtitle="Push, Email, SMS"
-              onPress={() => showComingSoon('Notification Settings')}
+              onPress={() => navigation.navigate('NotificationSettings')}
             />
           </Card>
         </View>
@@ -197,14 +197,14 @@ const ProfileScreen: React.FC = () => {
               iconColor={colors.success[600]}
               title="Availability"
               subtitle="Set your working hours"
-              onPress={() => showComingSoon('Availability Settings')}
+              onPress={() => navigation.navigate('Availability')}
             />
             <View style={styles.divider} />
             <SettingItem
               icon="location"
               iconColor={colors.danger[600]}
               title="Service Areas"
-              onPress={() => showComingSoon('Service Areas')}
+              onPress={() => navigation.navigate('ServiceAreas')}
             />
             <View style={styles.divider} />
             <SettingItem
@@ -212,7 +212,7 @@ const ProfileScreen: React.FC = () => {
               iconColor={colors.primary[600]}
               title="Certifications"
               subtitle="View your certifications"
-              onPress={() => showComingSoon('Certifications')}
+              onPress={() => navigation.navigate('Certifications')}
             />
           </Card>
         </View>
@@ -225,8 +225,8 @@ const ProfileScreen: React.FC = () => {
               icon="language"
               iconColor={colors.gray[600]}
               title="Language"
-              subtitle="English"
-              onPress={() => showComingSoon('Language Settings')}
+              subtitle="Français"
+              onPress={() => navigation.navigate('LanguageSettings')}
             />
             <View style={styles.divider} />
             <SettingItem
@@ -260,21 +260,21 @@ const ProfileScreen: React.FC = () => {
               icon="help-circle"
               iconColor={colors.primary[600]}
               title="Help & FAQ"
-              onPress={() => showComingSoon('Help & FAQ')}
+              onPress={() => navigation.navigate('HelpFaq')}
             />
             <View style={styles.divider} />
             <SettingItem
               icon="chatbubble"
               iconColor={colors.success[600]}
               title="Contact Support"
-              onPress={() => showComingSoon('Contact Support')}
+              onPress={() => navigation.navigate('ContactSupport')}
             />
             <View style={styles.divider} />
             <SettingItem
               icon="document-text"
               iconColor={colors.gray[600]}
               title="Terms & Privacy"
-              onPress={() => showComingSoon('Terms & Privacy')}
+              onPress={() => navigation.navigate('TermsPrivacy')}
             />
           </Card>
         </View>
