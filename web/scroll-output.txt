@@ -1,0 +1,14 @@
+Navigating to login...
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForSelector: Timeout 15000ms exceeded.
+Call log:
+[2m  - waiting for locator('input') to be visible[22m
+
+    at /Users/20015403/Documents/PROJECTS/personal/yellow-grid/web/check-scroll.cjs:14:14 {
+  name: 'TimeoutError'
+}
+
+Node.js v22.14.0

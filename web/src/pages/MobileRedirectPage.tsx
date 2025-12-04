@@ -14,7 +14,7 @@ export default function MobileRedirectPage() {
   // Mobile app URL - in production this would be the deployed mobile web app
   const mobileAppUrl = window.location.hostname === 'localhost' 
     ? 'http://localhost:8081' 
-    : `${window.location.origin}/mobile-app`;
+    : `${window.location.origin}/mobile/`;
 
   useEffect(() => {
     if (!autoRedirect) return;

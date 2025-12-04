@@ -22,6 +22,7 @@ interface Notification {
 }
 
 const mapNotificationType = (type: string): NotificationType => {
+  if (!type) return 'info';
   if (type.includes('SUCCESS') || type.includes('ACCEPTED') || type.includes('COMPLETED')) return 'success';
   if (type.includes('WARNING') || type.includes('PENDING') || type.includes('BLOCKED')) return 'warning';
   if (type.includes('ERROR') || type.includes('FAILED') || type.includes('REJECTED')) return 'error';
@@ -31,11 +32,11 @@ const mapNotificationType = (type: string): NotificationType => {
 const mapApiNotification = (n: ApiNotification): Notification => ({
   id: n.id,
   type: mapNotificationType(n.type),
-  // Backend uses subject/body, frontend expects title/message
-  title: n.subject || n.title || 'Notification',
-  message: n.body || n.message || '',
+  // Now using transformed title/message from notification-service
+  title: n.title || 'Notification',
+  message: n.message || '',
   timestamp: new Date(n.createdAt),
-  read: !!n.readAt, // API uses readAt date, UI uses boolean
+  read: n.read,
   actionUrl: n.link,
 });
 

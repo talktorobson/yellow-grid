@@ -223,7 +223,7 @@ export class BookingService {
         ...(providerIds && providerIds.length > 0 && { assignedProviderId: { in: providerIds } }),
         ...(countryCode && { countryCode }),
         state: {
-          in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
+          in: ['ASSIGNED', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
         },
       },
       include: {
@@ -264,7 +264,7 @@ export class BookingService {
           lte: end,
         },
         state: {
-          in: ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
+          in: ['ASSIGNED', 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED'],
         },
       },
       select: {

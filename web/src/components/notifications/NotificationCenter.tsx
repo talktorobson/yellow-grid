@@ -86,7 +86,7 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
   });
 
   const getNotificationIcon = (type: NotificationType) => {
-    const iconMap: Record<NotificationType, any> = {
+    const iconMap: Record<string, any> = {
       ASSIGNMENT_CREATED: UserCheck,
       ASSIGNMENT_ACCEPTED: Check,
       ASSIGNMENT_REJECTED: X,
@@ -99,6 +99,13 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
       DOCUMENT_UPLOADED: FileText,
       NOTE_ADDED: MessageSquare,
       SYSTEM_ALERT: AlertCircle,
+      // Backend event types
+      TEAM_ABSENCE: Calendar,
+      ORDER_ASSIGNED: Package,
+      DOCUMENT_REQUIRED: FileText,
+      ORDER_COMPLETED: Check,
+      ESCALATION: AlertCircle,
+      SCHEDULE_CHANGE: Calendar,
     };
     return iconMap[type] || Bell;
   };

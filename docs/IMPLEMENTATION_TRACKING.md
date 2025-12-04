@@ -1,6 +1,6 @@
 # Yellow Grid Platform - Implementation Tracking
 
-**Last Updated**: 2025-12-04 (Mobile Profile Features Plan Created)
+**Last Updated**: 2025-12-04 (Calendar UI Viewport Fix, Mobile Login Fix, Mobile Redirect Fix)
 **Current Phase**: Phase 5 - Multi-Experience Platform Architecture (🔄 IN PROGRESS)
 **Overall Progress**: 96% (24 weeks total, ~23 weeks completed/underway)
 **Team Size**: 1 engineer (Solo development with AI assistance)
@@ -9,6 +9,33 @@
 ---
 
 ## 🚀 LATEST UPDATES (2025-12-04)
+
+### UI/UX Fixes Deployed ✅
+
+**1. Calendar Page Viewport Fix** ✅
+- **Issue**: Calendar page required vertical scrolling due to `h-screen` not accounting for layout header/padding
+- **Solution**: Changed root container from `h-screen` to `h-[calc(100vh-8rem)]` to account for:
+  - Layout header: 64px (4rem)
+  - Main content padding: 64px (4rem = 32px top + 32px bottom)
+- **File**: `web/src/pages/calendar/CalendarPage.tsx`
+- **Result**: Calendar now fits perfectly within viewport without scrolling
+
+**2. Mobile App Login Screen Fix** ✅
+- **Issue**: "Sign In" button overlapped by "Need help?" footer on smaller mobile screens
+- **Solution**: 
+  - Added `ScrollView` wrapper for entire login content
+  - Reduced header padding from 80px to 60px
+  - Removed `flex: 1` from form container for proper stacking
+- **File**: `mobile/src/screens/auth/LoginScreen.tsx`
+- **Result**: Login form now scrollable, no overlapping elements
+
+**3. Mobile Redirect URL Fix** ✅
+- **Issue**: Redirect page pointed to `/mobile-app` (404) instead of `/mobile/`
+- **Solution**: Changed `mobileAppUrl` from `/mobile-app` to `/mobile/`
+- **File**: `web/src/pages/MobileRedirectPage.tsx`
+- **Result**: Mobile redirect now correctly navigates to deployed mobile app
+
+---
 
 ### Mobile Profile Features - Planning Complete 📋
 

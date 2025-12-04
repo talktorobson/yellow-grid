@@ -25,13 +25,17 @@ async function globalSetup(config: FullConfig) {
   try {
     // Navigate to login page
     await page.goto(`${baseURL}/login`);
+    
+    // Wait for React to render
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
 
     // Take debug screenshot
     await page.screenshot({ path: 'auth-step-1-login-page.png' });
 
     // Click "Use Email & Password" button to show dev login form
     const devLoginBtn = page.getByText('Use Email & Password');
-    await devLoginBtn.waitFor({ state: 'visible', timeout: 10000 });
+    await devLoginBtn.waitFor({ state: 'visible', timeout: 15000 });
     await devLoginBtn.click();
 
     // Wait for form to appear
@@ -41,7 +45,7 @@ async function globalSetup(config: FullConfig) {
     await page.screenshot({ path: 'auth-step-2-form-visible.png' });
 
     // Fill in credentials
-    await page.fill('input[type="email"]', 'admin@yellowgrid.com');
+    await page.fill('input[type="email"]', 'operator.fr@adeo.com');
     await page.fill('input[type="password"]', 'Admin123!');
 
     // Take debug screenshot
@@ -59,8 +63,8 @@ async function globalSetup(config: FullConfig) {
     // Check current URL
     console.log('Current URL after submit:', page.url());
 
-    // Wait for redirect to dashboard
-    await page.waitForURL('**/dashboard', { timeout: 15000 });
+    // Wait for redirect to dashboard or operator route
+    await page.waitForURL('**/operator/**', { timeout: 15000 });
 
     console.log('✅ Authentication successful');
 

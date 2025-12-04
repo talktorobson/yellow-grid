@@ -14,6 +14,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -52,101 +53,107 @@ const LoginScreen: React.FC<Props> = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <LinearGradient
-          colors={[colors.primary[600], colors.primary[800]]}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Ionicons name="grid" size={40} color={colors.primary[600]} />
+          <LinearGradient
+            colors={[colors.primary[600], colors.primary[800]]}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.logoContainer}>
+              <View style={styles.logoIcon}>
+                <Ionicons name="grid" size={40} color={colors.primary[600]} />
+              </View>
+              <Text style={styles.logoText}>Yellow Grid</Text>
+              <Text style={styles.tagline}>Field Service Platform</Text>
             </View>
-            <Text style={styles.logoText}>Yellow Grid</Text>
-            <Text style={styles.tagline}>Field Service Platform</Text>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.welcomeText}>Welcome back</Text>
-          <Text style={styles.instructionText}>Sign in to continue</Text>
+          <View style={styles.formContainer}>
+            <Text style={styles.welcomeText}>Welcome back</Text>
+            <Text style={styles.instructionText}>Sign in to continue</Text>
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Email address"
-                placeholderTextColor={colors.gray[400]}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
-                editable={!isLoading}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={colors.gray[400]}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoComplete="password"
-                editable={!isLoading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeButton}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color={colors.gray[400]}
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email address"
+                  placeholderTextColor={colors.gray[400]}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  editable={!isLoading}
                 />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor={colors.gray[400]}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  editable={!isLoading}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                    size={20}
+                    color={colors.gray[400]}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle" size={16} color={colors.danger[500]} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.button, isLoading && styles.buttonDisabled]}
+                onPress={handleLogin}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>Sign In</Text>
+                    <Ionicons name="arrow-forward" size={20} color={colors.white} />
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={16} color={colors.danger[500]} />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <>
-                  <Text style={styles.buttonText}>Sign In</Text>
-                  <Ionicons name="arrow-forward" size={20} color={colors.white} />
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
           </View>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Need help? Contact your administrator
-          </Text>
-          <Text style={styles.versionText}>v2.0.0</Text>
-        </View>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Need help? Contact your administrator
+            </Text>
+            <Text style={styles.versionText}>v2.0.0</Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -160,9 +167,12 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   headerGradient: {
-    paddingTop: 80,
-    paddingBottom: 80,
+    paddingTop: 60,
+    paddingBottom: 60,
     alignItems: 'center',
     borderBottomLeftRadius: spacing['2xl'],
     borderBottomRightRadius: spacing['2xl'],
@@ -195,9 +205,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   formContainer: {
-    flex: 1,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing['2xl'],
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
   },
   welcomeText: {
     fontSize: typography.fontSize['2xl'],

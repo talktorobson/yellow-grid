@@ -18,17 +18,37 @@ export type NotificationType =
   | 'PROJECT_OWNER_ASSIGNED'
   | 'DOCUMENT_UPLOADED'
   | 'NOTE_ADDED'
-  | 'SYSTEM_ALERT';
+  | 'SYSTEM_ALERT'
+  // Backend event types
+  | 'TEAM_ABSENCE'
+  | 'ORDER_ASSIGNED'
+  | 'DOCUMENT_REQUIRED'
+  | 'ORDER_COMPLETED'
+  | 'ESCALATION'
+  | 'SCHEDULE_CHANGE';
 
-export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type NotificationPriority = 'LOW' | 'MEDIUM' | 'NORMAL' | 'HIGH' | 'URGENT';
 
+// Backend notification structure
+interface BackendNotification {
+  id: UUID;
+  eventType: string;
+  priority: string;
+  subject: string;
+  body: string;
+  status: string;
+  readAt?: ISODateString | null;
+  createdAt: ISODateString;
+  contextType?: string;
+  contextId?: string;
+  metadata?: Record<string, any>;
+}
+
+// Frontend notification structure
 export interface Notification {
   id: UUID;
   type: NotificationType;
   priority: NotificationPriority;
-  // Backend uses subject/body, but we map to title/message for UI
-  subject?: string;
-  body?: string;
   title: string;
   message: string;
   link?: string;
@@ -39,6 +59,30 @@ export interface Notification {
   createdAt: ISODateString;
   expiresAt?: ISODateString;
   metadata?: Record<string, any>;
+}
+
+// Transform backend notification to frontend format
+function transformNotification(backend: BackendNotification): Notification {
+  const contextTypeMap: Record<string, 'SERVICE_ORDER' | 'PROJECT' | 'ASSIGNMENT' | 'PROVIDER'> = {
+    'service_order': 'SERVICE_ORDER',
+    'project': 'PROJECT',
+    'assignment': 'ASSIGNMENT',
+    'provider': 'PROVIDER',
+  };
+
+  return {
+    id: backend.id,
+    type: (backend.eventType || 'SYSTEM_ALERT') as NotificationType,
+    priority: (backend.priority || 'NORMAL') as NotificationPriority,
+    title: backend.subject || 'Notification',
+    message: backend.body || '',
+    read: backend.status === 'READ' || !!backend.readAt,
+    readAt: backend.readAt || undefined,
+    createdAt: backend.createdAt,
+    entityType: backend.contextType ? contextTypeMap[backend.contextType] : undefined,
+    entityId: backend.contextId,
+    metadata: backend.metadata || undefined,
+  };
 }
 
 export interface NotificationPreferences {
@@ -64,15 +108,15 @@ class NotificationService {
     page?: number;
     limit?: number;
   }): Promise<Notification[]> {
-    const response = await apiClient.get<ApiResponse<Notification[]>>(`/api/v1/notifications/user/${userId}`, { params });
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<BackendNotification[]>>(`/notifications/user/${userId}`, { params });
+    return (response.data.data || []).map(transformNotification);
   }
 
   /**
    * Get unread count
    */
   async getUnreadCount(userId: string): Promise<number> {
-    const response = await apiClient.get<ApiResponse<{ count: number }>>('/api/v1/notifications/unread/count', { params: { userId } });
+    const response = await apiClient.get<ApiResponse<{ count: number }>>('/notifications/unread/count', { params: { userId } });
     return response.data.data.count;
   }
 
@@ -80,7 +124,7 @@ class NotificationService {
    * Mark notification as read
    */
   async markAsRead(id: string): Promise<Notification> {
-    const response = await apiClient.patch<ApiResponse<Notification>>(`/api/v1/notifications/${id}/read`);
+    const response = await apiClient.patch<ApiResponse<Notification>>(`/notifications/${id}/read`);
     return response.data.data;
   }
 
@@ -88,7 +132,7 @@ class NotificationService {
    * Mark all notifications as read
    */
   async markAllAsRead(userId: string): Promise<{ count: number }> {
-    const response = await apiClient.post<ApiResponse<{ count: number }>>('/api/v1/notifications/read-all', { userId });
+    const response = await apiClient.post<ApiResponse<{ count: number }>>('/notifications/read-all', { userId });
     return response.data.data;
   }
 
@@ -96,7 +140,7 @@ class NotificationService {
    * Delete notification
    */
   async delete(id: string): Promise<void> {
-    await apiClient.delete(`/api/v1/notifications/${id}`);
+    await apiClient.delete(`/notifications/${id}`);
   }
 
   /**
