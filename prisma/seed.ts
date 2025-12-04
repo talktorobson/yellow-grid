@@ -140,11 +140,20 @@ async function main() {
     { role: 'WORK_TEAM', emailPrefix: 'workteam', firstName: 'Work Team', lastName: 'Member' },
   ];
 
+  // Map country codes to preferred language
+  const countryLanguageMap: Record<string, string> = {
+    'FR': 'fr',
+    'ES': 'es',
+    'IT': 'it',
+    'PT': 'pt',
+  };
+
   let userCount = 0;
   
   for (const country of countryCodes) {
     for (const config of roleUserConfigs) {
       const email = `${config.emailPrefix}.${country.toLowerCase()}@adeo.com`;
+      const preferredLanguage = countryLanguageMap[country] || 'en';
       
       const user = await prisma.user.upsert({
         where: { email },
@@ -155,6 +164,8 @@ async function main() {
           countryCode: country,
           isActive: true,
           isVerified: true,
+          preferredLanguage: preferredLanguage,
+          // avatarUrl and avatarThumbnailUrl are optional, left null for demo
         },
         create: {
           email,
@@ -165,6 +176,7 @@ async function main() {
           businessUnit: 'LEROY_MERLIN',
           isActive: true,
           isVerified: true,
+          preferredLanguage: preferredLanguage,
         },
       });
 
@@ -201,6 +213,7 @@ async function main() {
       lastName: 'Operator',
       isActive: true,
       isVerified: true,
+      preferredLanguage: 'fr',
     },
     create: {
       email: 'operator@adeo.com',
@@ -211,6 +224,7 @@ async function main() {
       businessUnit: 'LEROY_MERLIN',
       isActive: true,
       isVerified: true,
+      preferredLanguage: 'fr',
     },
   });
 
@@ -237,11 +251,13 @@ async function main() {
   ];
 
   for (const admin of legacyAdmins) {
+    const preferredLang = countryLanguageMap[admin.country] || 'en';
     const user = await prisma.user.upsert({
       where: { email: admin.email },
       update: {
         password: standardPassword,
         countryCode: admin.country,
+        preferredLanguage: preferredLang,
       },
       create: {
         email: admin.email,
@@ -252,6 +268,7 @@ async function main() {
         businessUnit: 'LEROY_MERLIN',
         isActive: true,
         isVerified: true,
+        preferredLanguage: preferredLang,
       },
     });
 
