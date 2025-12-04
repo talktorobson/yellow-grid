@@ -219,9 +219,9 @@ const HomeScreen: React.FC = () => {
                     <Text style={styles.nextOrderNumber}>#{nextOrder.externalId || nextOrder.id.slice(0, 8)}</Text>
                   </View>
                   <View style={styles.badgeContainer}>
-                    <StatusBadge status={nextOrder.status} />
+                    {nextOrder.status !== 'ASSIGNED' && <StatusBadge status={nextOrder.status} />}
                     {nextOrder.urgency === 'URGENT' && (
-                      <View style={{ marginLeft: spacing.xs }}>
+                      <View style={{ marginLeft: nextOrder.status !== 'ASSIGNED' ? spacing.xs : 0 }}>
                         <UrgencyBadge urgency={nextOrder.urgency as Urgency} />
                       </View>
                     )}
@@ -316,7 +316,7 @@ const HomeScreen: React.FC = () => {
                         {order.serviceAddress?.city || order.customerAddress || 'No address'}
                       </Text>
                     </View>
-                    <StatusBadge status={order.status} size="sm" />
+                    {order.status !== 'ASSIGNED' && <StatusBadge status={order.status} size="sm" />}
                   </View>
                 </Card>
               </TouchableOpacity>

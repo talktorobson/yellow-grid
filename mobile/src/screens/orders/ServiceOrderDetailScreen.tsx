@@ -217,9 +217,9 @@ const ServiceOrderDetailScreen: React.FC = () => {
           <View>
             <Text style={styles.orderNumber}>#{order.externalId || order.id.slice(0, 8)}</Text>
             <View style={styles.badgeRow}>
-              <StatusBadge status={order.status} />
+              {order.status !== 'ASSIGNED' && <StatusBadge status={order.status} />}
               {order.urgency && (
-                <View style={{ marginLeft: spacing.xs }}>
+                <View style={{ marginLeft: order.status !== 'ASSIGNED' ? spacing.xs : 0 }}>
                   <UrgencyBadge urgency={order.urgency} />
                 </View>
               )}

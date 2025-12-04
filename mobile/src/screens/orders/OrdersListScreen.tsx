@@ -156,9 +156,9 @@ const OrdersListScreen: React.FC = () => {
             <Text style={styles.orderSchedule}>{formatSchedule(item)}</Text>
           </View>
           <View style={styles.badges}>
-            <StatusBadge status={item.status} size="sm" />
+            {item.status !== 'ASSIGNED' && <StatusBadge status={item.status} size="sm" />}
             {item.urgency === 'URGENT' && (
-              <View style={{ marginLeft: 4 }}>
+              <View style={{ marginLeft: item.status !== 'ASSIGNED' ? 4 : 0 }}>
                 <UrgencyBadge urgency={item.urgency as Urgency} size="sm" />
               </View>
             )}
