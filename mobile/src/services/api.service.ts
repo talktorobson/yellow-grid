@@ -3,6 +3,21 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { API_CONFIG, STORAGE_KEYS } from '@config/api.config';
 
+// Event emitter for auth state changes
+type AuthEventListener = () => void;
+const authEventListeners: Set<AuthEventListener> = new Set();
+
+export const onAuthLogout = (listener: AuthEventListener) => {
+  authEventListeners.add(listener);
+  return () => authEventListeners.delete(listener);
+};
+
+const emitAuthLogout = () => {
+  for (const listener of authEventListeners) {
+    listener();
+  }
+};
+
 class ApiService {
   private api: AxiosInstance;
   private refreshTokenPromise: Promise<string> | null = null;
@@ -120,6 +135,8 @@ class ApiService {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
       await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_DATA);
     }
+    // Notify listeners that tokens were cleared (e.g., auth store)
+    emitAuthLogout();
   }
 
   // Generic HTTP methods

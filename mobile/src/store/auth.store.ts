@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { apiService } from '@services/api.service';
+import { apiService, onAuthLogout } from '@services/api.service';
 import { STORAGE_KEYS } from '@config/api.config';
 import type {
   AuthState,
@@ -19,6 +19,7 @@ interface AuthStore extends AuthState {
   updateUser: (user: Partial<User>) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
+  handleForceLogout: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -110,10 +111,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   refreshUser: async () => {
     try {
       const user = await apiService.get<User>('/auth/me');
-      await SecureStore.setItemAsync(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+      if (Platform.OS === 'web') {
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+      } else {
+        await SecureStore.setItemAsync(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+      }
       set({ user });
     } catch (error) {
       console.error('Failed to refresh user:', error);
+      // If refresh fails (e.g., 401), clear auth state and log out
+      if (Platform.OS === 'web') {
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      } else {
+        await SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
+        await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+        await SecureStore.deleteItemAsync(STORAGE_KEYS.USER_DATA);
+      }
+      set({
+        user: null,
+        tokens: null,
+        isAuthenticated: false,
+        error: null,
+      });
     }
   },
 
@@ -179,4 +200,20 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   clearError: () => {
     set({ error: null });
   },
+
+  handleForceLogout: () => {
+    // Called when API service detects token refresh failure
+    set({
+      user: null,
+      tokens: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+    });
+  },
 }));
+
+// Subscribe to auth logout events from API service
+onAuthLogout(() => {
+  useAuthStore.getState().handleForceLogout();
+});
