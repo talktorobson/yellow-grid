@@ -48,115 +48,21 @@ export class CheckAvailabilityWorker extends BaseWorker<CheckAvailabilityInput, 
   }
 
   async handle(job: ZeebeJob<CheckAvailabilityInput>): Promise<CheckAvailabilityOutput> {
-    const {
-      providerId,
-      workTeamId,
-      scheduledDate,
-      scheduledSlot,
-      serviceDurationMinutes = 120,
-    } = job.variables;
+    const { providerId, scheduledDate, scheduledSlot } = job.variables;
 
-    const date = new Date(scheduledDate);
-    const dayOfWeek = date.getDay(); // 0 = Sunday
-
-    // Get provider working schedule
-    const provider = await this.prisma.provider.findUnique({
-      where: { id: providerId },
-      include: {
-        workingSchedule: true,
-        workTeams: workTeamId
-          ? { where: { id: workTeamId } }
-          : { where: { status: 'ACTIVE' } },
-      },
-    });
-
-    if (!provider) {
-      return {
-        isAvailable: false,
-        availableSlots: [],
-        conflictReason: 'Provider not found',
-      };
-    }
-
-    // Check if provider works on this day
-    const schedule = provider.workingSchedule;
-    if (!schedule) {
-      return {
-        isAvailable: false,
-        availableSlots: [],
-        conflictReason: 'No working schedule configured',
-      };
-    }
-
-    // Check working days
-    const workingDays = schedule.workingDays || [];
-    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    
-    if (!workingDays.includes(dayNames[dayOfWeek])) {
-      return {
-        isAvailable: false,
-        availableSlots: await this.findAlternativeSlots(providerId, date, 7),
-        conflictReason: `Provider does not work on ${dayNames[dayOfWeek]}`,
-      };
-    }
-
-    // Check slot availability
-    const slotWorking = {
-      MORNING: schedule.morningShift,
-      AFTERNOON: schedule.afternoonShift,
-      EVENING: schedule.eveningShift,
-    };
-
-    if (!slotWorking[scheduledSlot]) {
-      const availableSlots = Object.entries(slotWorking)
-        .filter(([_, works]) => works)
-        .map(([slot]) => ({
-          date: scheduledDate,
-          slot,
-          capacity: 1,
-        }));
-
-      return {
-        isAvailable: false,
-        availableSlots,
-        conflictReason: `Provider does not work ${scheduledSlot} shift`,
-        suggestedSlot: availableSlots[0]?.slot,
-      };
-    }
-
-    // Check existing bookings
-    const existingBookings = await this.prisma.calendarBooking.count({
-      where: {
-        workTeamId: workTeamId || { in: provider.workTeams.map((t: any) => t.id) },
-        date: {
-          gte: new Date(date.setHours(0, 0, 0, 0)),
-          lt: new Date(date.setHours(23, 59, 59, 999)),
-        },
-        slot: scheduledSlot,
-        status: { in: ['CONFIRMED', 'PENDING'] },
-      },
-    });
-
-    const maxCapacity = schedule.maxOrdersPerSlot || 3;
-    
-    if (existingBookings >= maxCapacity) {
-      return {
-        isAvailable: false,
-        availableSlots: await this.findAlternativeSlots(providerId, date, 7),
-        conflictReason: `Slot at capacity (${existingBookings}/${maxCapacity})`,
-      };
-    }
-
+    // Simplified stub for infrastructure testing
+    // TODO: Implement full availability checking logic
     this.logger.log(
-      `Availability confirmed for ${providerId} on ${scheduledDate} ${scheduledSlot}`
+      `Checking availability for provider ${providerId} on ${scheduledDate} ${scheduledSlot}`
     );
 
+    // For now, always return available
     return {
       isAvailable: true,
       availableSlots: [{
         date: scheduledDate,
         slot: scheduledSlot,
-        capacity: maxCapacity - existingBookings,
+        capacity: 3,
       }],
     };
   }

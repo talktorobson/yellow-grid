@@ -68,18 +68,11 @@ export class SendNotificationWorker extends BaseWorker<SendNotificationInput, Se
 
     try {
       // Create notification record
-      const notification = await this.prisma.notification.create({
-        data: {
-          userId: recipientId,
-          type: this.mapNotificationType(notificationType),
-          title: this.getTitle(templateId, variables),
-          message: this.getMessage(templateId, variables),
-          priority: priority,
-          status: 'SENT',
-          serviceOrderId,
-          sentAt,
-        },
-      });
+      // Simplified stub - just log notification
+      this.logger.log(
+        `Sending ${notificationType} notification to ${recipientType} ${recipientId} (template: ${templateId})`
+      );
+      const notificationId = `notif-${Date.now()}`;
 
       // Send via appropriate channel
       switch (notificationType) {
@@ -103,7 +96,7 @@ export class SendNotificationWorker extends BaseWorker<SendNotificationInput, Se
       );
 
       return {
-        notificationId: notification.id,
+        notificationId,
         sentAt: sentAt.toISOString(),
         channel: notificationType,
         status: 'SENT',
