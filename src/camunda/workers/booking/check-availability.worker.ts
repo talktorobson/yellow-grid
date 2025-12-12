@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BaseWorker, ZeebeJob } from '../base.worker';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
  * Input variables for check-availability task
@@ -127,7 +127,7 @@ export class CheckAvailabilityWorker extends BaseWorker<CheckAvailabilityInput, 
     // Check existing bookings
     const existingBookings = await this.prisma.calendarBooking.count({
       where: {
-        workTeamId: workTeamId || { in: provider.workTeams.map(t => t.id) },
+        workTeamId: workTeamId || { in: provider.workTeams.map((t: any) => t.id) },
         date: {
           gte: new Date(date.setHours(0, 0, 0, 0)),
           lt: new Date(date.setHours(23, 59, 59, 999)),

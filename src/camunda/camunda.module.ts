@@ -16,16 +16,14 @@ import { SendNotificationWorker } from './workers/notification/send-notification
 // Existing services for worker dependencies
 import { ProvidersModule } from '../modules/providers/providers.module';
 import { ServiceOrdersModule } from '../modules/service-orders/service-orders.module';
-import { BookingsModule } from '../modules/bookings/bookings.module';
-import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule,
     ProvidersModule,
     ServiceOrdersModule,
-    BookingsModule,
-    NotificationsModule,
+    PrismaModule,
   ],
   providers: [
     CamundaConfig,

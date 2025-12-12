@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BaseWorker, ZeebeJob, BpmnError } from '../base.worker';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../../common/prisma/prisma.service';
 
 /**
  * Input variables for reserve-slot task

@@ -116,7 +116,7 @@ export class FindProvidersWorker extends BaseWorker<FindProvidersInput, FindProv
 
     // Score and rank providers
     const rankedProviders = providers
-      .map(provider => {
+      .map((provider: any) => {
         const zone = provider.interventionZones[0];
         const priority = provider.servicePriorityConfigs[0];
         
@@ -143,7 +143,7 @@ export class FindProvidersWorker extends BaseWorker<FindProvidersInput, FindProv
           hasCapacity: provider.workTeams.length > 0,
         };
       })
-      .sort((a, b) => b.score - a.score);
+      .sort((a: any, b: any) => b.score - a.score);
 
     this.logger.log(`Found ${rankedProviders.length} eligible providers`);
 
