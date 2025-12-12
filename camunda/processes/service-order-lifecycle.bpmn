@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_1" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <!-- 
+    =====================================================================
+    SERVICE ORDER LIFECYCLE PROCESS (TEMPLATE)
+    =====================================================================
+    
+    This is a starter BPMN template for the Yellow Grid service order workflow.
+    Open in Camunda Modeler to design the full process visually.
+    
+    PROCESS ID: ServiceOrderLifecycle
+    
+    KEY PHASES:
+    1. Order Creation & Validation
+    2. Provider Assignment (call activity → ProviderAssignment sub-process)
+    3. Scheduling & Booking
+    4. Pre-Execution GO Check (24-48h before)
+    5. Execution & Completion
+    6. Post-Execution & Invoicing
+    
+    WORKER TASK TYPES (already implemented):
+    - find-providers       → FindProvidersWorker
+    - rank-providers       → RankProvidersWorker
+    - send-offer          → SendOfferWorker
+    - check-availability  → CheckAvailabilityWorker
+    - reserve-slot        → ReserveSlotWorker
+    - go-check            → GoCheckWorker
+    - send-notification   → SendNotificationWorker
+    
+    BOUNDARY EVENTS NEEDED:
+    - Timer: Offer expiration (4 hours)
+    - Timer: Date negotiation timeout (24 hours per round)
+    - Timer: GO Check trigger (48h before scheduled date)
+    - Error: No providers found
+    - Error: Payment/delivery blocked
+    
+    MESSAGE EVENTS:
+    - Message: offer_accepted
+    - Message: offer_declined
+    - Message: date_accepted
+    - Message: date_rejected
+    - Message: alternative_date_proposed
+    
+    =====================================================================
+  -->
+  
+  <bpmn:process id="ServiceOrderLifecycle" name="Service Order Lifecycle" isExecutable="true">
+    
+    <!-- START EVENT -->
+    <bpmn:startEvent id="StartEvent_OrderCreated" name="Order Created">
+      <bpmn:outgoing>Flow_ToValidation</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- VALIDATION -->
+    <bpmn:serviceTask id="Task_ValidateOrder" name="Validate Order">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-order" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToValidation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAssignment</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- PROVIDER ASSIGNMENT SUB-PROCESS -->
+    <bpmn:callActivity id="SubProcess_Assignment" name="Provider Assignment">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="ProviderAssignment" propagateAllChildVariables="true" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToAssignment</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToScheduling</bpmn:outgoing>
+    </bpmn:callActivity>
+    
+    <!-- SCHEDULING -->
+    <bpmn:serviceTask id="Task_CheckAvailability" name="Check Availability">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="check-availability" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToScheduling</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToReserve</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="Task_ReserveSlot" name="Reserve Slot">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="reserve-slot" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToReserve</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToWaitGoCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- WAIT FOR GO CHECK TIMER -->
+    <bpmn:intermediateCatchEvent id="Timer_WaitForGoCheck" name="Wait until 48h before">
+      <bpmn:incoming>Flow_ToWaitGoCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGoCheck</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>= goCheckWaitDuration</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- GO CHECK -->
+    <bpmn:serviceTask id="Task_GoCheck" name="GO Check">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="go-check" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToGoCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGoDecision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- GO DECISION GATEWAY -->
+    <bpmn:exclusiveGateway id="Gateway_GoStatus" name="GO Status?">
+      <bpmn:incoming>Flow_ToGoDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_GoOk</bpmn:outgoing>
+      <bpmn:outgoing>Flow_GoNok</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- EXECUTION (simplified) -->
+    <bpmn:serviceTask id="Task_NotifyExecution" name="Notify Ready for Execution">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-notification" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_GoOk</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- END EVENT -->
+    <bpmn:endEvent id="EndEvent_Completed" name="Order Completed">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- BLOCKED PATH -->
+    <bpmn:endEvent id="EndEvent_Blocked" name="Execution Blocked">
+      <bpmn:incoming>Flow_GoNok</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToValidation" sourceRef="StartEvent_OrderCreated" targetRef="Task_ValidateOrder" />
+    <bpmn:sequenceFlow id="Flow_ToAssignment" sourceRef="Task_ValidateOrder" targetRef="SubProcess_Assignment" />
+    <bpmn:sequenceFlow id="Flow_ToScheduling" sourceRef="SubProcess_Assignment" targetRef="Task_CheckAvailability" />
+    <bpmn:sequenceFlow id="Flow_ToReserve" sourceRef="Task_CheckAvailability" targetRef="Task_ReserveSlot" />
+    <bpmn:sequenceFlow id="Flow_ToWaitGoCheck" sourceRef="Task_ReserveSlot" targetRef="Timer_WaitForGoCheck" />
+    <bpmn:sequenceFlow id="Flow_ToGoCheck" sourceRef="Timer_WaitForGoCheck" targetRef="Task_GoCheck" />
+    <bpmn:sequenceFlow id="Flow_ToGoDecision" sourceRef="Task_GoCheck" targetRef="Gateway_GoStatus" />
+    <bpmn:sequenceFlow id="Flow_GoOk" name="GO_OK" sourceRef="Gateway_GoStatus" targetRef="Task_NotifyExecution">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= goStatus = "GO_OK"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_GoNok" name="GO_NOK" sourceRef="Gateway_GoStatus" targetRef="EndEvent_Blocked">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= goStatus != "GO_OK"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="Task_NotifyExecution" targetRef="EndEvent_Completed" />
+    
+  </bpmn:process>
+  
+</bpmn:definitions>

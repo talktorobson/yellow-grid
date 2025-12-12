@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yellowgrid.com/schemas/service-order.schema.json",
+  "title": "ServiceOrderVariables",
+  "description": "Variable contract for service order workflow in Camunda 8",
+  "type": "object",
+  "required": ["serviceOrderId", "storeId", "customerId", "urgency", "countryCode"],
+  "properties": {
+    "serviceOrderId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique service order identifier (primary key)"
+    },
+    "projectId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Parent project ID if part of a project"
+    },
+    "externalId": {
+      "type": ["string", "null"],
+      "description": "External reference from source system (LMx sales)"
+    },
+    "storeId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Store where service was sold"
+    },
+    "customerId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Customer who purchased the service"
+    },
+    "customerName": {
+      "type": "string",
+      "description": "Customer display name for notifications"
+    },
+    "customerEmail": {
+      "type": ["string", "null"],
+      "format": "email"
+    },
+    "customerPhone": {
+      "type": ["string", "null"]
+    },
+    "urgency": {
+      "type": "string",
+      "enum": ["URGENT", "STANDARD", "LOW"],
+      "description": "SLA urgency level - determines response time requirements",
+      "default": "STANDARD"
+    },
+    "serviceType": {
+      "type": "string",
+      "description": "Service specialty code (e.g., PLUMBING, ELECTRICAL, ASSEMBLY)"
+    },
+    "serviceId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Reference to service catalog entry"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "description": "Service description / work to be performed"
+    },
+    "countryCode": {
+      "type": "string",
+      "enum": ["FR", "ES", "IT", "PT", "PL"],
+      "description": "Country code - affects assignment rules and SLA"
+    },
+    "postalCode": {
+      "type": "string",
+      "description": "Customer postal code for geographic matching"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "postalCode": { "type": "string" },
+        "countryCode": { "type": "string" }
+      }
+    },
+    "scheduledDate": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Scheduled execution date"
+    },
+    "scheduledSlot": {
+      "type": ["string", "null"],
+      "enum": ["MORNING", "AFTERNOON", "EVENING"],
+      "description": "Time slot within scheduled date"
+    },
+    "schedulingWindowStart": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Earliest acceptable scheduling date"
+    },
+    "schedulingWindowEnd": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Latest acceptable scheduling date"
+    },
+    "assignedProviderId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Provider assigned to execute service"
+    },
+    "assignedWorkTeamId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Work team assigned to execute service"
+    },
+    "assignmentMode": {
+      "type": ["string", "null"],
+      "enum": ["OFFER", "AUTO_ACCEPT", "DIRECT"],
+      "description": "How provider was assigned (country-specific)"
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "SCHEDULING_PENDING",
+        "SCHEDULED",
+        "CONTRACT_GENERATION",
+        "CONTRACT_AWAITING_SIGNATURE",
+        "CONTRACT_SIGNED",
+        "ASSIGNMENT_PENDING",
+        "OFFER_SENT",
+        "OFFER_ACCEPTED",
+        "ASSIGNED",
+        "GO_EXECUTION_CHECK",
+        "GO_OK",
+        "GO_NOK_PAYMENT",
+        "GO_NOK_DELIVERY",
+        "DISPATCHED",
+        "IN_PROGRESS",
+        "COMPLETED",
+        "WCF_GENERATION",
+        "WCF_AWAITING_SIGNATURE",
+        "WCF_SIGNED",
+        "PAYMENT_PENDING",
+        "PAYMENT_RECEIVED",
+        "CLOSED",
+        "CANCELLED",
+        "ON_HOLD"
+      ],
+      "description": "Current workflow state"
+    },
+    "paymentConfirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether customer payment is confirmed (Go check)"
+    },
+    "deliveryConfirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether product delivery is confirmed (Go check)"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "createdBy": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    }
+  }
+}

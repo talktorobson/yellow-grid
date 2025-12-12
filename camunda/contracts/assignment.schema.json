@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://yellowgrid.com/schemas/assignment.schema.json",
+  "title": "AssignmentVariables",
+  "description": "Variable contract for provider assignment sub-process",
+  "type": "object",
+  "required": ["serviceOrderId", "serviceType", "postalCode", "countryCode"],
+  "properties": {
+    "serviceOrderId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to parent service order"
+    },
+    "serviceType": {
+      "type": "string",
+      "description": "Service specialty code for provider matching"
+    },
+    "postalCode": {
+      "type": "string",
+      "description": "Customer postal code for geographic filtering"
+    },
+    "countryCode": {
+      "type": "string",
+      "enum": ["FR", "ES", "IT", "PT", "PL"],
+      "description": "Country code - determines assignment mode"
+    },
+    "scheduledDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Requested execution date"
+    },
+    "urgency": {
+      "type": "string",
+      "enum": ["URGENT", "STANDARD", "LOW"],
+      "default": "STANDARD"
+    },
+    "assignmentMode": {
+      "type": "string",
+      "enum": ["OFFER", "AUTO_ACCEPT", "DIRECT"],
+      "description": "Assignment mode: OFFER (FR/PL), AUTO_ACCEPT (ES/IT), DIRECT (manual)"
+    },
+    "candidateProviders": {
+      "type": "array",
+      "description": "Ranked list of eligible providers",
+      "items": {
+        "type": "object",
+        "required": ["providerId", "score"],
+        "properties": {
+          "providerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerName": {
+            "type": "string"
+          },
+          "providerType": {
+            "type": "string",
+            "enum": ["P1", "P2"],
+            "description": "Provider tier (P1 = preferred, P2 = standard)"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Ranking score based on distance, availability, rating"
+          },
+          "distanceKm": {
+            "type": "number",
+            "minimum": 0
+          },
+          "hasCapacity": {
+            "type": "boolean"
+          },
+          "estimatedArrival": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "providersFound": {
+      "type": "boolean",
+      "description": "Whether any eligible providers were found"
+    },
+    "currentProviderIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Index of current provider being offered to"
+    },
+    "selectedProviderId": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Provider who accepted the assignment"
+    },
+    "selectedWorkTeamId": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "offerSentAt": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "offerExpiresAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Offer expiration (typically 2-4 hours)"
+    },
+    "offerResponse": {
+      "type": ["string", "null"],
+      "enum": ["ACCEPTED", "DECLINED", "TIMEOUT", "DATE_PROPOSED"],
+      "description": "Provider response to offer"
+    },
+    "dateNegotiationRound": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "default": 0,
+      "description": "Current date negotiation round (max 3 per PRD)"
+    },
+    "proposedAlternativeDates": {
+      "type": "array",
+      "maxItems": 3,
+      "description": "Alternative dates proposed by provider",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "format": "date-time" },
+          "slot": { "type": "string", "enum": ["MORNING", "AFTERNOON", "EVENING"] },
+          "proposedBy": { "type": "string", "enum": ["PROVIDER", "CUSTOMER"] },
+          "round": { "type": "integer" }
+        }
+      }
+    },
+    "customerAcceptedAlternative": {
+      "type": ["boolean", "null"],
+      "description": "Whether customer accepted proposed alternative date"
+    },
+    "assignmentCompleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether assignment process completed successfully"
+    },
+    "assignmentFailedReason": {
+      "type": ["string", "null"],
+      "enum": [
+        "NO_PROVIDERS_FOUND",
+        "ALL_PROVIDERS_DECLINED",
+        "DATE_NEGOTIATION_FAILED",
+        "OFFER_TIMEOUT",
+        "MANUAL_CANCELLATION"
+      ],
+      "description": "Reason for assignment failure (if failed)"
+    },
+    "escalationRequired": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether manual intervention is needed"
+    }
+  }
+}

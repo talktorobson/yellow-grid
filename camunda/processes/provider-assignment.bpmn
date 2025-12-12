@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_Assignment" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <!-- 
+    =====================================================================
+    PROVIDER ASSIGNMENT SUB-PROCESS
+    =====================================================================
+    
+    Called from ServiceOrderLifecycle as a call activity.
+    
+    PROCESS ID: ProviderAssignment
+    
+    ASSIGNMENT MODES:
+    - AUTO_ACCEPT (ES, IT): Auto-assign to top-ranked provider
+    - OFFER (FR, PL): Send offer, wait for acceptance
+    
+    DATE NEGOTIATION:
+    - Max 3 rounds per PRD
+    - Timer: 24h per round
+    - Alternative dates proposed if rejected
+    
+    ESCALATION:
+    - After all providers exhausted → escalate to operator
+    
+    =====================================================================
+  -->
+  
+  <bpmn:process id="ProviderAssignment" name="Provider Assignment" isExecutable="true">
+    
+    <bpmn:startEvent id="Start_Assignment" name="Start Assignment">
+      <bpmn:outgoing>Flow_ToFindProviders</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- FIND ELIGIBLE PROVIDERS -->
+    <bpmn:serviceTask id="Task_FindProviders" name="Find Providers">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="find-providers" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFindProviders</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRankProviders</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- RANK PROVIDERS -->
+    <bpmn:serviceTask id="Task_RankProviders" name="Rank Providers">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="rank-providers" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToRankProviders</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToModeGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- ASSIGNMENT MODE GATEWAY -->
+    <bpmn:exclusiveGateway id="Gateway_AssignmentMode" name="Assignment Mode?">
+      <bpmn:incoming>Flow_ToModeGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoAccept</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Offer</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- AUTO ACCEPT PATH (ES, IT) -->
+    <bpmn:serviceTask id="Task_AutoAssign" name="Auto-Assign Provider">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="auto-assign-provider" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AutoAccept</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoAssignEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- OFFER PATH (FR, PL) -->
+    <bpmn:serviceTask id="Task_SendOffer" name="Send Offer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-offer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Offer</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOfferWait</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- WAIT FOR OFFER RESPONSE -->
+    <bpmn:eventBasedGateway id="Gateway_WaitOffer" name="Wait for Response">
+      <bpmn:incoming>Flow_ToOfferWait</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAccepted</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToDeclined</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToExpired</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- OFFER ACCEPTED -->
+    <bpmn:intermediateCatchEvent id="Event_OfferAccepted" name="Offer Accepted">
+      <bpmn:incoming>Flow_ToAccepted</bpmn:incoming>
+      <bpmn:outgoing>Flow_AcceptedEnd</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Message_OfferAccepted" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- OFFER DECLINED -->
+    <bpmn:intermediateCatchEvent id="Event_OfferDeclined" name="Offer Declined">
+      <bpmn:incoming>Flow_ToDeclined</bpmn:incoming>
+      <bpmn:outgoing>Flow_DeclinedNext</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Message_OfferDeclined" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- OFFER EXPIRED (Timer) -->
+    <bpmn:intermediateCatchEvent id="Event_OfferExpired" name="Offer Expired">
+      <bpmn:incoming>Flow_ToExpired</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExpiredNext</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT4H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CHECK MORE PROVIDERS GATEWAY -->
+    <bpmn:exclusiveGateway id="Gateway_MoreProviders" name="More Providers?">
+      <bpmn:incoming>Flow_DeclinedNext</bpmn:incoming>
+      <bpmn:incoming>Flow_ExpiredNext</bpmn:incoming>
+      <bpmn:outgoing>Flow_TryNext</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Escalate</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="End_Assigned" name="Provider Assigned">
+      <bpmn:incoming>Flow_AutoAssignEnd</bpmn:incoming>
+      <bpmn:incoming>Flow_AcceptedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="End_Escalated" name="Escalated to Operator">
+      <bpmn:incoming>Flow_Escalate</bpmn:incoming>
+      <bpmn:escalationEventDefinition escalationRef="Escalation_NoProvider" />
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToFindProviders" sourceRef="Start_Assignment" targetRef="Task_FindProviders" />
+    <bpmn:sequenceFlow id="Flow_ToRankProviders" sourceRef="Task_FindProviders" targetRef="Task_RankProviders" />
+    <bpmn:sequenceFlow id="Flow_ToModeGateway" sourceRef="Task_RankProviders" targetRef="Gateway_AssignmentMode" />
+    
+    <bpmn:sequenceFlow id="Flow_AutoAccept" name="AUTO_ACCEPT" sourceRef="Gateway_AssignmentMode" targetRef="Task_AutoAssign">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= assignmentMode = "AUTO_ACCEPT"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:sequenceFlow id="Flow_Offer" name="OFFER" sourceRef="Gateway_AssignmentMode" targetRef="Task_SendOffer">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= assignmentMode = "OFFER"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:sequenceFlow id="Flow_ToOfferWait" sourceRef="Task_SendOffer" targetRef="Gateway_WaitOffer" />
+    <bpmn:sequenceFlow id="Flow_ToAccepted" sourceRef="Gateway_WaitOffer" targetRef="Event_OfferAccepted" />
+    <bpmn:sequenceFlow id="Flow_ToDeclined" sourceRef="Gateway_WaitOffer" targetRef="Event_OfferDeclined" />
+    <bpmn:sequenceFlow id="Flow_ToExpired" sourceRef="Gateway_WaitOffer" targetRef="Event_OfferExpired" />
+    
+    <bpmn:sequenceFlow id="Flow_AutoAssignEnd" sourceRef="Task_AutoAssign" targetRef="End_Assigned" />
+    <bpmn:sequenceFlow id="Flow_AcceptedEnd" sourceRef="Event_OfferAccepted" targetRef="End_Assigned" />
+    
+    <bpmn:sequenceFlow id="Flow_DeclinedNext" sourceRef="Event_OfferDeclined" targetRef="Gateway_MoreProviders" />
+    <bpmn:sequenceFlow id="Flow_ExpiredNext" sourceRef="Event_OfferExpired" targetRef="Gateway_MoreProviders" />
+    
+    <bpmn:sequenceFlow id="Flow_TryNext" name="Yes" sourceRef="Gateway_MoreProviders" targetRef="Task_SendOffer">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= currentProviderIndex &lt; count(candidateProviders)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:sequenceFlow id="Flow_Escalate" name="No" sourceRef="Gateway_MoreProviders" targetRef="End_Escalated">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">= currentProviderIndex >= count(candidateProviders)</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+  </bpmn:process>
+  
+  <!-- MESSAGES -->
+  <bpmn:message id="Message_OfferAccepted" name="offer_accepted">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= assignmentId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_OfferDeclined" name="offer_declined">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= assignmentId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <!-- ESCALATION -->
+  <bpmn:escalation id="Escalation_NoProvider" name="No Provider Available" escalationCode="NO_PROVIDER" />
+  
+</bpmn:definitions>

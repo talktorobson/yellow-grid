@@ -1,0 +1,156 @@
+# Camunda 8 Self-Managed - Yellow Grid Development Stack
+# Based on: https://docs.camunda.io/docs/self-managed/setup/docker/
+
+version: '3.8'
+
+services:
+  # ============================================
+  # Zeebe - Workflow Engine
+  # ============================================
+  zeebe:
+    image: camunda/zeebe:8.5.0
+    container_name: yellow-grid-zeebe
+    ports:
+      - "26500:26500"  # gRPC API
+      - "9600:9600"    # Metrics/Monitoring
+    environment:
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME=io.camunda.zeebe.exporter.ElasticsearchExporter
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL=http://elasticsearch:9200
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_BULK_SIZE=1
+      - ZEEBE_BROKER_CLUSTER_PARTITIONS_COUNT=1
+      - ZEEBE_BROKER_CLUSTER_REPLICATIONFACTOR=1
+      - ZEEBE_BROKER_CLUSTER_CLUSTERSIZE=1
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - zeebe-data:/usr/local/zeebe/data
+    networks:
+      - camunda-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9600/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Operate - Process Monitoring & Debugging
+  # ============================================
+  operate:
+    image: camunda/operate:8.5.0
+    container_name: yellow-grid-operate
+    ports:
+      - "8081:8080"
+    environment:
+      - CAMUNDA_OPERATE_ZEEBE_GATEWAYADDRESS=zeebe:26500
+      - CAMUNDA_OPERATE_ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_URL=http://elasticsearch:9200
+      - SPRING_PROFILES_ACTIVE=dev-data
+      # Default login: demo/demo
+      - CAMUNDA_OPERATE_IDENTITY_ISSUER_URL=http://localhost:18080/auth/realms/camunda-platform
+      - CAMUNDA_OPERATE_IDENTITY_ISSUER_BACKEND_URL=http://keycloak:8080/auth/realms/camunda-platform
+      - CAMUNDA_OPERATE_IDENTITY_CLIENT_ID=operate
+      - CAMUNDA_OPERATE_IDENTITY_CLIENT_SECRET=XALaRPl5qwTEItdwCMiPS62nVpKs7dL7
+      - CAMUNDA_OPERATE_IDENTITY_AUDIENCE=operate-api
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUERURI=http://localhost:18080/auth/realms/camunda-platform
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWKSETURI=http://keycloak:8080/auth/realms/camunda-platform/protocol/openid-connect/certs
+      # Disable auth for local development
+      - CAMUNDA_OPERATE_AUTH_DISABLE=true
+    depends_on:
+      zeebe:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - camunda-network
+
+  # ============================================
+  # Tasklist - Human Task Management
+  # ============================================
+  tasklist:
+    image: camunda/tasklist:8.5.0
+    container_name: yellow-grid-tasklist
+    ports:
+      - "8082:8080"
+    environment:
+      - CAMUNDA_TASKLIST_ZEEBE_GATEWAYADDRESS=zeebe:26500
+      - CAMUNDA_TASKLIST_ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_URL=http://elasticsearch:9200
+      - SPRING_PROFILES_ACTIVE=dev-data
+      # Disable auth for local development
+      - CAMUNDA_TASKLIST_AUTH_DISABLE=true
+    depends_on:
+      zeebe:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - camunda-network
+
+  # ============================================
+  # Elasticsearch - Data Store
+  # ============================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.9.0
+    container_name: yellow-grid-elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - camunda-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================
+  # Connectors (Optional - for outbound integrations)
+  # ============================================
+  connectors:
+    image: camunda/connectors-bundle:8.5.0
+    container_name: yellow-grid-connectors
+    ports:
+      - "8085:8080"
+    environment:
+      - ZEEBE_CLIENT_BROKER_GATEWAY_ADDRESS=zeebe:26500
+      - ZEEBE_CLIENT_SECURITY_PLAINTEXT=true
+      - CAMUNDA_OPERATE_CLIENT_URL=http://operate:8080
+      # Connector secrets (for Kafka, HTTP, etc.)
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      zeebe:
+        condition: service_healthy
+    networks:
+      - camunda-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  zeebe-data:
+    driver: local
+  elasticsearch-data:
+    driver: local
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  camunda-network:
+    driver: bridge
+    name: yellow-grid-camunda

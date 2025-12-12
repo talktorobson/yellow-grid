@@ -4,8 +4,8 @@ WORKDIR /app
 COPY web/package*.json ./
 RUN npm ci
 COPY web/ .
-# Environment variables for the build
-ENV VITE_API_BASE_URL=/api/v1
+# Copy production environment configuration
+COPY web/.env.production .env.production
 RUN npm run build
 
 # Build Mobile

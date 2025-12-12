@@ -1,18 +1,42 @@
 {
+    email talktorobson@gmail.com
 }
 
-# HTTP Listener - Redirect to HTTPS
-:80 {
-    redir https://{host}{uri}
+# Production domains - Let's Encrypt certificates
+www.goexec.de, goexec.de {
+    encode gzip
+
+    # Proxy API requests to the backend
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+
+    # Serve mobile app assets (Expo bundles accessed from /mobile/index.html)
+    handle /_expo/* {
+        root * /srv/mobile
+        try_files {path} =404
+        file_server
+    }
+
+    # Serve mobile app
+    handle_path /mobile/* {
+        root * /srv/mobile
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Serve static files from /srv
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
 }
 
-# HTTPS Listener - Catch-all for port 443
-:443 {
-    # Use internal self-signed certificate with on-demand issuance
-    # This allows Caddy to generate certs for the internal Docker IP (172.x.x.x)
+# IP fallback - Self-signed certificate for direct IP access
+135.181.96.93 {
     tls {
         issuer internal
-        on_demand
     }
     
     encode gzip
@@ -22,7 +46,7 @@
         reverse_proxy api:3000
     }
 
-    # Serve mobile app assets (Expo bundles accessed from /mobile/index.html)
+    # Serve mobile app assets
     handle /_expo/* {
         root * /srv/mobile
         try_files {path} =404
