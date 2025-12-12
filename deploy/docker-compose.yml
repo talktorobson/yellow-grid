@@ -29,6 +29,136 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # CAMUNDA 8 SELF-MANAGED (Memory-Optimized)
+  # ============================================
+
+  # Elasticsearch - Required for Zeebe, Operate, Tasklist
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: yellow-grid-elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - cluster.name=elasticsearch
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.watcher.enabled=false
+      - xpack.graph.enabled=false
+      # Memory-optimized: 512MB heap (min for ES)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  # Zeebe - Workflow Engine
+  zeebe:
+    image: camunda/zeebe:8.5.0
+    container_name: yellow-grid-zeebe
+    restart: always
+    environment:
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_CLASSNAME=io.camunda.zeebe.exporter.ElasticsearchExporter
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_URL=http://elasticsearch:9200
+      - ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_BULK_SIZE=1
+      # Memory-optimized: 512MB heap
+      - JAVA_TOOL_OPTIONS=-Xms512m -Xmx512m
+      # Single partition for low-memory setup
+      - ZEEBE_BROKER_CLUSTER_PARTITIONSCOUNT=1
+      - ZEEBE_BROKER_CLUSTER_REPLICATIONFACTOR=1
+      - ZEEBE_BROKER_CLUSTER_CLUSTERSIZE=1
+    volumes:
+      - zeebe_data:/usr/local/zeebe/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', '/usr/local/zeebe/bin/zbctl --insecure status || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  # Operate - Process Monitoring UI
+  operate:
+    image: camunda/operate:8.5.0
+    container_name: yellow-grid-operate
+    restart: always
+    environment:
+      - CAMUNDA_OPERATE_ZEEBE_GATEWAYADDRESS=zeebe:26500
+      - CAMUNDA_OPERATE_ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CAMUNDA_OPERATE_ZEEBEELASTICSEARCH_URL=http://elasticsearch:9200
+      # Memory-optimized: 256MB heap
+      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx256m
+      # Demo credentials
+      - CAMUNDA_OPERATE_AUTH_TYPE=simple
+      - CAMUNDA_OPERATE_USERID=demo
+      - CAMUNDA_OPERATE_PASSWORD=demo
+      - CAMUNDA_OPERATE_DISPLAYNAME=Demo User
+    depends_on:
+      zeebe:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8080/actuator/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # Tasklist - Human Task UI
+  tasklist:
+    image: camunda/tasklist:8.5.0
+    container_name: yellow-grid-tasklist
+    restart: always
+    environment:
+      - CAMUNDA_TASKLIST_ZEEBE_GATEWAYADDRESS=zeebe:26500
+      - CAMUNDA_TASKLIST_ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CAMUNDA_TASKLIST_ZEEBEELASTICSEARCH_URL=http://elasticsearch:9200
+      # Memory-optimized: 256MB heap
+      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx256m
+      # Demo credentials
+      - CAMUNDA_TASKLIST_AUTH_TYPE=simple
+      - CAMUNDA_TASKLIST_USERID=demo
+      - CAMUNDA_TASKLIST_PASSWORD=demo
+      - CAMUNDA_TASKLIST_DISPLAYNAME=Demo User
+    depends_on:
+      zeebe:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8080/actuator/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ============================================
+  # APPLICATION SERVICES
+  # ============================================
+
   # Backend API
   api:
     build:
@@ -46,10 +176,19 @@ services:
       KAFKA_ENABLED: 'false'
       # CORS configuration for mobile app access
       CORS_ORIGIN: '*'
+      # Camunda 8 configuration
+      CAMUNDA_ENABLED: 'true'
+      ZEEBE_GATEWAY_ADDRESS: 'zeebe:26500'
+      ZEEBE_INSECURE: 'true'
+      CAMUNDA_OPERATE_URL: 'http://operate:8080'
+      CAMUNDA_OPERATE_USER: 'demo'
+      CAMUNDA_OPERATE_PASSWORD: 'demo'
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      zeebe:
         condition: service_healthy
 
   # Frontend + Reverse Proxy (Caddy)
@@ -64,7 +203,11 @@ services:
       - '443:443'
     depends_on:
       - api
+      - operate
+      - tasklist
 
 volumes:
   postgres_data:
   redis_data:
+  elasticsearch_data:
+  zeebe_data:

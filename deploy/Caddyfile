@@ -11,6 +11,16 @@ www.goexec.de, goexec.de {
         reverse_proxy api:3000
     }
 
+    # Camunda Operate - Process Monitoring UI
+    handle_path /camunda/operate/* {
+        reverse_proxy operate:8080
+    }
+
+    # Camunda Tasklist - Human Task UI
+    handle_path /camunda/tasklist/* {
+        reverse_proxy tasklist:8080
+    }
+
     # Serve mobile app assets (Expo bundles accessed from /mobile/index.html)
     handle /_expo/* {
         root * /srv/mobile
@@ -44,6 +54,16 @@ www.goexec.de, goexec.de {
     # Proxy API requests to the backend
     handle /api/* {
         reverse_proxy api:3000
+    }
+
+    # Camunda Operate - Process Monitoring UI
+    handle_path /camunda/operate/* {
+        reverse_proxy operate:8080
+    }
+
+    # Camunda Tasklist - Human Task UI
+    handle_path /camunda/tasklist/* {
+        reverse_proxy tasklist:8080
     }
 
     # Serve mobile app assets

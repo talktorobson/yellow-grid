@@ -49,16 +49,25 @@ export class CamundaModule implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    const enabled = this.configService.get<boolean>('CAMUNDA_ENABLED', false);
+    const enabledValue = this.configService.get<string>('CAMUNDA_ENABLED', 'false');
+    const enabled = enabledValue === 'true' || enabledValue === '1';
     
     if (!enabled) {
       this.logger.warn('Camunda integration is disabled. Set CAMUNDA_ENABLED=true to enable.');
       return;
     }
 
-    this.logger.log('Initializing Camunda 8 integration...');
-    await this.camundaService.initialize();
-    this.logger.log('Camunda 8 integration initialized successfully');
+    const zeebeAddress = this.configService.get<string>('ZEEBE_GATEWAY_ADDRESS') || 
+                         this.configService.get<string>('ZEEBE_ADDRESS', 'localhost:26500');
+    this.logger.log(`Initializing Camunda 8 integration (Zeebe: ${zeebeAddress})...`);
+    
+    try {
+      await this.camundaService.initialize();
+      this.logger.log('✅ Camunda 8 integration initialized successfully');
+    } catch (error) {
+      this.logger.error(`❌ Failed to initialize Camunda 8: ${error.message}`);
+      // Don't throw - allow app to start without Camunda if it fails
+    }
   }
 
   async onModuleDestroy() {

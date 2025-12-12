@@ -20,16 +20,21 @@ export class CamundaConfig {
 
   get(): CamundaConfiguration {
     return {
-      zeebeAddress: this.configService.get<string>('ZEEBE_ADDRESS', 'localhost:26500'),
+      // Support both naming conventions for gateway address
+      zeebeAddress: this.configService.get<string>('ZEEBE_GATEWAY_ADDRESS') || 
+                    this.configService.get<string>('ZEEBE_ADDRESS', 'localhost:26500'),
       zeebeRestAddress: this.configService.get<string>('ZEEBE_REST_ADDRESS', 'http://localhost:8080'),
-      secureConnection: this.configService.get<boolean>('CAMUNDA_SECURE_CONNECTION', false),
+      secureConnection: !(this.configService.get<string>('ZEEBE_INSECURE', 'false') === 'true') &&
+                        this.configService.get<boolean>('CAMUNDA_SECURE_CONNECTION', false),
       clientId: this.configService.get<string>('ZEEBE_CLIENT_ID'),
       clientSecret: this.configService.get<string>('ZEEBE_CLIENT_SECRET'),
       oauthUrl: this.configService.get<string>('CAMUNDA_OAUTH_URL'),
-      operateBaseUrl: this.configService.get<string>('CAMUNDA_OPERATE_BASE_URL', 'http://localhost:8081'),
-      tasklistBaseUrl: this.configService.get<string>('CAMUNDA_TASKLIST_BASE_URL', 'http://localhost:8082'),
+      operateBaseUrl: this.configService.get<string>('CAMUNDA_OPERATE_URL') ||
+                      this.configService.get<string>('CAMUNDA_OPERATE_BASE_URL', 'http://localhost:8081'),
+      tasklistBaseUrl: this.configService.get<string>('CAMUNDA_TASKLIST_URL') ||
+                       this.configService.get<string>('CAMUNDA_TASKLIST_BASE_URL', 'http://localhost:8082'),
       tenantId: this.configService.get<string>('CAMUNDA_TENANT_ID'),
-      enabled: this.configService.get<boolean>('CAMUNDA_ENABLED', false),
+      enabled: this.configService.get<string>('CAMUNDA_ENABLED', 'false') === 'true',
     };
   }
 
