@@ -1,20 +1,13 @@
 {
+    # Global options
+    email admin@goexec.de
 }
 
-# HTTP Listener - Redirect to HTTPS
-:80 {
-    redir https://{host}{uri}
-}
+# Automatic HTTPS with Let's Encrypt for goexec.de and www.goexec.de
+goexec.de, www.goexec.de {
+    # Caddy automatically obtains and renews Let's Encrypt certificates
+    # No manual TLS configuration needed!
 
-# HTTPS Listener - Catch-all for port 443
-:443 {
-    # Use internal self-signed certificate with on-demand issuance
-    # This allows Caddy to generate certs for the internal Docker IP (172.x.x.x)
-    tls {
-        issuer internal
-        on_demand
-    }
-    
     encode gzip
 
     # Proxy API requests to the backend
