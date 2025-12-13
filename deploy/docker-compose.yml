@@ -110,9 +110,6 @@ services:
       - CAMUNDA_OPERATE_USERID=demo
       - CAMUNDA_OPERATE_PASSWORD=demo
       - CAMUNDA_OPERATE_DISPLAYNAME=Demo User
-      # Context path configuration
-      - CAMUNDA_OPERATE_CONTEXTPATH=/camunda/operate
-      - SERVER_SERVLET_CONTEXT_PATH=/camunda/operate
     depends_on:
       zeebe:
         condition: service_started
@@ -145,9 +142,6 @@ services:
       # Demo credentials
       - CAMUNDA_TASKLIST_AUTH_TYPE=simple
       - CAMUNDA_TASKLIST_USERID=demo
-      # Context path configuration
-      - CAMUNDA_TASKLIST_CONTEXTPATH=/camunda/tasklist
-      - SERVER_SERVLET_CONTEXT_PATH=/camunda/tasklist
       - CAMUNDA_TASKLIST_PASSWORD=demo
       - CAMUNDA_TASKLIST_DISPLAYNAME=Demo User
     depends_on:

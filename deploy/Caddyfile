@@ -56,13 +56,13 @@ www.goexec.de, goexec.de {
         reverse_proxy api:3000
     }
 
-    # Camunda Operate - Process Monitoring UI (context path configured in container)
-    handle /camunda/operate* {
+    # Camunda Operate - Process Monitoring UI
+    handle_path /camunda/operate* {
         reverse_proxy operate:8080
     }
 
-    # Camunda Tasklist - Human Task UI (context path configured in container)
-    handle /camunda/tasklist* {
+    # Camunda Tasklist - Human Task UI
+    handle_path /camunda/tasklist* {
         reverse_proxy tasklist:8080
     }
 
