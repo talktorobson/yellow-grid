@@ -80,12 +80,13 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+    # Note: Zeebe doesn't have curl/wget, using TCP port check instead
     healthcheck:
-      test: ['CMD-SHELL', '/usr/local/zeebe/bin/zbctl --insecure status || exit 1']
+      test: ['CMD-SHELL', 'timeout 5 bash -c "</dev/tcp/localhost/26500" 2>/dev/null || exit 1']
       interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 120s
+      retries: 15
+      start_period: 180s
     deploy:
       resources:
         limits:
@@ -109,15 +110,15 @@ services:
       - CAMUNDA_OPERATE_DISPLAYNAME=Demo User
     depends_on:
       zeebe:
-        condition: service_healthy
+        condition: service_started
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'curl -sf http://localhost:8080/actuator/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8080/actuator/health 2>/dev/null | grep -q UP || exit 1']
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 120s
+      retries: 10
+      start_period: 180s
     deploy:
       resources:
         limits:
@@ -141,15 +142,15 @@ services:
       - CAMUNDA_TASKLIST_DISPLAYNAME=Demo User
     depends_on:
       zeebe:
-        condition: service_healthy
+        condition: service_started
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'curl -sf http://localhost:8080/actuator/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:8080/actuator/health 2>/dev/null | grep -q UP || exit 1']
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 120s
+      retries: 10
+      start_period: 180s
     deploy:
       resources:
         limits:
@@ -189,7 +190,7 @@ services:
       redis:
         condition: service_healthy
       zeebe:
-        condition: service_healthy
+        condition: service_started
 
   # Frontend + Reverse Proxy (Caddy)
   frontend:

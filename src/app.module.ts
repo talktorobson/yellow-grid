@@ -28,6 +28,9 @@ import { SalesIntegrationModule } from './modules/sales-integration/sales-integr
 import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { ChatModule } from './modules/chat/chat.module';
 
+// Workflow orchestration (Camunda 8)
+import { CamundaModule } from './camunda/camunda.module';
+
 // Controllers
 import { AppController } from './app.controller';
 
@@ -98,6 +101,9 @@ import { AppController } from './app.controller';
 
     // Chat/Messaging module (Phase 3)
     ChatModule,
+
+    // Workflow orchestration (Camunda 8)
+    CamundaModule,
   ],
   controllers: [AppController],
 })
