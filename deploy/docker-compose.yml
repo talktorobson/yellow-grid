@@ -97,6 +97,8 @@ services:
     image: camunda/operate:8.5.0
     container_name: yellow-grid-operate
     restart: always
+    ports:
+      - "127.0.0.1:8081:8080"
     environment:
       - CAMUNDA_OPERATE_ZEEBE_GATEWAYADDRESS=zeebe:26500
       - CAMUNDA_OPERATE_ELASTICSEARCH_URL=http://elasticsearch:9200
@@ -108,9 +110,6 @@ services:
       - CAMUNDA_OPERATE_USERID=demo
       - CAMUNDA_OPERATE_PASSWORD=demo
       - CAMUNDA_OPERATE_DISPLAYNAME=Demo User
-      # Context path for reverse proxy
-      - SERVER_SERVLET_CONTEXT_PATH=/camunda/operate
-      - CAMUNDA_OPERATE_CONTEXTPATH=/camunda/operate
     depends_on:
       zeebe:
         condition: service_started
@@ -132,6 +131,8 @@ services:
     image: camunda/tasklist:8.5.0
     container_name: yellow-grid-tasklist
     restart: always
+    ports:
+      - "127.0.0.1:8082:8080"
     environment:
       - CAMUNDA_TASKLIST_ZEEBE_GATEWAYADDRESS=zeebe:26500
       - CAMUNDA_TASKLIST_ELASTICSEARCH_URL=http://elasticsearch:9200
@@ -141,8 +142,6 @@ services:
       # Demo credentials
       - CAMUNDA_TASKLIST_AUTH_TYPE=simple
       - CAMUNDA_TASKLIST_USERID=demo
-      - SERVER_SERVLET_CONTEXT_PATH=/camunda/tasklist
-      - CAMUNDA_TASKLIST_CONTEXTPATH=/camunda/tasklist
       - CAMUNDA_TASKLIST_PASSWORD=demo
       - CAMUNDA_TASKLIST_DISPLAYNAME=Demo User
     depends_on:
