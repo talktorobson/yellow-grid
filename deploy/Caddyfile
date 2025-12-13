@@ -11,14 +11,23 @@ www.goexec.de, goexec.de {
         reverse_proxy api:3000
     }
 
-    # Camunda Operate - Process Monitoring UI (context path configured in container)
-    handle /camunda/operate* {
+    # Camunda Operate - Main UI
+    handle_path /camunda/operate* {
         reverse_proxy operate:8080
     }
 
-    # Camunda Tasklist - Human Task UI (context path configured in container)
-    handle /camunda/tasklist* {
+    # Camunda Tasklist - Main UI
+    handle_path /camunda/tasklist* {
         reverse_proxy tasklist:8080
+    }
+
+    # Camunda assets (for base href="/" compatibility) - proxy to Operate
+    # These paths are requested when browser loads /camunda/operate/ with <base href="/">
+    @camunda_assets {
+        path /client-config.js /static/* /favicon.ico /locales/*
+    }
+    handle @camunda_assets {
+        reverse_proxy operate:8080
     }
 
     # Serve mobile app assets (Expo bundles accessed from /mobile/index.html)
