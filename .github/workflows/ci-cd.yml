@@ -123,7 +123,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check secrets are configured
+        run: |
+          if [ -z "${{ secrets.STAGING_SSH_KEY }}" ] || [ -z "${{ secrets.STAGING_HOST }}" ]; then
+            echo "⚠️ Deployment secrets not configured. Skipping deployment."
+            echo "Please add these secrets to your repository:"
+            echo "  - STAGING_SSH_KEY: SSH private key for VPS access"
+            echo "  - STAGING_HOST: VPS IP address (135.181.96.93)"
+            echo "  - STAGING_USER: SSH user (root)"
+            exit 0
+          fi
+      
       - name: Setup SSH
+        if: ${{ secrets.STAGING_SSH_KEY != '' }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key
