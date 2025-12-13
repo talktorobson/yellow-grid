@@ -1,0 +1,28 @@
+{
+    email talktorobson@gmail.com
+}
+
+# Staging environment
+staging.goexec.de {
+    encode gzip
+    
+    # API
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+    
+    # Camunda Operate (when profile enabled)
+    handle /camunda/operate* {
+        reverse_proxy operate:8080
+    }
+    
+    # SPA fallback
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+    
+    # Add staging banner header
+    header X-Environment "staging"
+}

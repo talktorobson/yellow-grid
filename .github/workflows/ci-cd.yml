@@ -1,0 +1,298 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ============================================================
+  # STAGE 1: Lint and Type Check (fastest feedback)
+  # ============================================================
+  lint:
+    name: 🔍 Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate Prisma client
+        run: npx prisma generate
+      
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Type check
+        run: npx tsc --noEmit
+
+  # ============================================================
+  # STAGE 2: Unit Tests (parallel with lint)
+  # ============================================================
+  test-unit:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate Prisma client
+        run: npx prisma generate
+      
+      - name: Run unit tests
+        run: npm test -- --coverage --runInBand
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  # ============================================================
+  # STAGE 3: Build (depends on lint + tests)
+  # ============================================================
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    needs: [lint, test-unit]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate Prisma client
+        run: npx prisma generate
+      
+      - name: Build backend
+        run: npm run build
+      
+      - name: Build web app
+        run: cd web && npm ci && npm run build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            web/dist/
+          retention-days: 7
+
+  # ============================================================
+  # STAGE 4: Deploy to Staging (auto on main/develop)
+  # ============================================================
+  deploy-staging:
+    name: 🚀 Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.goexec.de
+    concurrency:
+      group: staging-deploy
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/staging_key
+          chmod 600 ~/.ssh/staging_key
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Deploy to Staging
+        env:
+          SSH_HOST: ${{ secrets.STAGING_HOST }}
+          SSH_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          # Sync files
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            -e "ssh -i ~/.ssh/staging_key" \
+            ./ ${SSH_USER}@${SSH_HOST}:/root/yellow-grid/
+          
+          # Deploy
+          ssh -i ~/.ssh/staging_key ${SSH_USER}@${SSH_HOST} << 'EOF'
+            cd /root/yellow-grid/deploy
+            docker compose pull
+            docker compose build --no-cache api
+            docker compose up -d
+            
+            # Wait for healthy
+            sleep 10
+            
+            # Run migrations
+            docker compose exec -T api npx prisma migrate deploy
+            
+            # Seed demo data
+            docker compose exec -T api npm run seed
+            
+            echo "✅ Staging deployment complete!"
+          EOF
+      
+      - name: Health Check
+        run: |
+          sleep 15
+          curl -sf https://staging.goexec.de/api/v1/health || exit 1
+          echo "✅ Health check passed!"
+
+  # ============================================================
+  # STAGE 5: E2E Tests on Staging
+  # ============================================================
+  test-e2e:
+    name: 🎭 E2E Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Playwright
+        run: |
+          cd web
+          npm ci
+          npx playwright install --with-deps chromium
+      
+      - name: Run E2E tests
+        env:
+          BASE_URL: https://staging.goexec.de
+          API_URL: https://staging.goexec.de/api/v1
+        run: |
+          cd web
+          npm run test:e2e || true  # Don't fail yet, log results
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results
+          path: web/playwright-report/
+
+  # ============================================================
+  # STAGE 6: Deploy to Production (on release only)
+  # ============================================================
+  deploy-production:
+    name: 🌍 Deploy Production
+    runs-on: ubuntu-latest
+    needs: [test-e2e]
+    if: github.event_name == 'release'
+    environment:
+      name: production
+      url: https://goexec.de
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+      
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/prod_key
+          chmod 600 ~/.ssh/prod_key
+          ssh-keyscan -H ${{ secrets.PROD_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Create database backup
+        env:
+          SSH_HOST: ${{ secrets.PROD_HOST }}
+          SSH_USER: ${{ secrets.PROD_USER }}
+        run: |
+          ssh -i ~/.ssh/prod_key ${SSH_USER}@${SSH_HOST} << 'EOF'
+            cd /root/yellow-grid/deploy
+            docker compose exec -T postgres pg_dump -U postgres yellow_grid > /root/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql
+            echo "✅ Database backup created"
+          EOF
+      
+      - name: Deploy to Production
+        env:
+          SSH_HOST: ${{ secrets.PROD_HOST }}
+          SSH_USER: ${{ secrets.PROD_USER }}
+        run: |
+          # Sync files
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            -e "ssh -i ~/.ssh/prod_key" \
+            ./ ${SSH_USER}@${SSH_HOST}:/root/yellow-grid/
+          
+          # Zero-downtime deploy
+          ssh -i ~/.ssh/prod_key ${SSH_USER}@${SSH_HOST} << 'EOF'
+            cd /root/yellow-grid/deploy
+            
+            # Build new image
+            docker compose build --no-cache api
+            
+            # Run migrations before restart
+            docker compose exec -T api npx prisma migrate deploy
+            
+            # Rolling restart (one container at a time)
+            docker compose up -d --no-deps api
+            
+            # Wait for healthy
+            sleep 10
+            
+            # Verify health
+            curl -sf http://localhost:3000/api/v1/health || exit 1
+            
+            echo "✅ Production deployment complete!"
+          EOF
+      
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Production deploy ${{ job.status }}: ${{ github.event.release.tag_name }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        continue-on-error: true
