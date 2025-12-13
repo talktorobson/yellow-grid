@@ -110,6 +110,7 @@ services:
       - CAMUNDA_OPERATE_DISPLAYNAME=Demo User
       # Context path for reverse proxy
       - SERVER_SERVLET_CONTEXT_PATH=/camunda/operate
+      - CAMUNDA_OPERATE_CONTEXTPATH=/camunda/operate
     depends_on:
       zeebe:
         condition: service_started
@@ -141,6 +142,7 @@ services:
       - CAMUNDA_TASKLIST_AUTH_TYPE=simple
       - CAMUNDA_TASKLIST_USERID=demo
       - SERVER_SERVLET_CONTEXT_PATH=/camunda/tasklist
+      - CAMUNDA_TASKLIST_CONTEXTPATH=/camunda/tasklist
       - CAMUNDA_TASKLIST_PASSWORD=demo
       - CAMUNDA_TASKLIST_DISPLAYNAME=Demo User
     depends_on:
