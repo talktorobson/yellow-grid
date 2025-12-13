@@ -21,12 +21,21 @@ www.goexec.de, goexec.de {
         reverse_proxy tasklist:8080
     }
 
-    # Camunda assets (for base href="/" compatibility) - proxy to Operate
+    # Camunda assets (for base href="/" compatibility)
     # These paths are requested when browser loads /camunda/operate/ with <base href="/">
-    @camunda_assets {
-        path /client-config.js /static/* /favicon.ico /locales/*
+    handle /client-config.js {
+        reverse_proxy operate:8080
     }
-    handle @camunda_assets {
+    
+    handle /static/* {
+        reverse_proxy operate:8080
+    }
+    
+    handle /favicon.ico {
+        reverse_proxy operate:8080
+    }
+    
+    handle /locales/* {
         reverse_proxy operate:8080
     }
 
