@@ -16,11 +16,7 @@ import { RedisService } from '../../../common/redis/redis.service';
 
 @Injectable()
 export class SlotAvailabilityService
-  implements
-    IntegrationAdapter<
-      SlotAvailabilityRequestDto,
-      SlotAvailabilityResponseDto
-    >
+  implements IntegrationAdapter<SlotAvailabilityRequestDto, SlotAvailabilityResponseDto>
 {
   readonly adapterId = 'slot-availability';
   readonly version = '1.0.0';
@@ -46,9 +42,7 @@ export class SlotAvailabilityService
     // Validate request
     const validation = this.validate(request);
     if (!validation.isValid) {
-      throw new Error(
-        `Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
-      );
+      throw new Error(`Validation failed: ${validation.errors.map((e) => e.message).join(', ')}`);
     }
 
     // TODO: Integration with actual scheduling service
@@ -62,11 +56,7 @@ export class SlotAvailabilityService
     };
 
     // Cache for 5 minutes
-    await this.redisService.set(
-      cacheKey,
-      JSON.stringify(response),
-      this.CACHE_TTL,
-    );
+    await this.redisService.set(cacheKey, JSON.stringify(response), this.CACHE_TTL);
 
     return response;
   }
@@ -74,10 +64,7 @@ export class SlotAvailabilityService
   validate(request: SlotAvailabilityRequestDto): ValidationResult {
     const errors = [];
 
-    if (
-      !request.serviceAddress?.latitude ||
-      !request.serviceAddress?.longitude
-    ) {
+    if (!request.serviceAddress?.latitude || !request.serviceAddress?.longitude) {
       errors.push({
         field: 'serviceAddress',
         message: 'Valid latitude and longitude are required',
@@ -132,9 +119,7 @@ export class SlotAvailabilityService
     return createHash('md5').update(JSON.stringify(request)).digest('hex');
   }
 
-  private generateMockSlots(
-    request: SlotAvailabilityRequestDto,
-  ): AvailableSlotDto[] {
+  private generateMockSlots(request: SlotAvailabilityRequestDto): AvailableSlotDto[] {
     // Mock implementation - replace with actual scheduling logic
     const slots: AvailableSlotDto[] = [];
     const startDate = new Date(request.dateRange.startDate);
@@ -147,9 +132,7 @@ export class SlotAvailabilityService
         slotId: `slot-${Date.now()}-${i}`,
         date: slotDate.toISOString().split('T')[0],
         timeWindow: {
-          start: new Date(
-            slotDate.setHours(9, 0, 0, 0),
-          ).toISOString(),
+          start: new Date(slotDate.setHours(9, 0, 0, 0)).toISOString(),
           end: new Date(slotDate.setHours(12, 0, 0, 0)).toISOString(),
         },
         slotType: SlotType.MORNING,

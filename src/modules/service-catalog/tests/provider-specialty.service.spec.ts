@@ -1,11 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProviderSpecialtyService } from '../provider-specialty.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import {
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ServiceCategory, ExperienceLevel } from '@prisma/client';
 
 describe('ProviderSpecialtyService', () => {
@@ -66,9 +62,7 @@ describe('ProviderSpecialtyService', () => {
     };
 
     it('should return specialty by code', async () => {
-      mockPrismaService.providerSpecialty.findUnique.mockResolvedValue(
-        mockSpecialty,
-      );
+      mockPrismaService.providerSpecialty.findUnique.mockResolvedValue(mockSpecialty);
 
       const result = await service.findSpecialtyByCode('HVAC_INSTALL');
 
@@ -88,9 +82,7 @@ describe('ProviderSpecialtyService', () => {
     it('should throw NotFoundException if specialty not found', async () => {
       mockPrismaService.providerSpecialty.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findSpecialtyByCode('NON_EXISTENT'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findSpecialtyByCode('NON_EXISTENT')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -113,9 +105,7 @@ describe('ProviderSpecialtyService', () => {
     ];
 
     it('should return all specialties', async () => {
-      mockPrismaService.providerSpecialty.findMany.mockResolvedValue(
-        mockSpecialties,
-      );
+      mockPrismaService.providerSpecialty.findMany.mockResolvedValue(mockSpecialties);
 
       const result = await service.findAllSpecialties();
 
@@ -173,9 +163,7 @@ describe('ProviderSpecialtyService', () => {
         code: 'HVAC_INSTALL',
       });
 
-      await expect(service.createSpecialty(specialtyData)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.createSpecialty(specialtyData)).rejects.toThrow(ConflictException);
     });
   });
 
@@ -190,9 +178,7 @@ describe('ProviderSpecialtyService', () => {
     };
 
     it('should create new assignment', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(null);
       mockPrismaService.providerSpecialtyAssignment.create.mockResolvedValue({
         id: 'assignment-1',
         workTeamId: 'team-1',
@@ -220,12 +206,10 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should throw ConflictException if active assignment exists', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        {
-          id: 'assignment-1',
-          isActive: true,
-        },
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue({
+        id: 'assignment-1',
+        isActive: true,
+      });
 
       await expect(
         service.assignSpecialtyToWorkTeam('team-1', 'specialty-1', assignmentData),
@@ -233,14 +217,12 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should reactivate inactive assignment', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        {
-          id: 'assignment-1',
-          isActive: false,
-          revokedAt: new Date('2024-01-01'),
-          revocationReason: 'Cert expired',
-        },
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue({
+        id: 'assignment-1',
+        isActive: false,
+        revokedAt: new Date('2024-01-01'),
+        revocationReason: 'Cert expired',
+      });
       mockPrismaService.providerSpecialtyAssignment.update.mockResolvedValue({
         id: 'assignment-1',
         ...assignmentData,
@@ -271,12 +253,10 @@ describe('ProviderSpecialtyService', () => {
 
   describe('revokeSpecialtyFromWorkTeam', () => {
     it('should revoke active assignment', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        {
-          id: 'assignment-1',
-          isActive: true,
-        },
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue({
+        id: 'assignment-1',
+        isActive: true,
+      });
       mockPrismaService.providerSpecialtyAssignment.update.mockResolvedValue({
         id: 'assignment-1',
         isActive: false,
@@ -303,33 +283,21 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should throw NotFoundException if assignment not found', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.revokeSpecialtyFromWorkTeam(
-          'team-1',
-          'specialty-1',
-          'Test reason',
-        ),
+        service.revokeSpecialtyFromWorkTeam('team-1', 'specialty-1', 'Test reason'),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if already revoked', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        {
-          id: 'assignment-1',
-          isActive: false,
-        },
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue({
+        id: 'assignment-1',
+        isActive: false,
+      });
 
       await expect(
-        service.revokeSpecialtyFromWorkTeam(
-          'team-1',
-          'specialty-1',
-          'Test reason',
-        ),
+        service.revokeSpecialtyFromWorkTeam('team-1', 'specialty-1', 'Test reason'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -354,9 +322,7 @@ describe('ProviderSpecialtyService', () => {
 
     it('should return active assignments only', async () => {
       const activeOnly = [mockAssignments[0]];
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        activeOnly,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(activeOnly);
 
       const result = await service.getWorkTeamSpecialties('team-1', true);
 
@@ -369,9 +335,7 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should return all assignments when activeOnly is false', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        mockAssignments,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(mockAssignments);
 
       const result = await service.getWorkTeamSpecialties('team-1', false);
 
@@ -394,9 +358,7 @@ describe('ProviderSpecialtyService', () => {
     ];
 
     it('should return work teams with specialty', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        mockAssignments,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(mockAssignments);
 
       const result = await service.getWorkTeamsWithSpecialty('specialty-1');
 
@@ -409,9 +371,7 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should filter by country code', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        mockAssignments,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(mockAssignments);
 
       await service.getWorkTeamsWithSpecialty('specialty-1', 'ES');
 
@@ -441,10 +401,7 @@ describe('ProviderSpecialtyService', () => {
         ...certificationData,
       });
 
-      const result = await service.updateCertification(
-        'assignment-1',
-        certificationData,
-      );
+      const result = await service.updateCertification('assignment-1', certificationData);
 
       expect(result.certificationNumber).toBe('HVAC-67890');
       expect(prisma.providerSpecialtyAssignment.update).toHaveBeenCalledWith({
@@ -520,9 +477,7 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should throw NotFoundException if assignment not found', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findUnique.mockResolvedValue(null);
 
       await expect(
         service.recordJobCompletion('non-existent', {
@@ -569,15 +524,10 @@ describe('ProviderSpecialtyService', () => {
         },
       ];
 
-      mockPrismaService.serviceSkillRequirement.findMany.mockResolvedValue(
-        requirements,
-      );
+      mockPrismaService.serviceSkillRequirement.findMany.mockResolvedValue(requirements);
       mockPrismaService.workTeam.findMany.mockResolvedValue(workTeams);
 
-      const result = await service.findQualifiedWorkTeamsForService(
-        'service-1',
-        'ES',
-      );
+      const result = await service.findQualifiedWorkTeamsForService('service-1', 'ES');
 
       // Only team-1 has both specialties
       expect(result.length).toBe(1);
@@ -610,9 +560,7 @@ describe('ProviderSpecialtyService', () => {
         },
       ];
 
-      mockPrismaService.serviceSkillRequirement.findMany.mockResolvedValue(
-        requirements,
-      );
+      mockPrismaService.serviceSkillRequirement.findMany.mockResolvedValue(requirements);
       mockPrismaService.workTeam.findMany.mockResolvedValue(workTeams);
 
       const result = await service.findQualifiedWorkTeamsForService(
@@ -629,10 +577,7 @@ describe('ProviderSpecialtyService', () => {
     it('should return empty array if no requirements defined', async () => {
       mockPrismaService.serviceSkillRequirement.findMany.mockResolvedValue([]);
 
-      const result = await service.findQualifiedWorkTeamsForService(
-        'service-1',
-        'ES',
-      );
+      const result = await service.findQualifiedWorkTeamsForService('service-1', 'ES');
 
       expect(result).toEqual([]);
     });
@@ -648,9 +593,7 @@ describe('ProviderSpecialtyService', () => {
         },
       ];
 
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        expiringAssignments,
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(expiringAssignments);
 
       const result = await service.getExpiringCertifications(30);
 
@@ -670,9 +613,7 @@ describe('ProviderSpecialtyService', () => {
     });
 
     it('should filter by work team ID', async () => {
-      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue(
-        [],
-      );
+      mockPrismaService.providerSpecialtyAssignment.findMany.mockResolvedValue([]);
 
       await service.getExpiringCertifications(30, 'team-1');
 
@@ -712,9 +653,7 @@ describe('ProviderSpecialtyService', () => {
 
     it('should handle zero assignments', async () => {
       mockPrismaService.providerSpecialtyAssignment.count.mockResolvedValue(0);
-      mockPrismaService.providerSpecialtyAssignment.groupBy.mockResolvedValue(
-        [],
-      );
+      mockPrismaService.providerSpecialtyAssignment.groupBy.mockResolvedValue([]);
 
       const result = await service.getStatistics('ES');
 

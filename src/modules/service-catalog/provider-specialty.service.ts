@@ -95,9 +95,7 @@ export class ProviderSpecialtyService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        `Specialty with code ${specialtyData.code} already exists`,
-      );
+      throw new ConflictException(`Specialty with code ${specialtyData.code} already exists`);
     }
 
     return this.prisma.providerSpecialty.create({
@@ -192,21 +190,15 @@ export class ProviderSpecialtyService {
    * @param reason - Revocation reason
    * @returns Updated assignment
    */
-  async revokeSpecialtyFromWorkTeam(
-    workTeamId: string,
-    specialtyId: string,
-    reason: string,
-  ) {
-    const assignment = await this.prisma.providerSpecialtyAssignment.findUnique(
-      {
-        where: {
-          workTeamId_specialtyId: {
-            workTeamId,
-            specialtyId,
-          },
+  async revokeSpecialtyFromWorkTeam(workTeamId: string, specialtyId: string, reason: string) {
+    const assignment = await this.prisma.providerSpecialtyAssignment.findUnique({
+      where: {
+        workTeamId_specialtyId: {
+          workTeamId,
+          specialtyId,
         },
       },
-    );
+    });
 
     if (!assignment) {
       throw new NotFoundException(
@@ -220,9 +212,7 @@ export class ProviderSpecialtyService {
       );
     }
 
-    this.logger.log(
-      `Revoking specialty ${specialtyId} from work team ${workTeamId}: ${reason}`,
-    );
+    this.logger.log(`Revoking specialty ${specialtyId} from work team ${workTeamId}: ${reason}`);
 
     return this.prisma.providerSpecialtyAssignment.update({
       where: { id: assignment.id },
@@ -293,10 +283,7 @@ export class ProviderSpecialtyService {
         },
         specialty: true,
       },
-      orderBy: [
-        { workTeam: { provider: { name: 'asc' } } },
-        { workTeam: { name: 'asc' } },
-      ],
+      orderBy: [{ workTeam: { provider: { name: 'asc' } } }, { workTeam: { name: 'asc' } }],
     });
   }
 
@@ -343,19 +330,16 @@ export class ProviderSpecialtyService {
       success: boolean;
     },
   ) {
-    const assignment = await this.prisma.providerSpecialtyAssignment.findUnique(
-      {
-        where: { id: assignmentId },
-      },
-    );
+    const assignment = await this.prisma.providerSpecialtyAssignment.findUnique({
+      where: { id: assignmentId },
+    });
 
     if (!assignment) {
       throw new NotFoundException(`Assignment ${assignmentId} not found`);
     }
 
     // Calculate new averages
-    const totalJobs =
-      assignment.totalJobsCompleted + assignment.totalJobsFailed;
+    const totalJobs = assignment.totalJobsCompleted + assignment.totalJobsFailed;
     const newTotalJobs = totalJobs + 1;
 
     const currentAvgDuration = assignment.avgDurationMinutes || 0;
@@ -363,8 +347,7 @@ export class ProviderSpecialtyService {
       (currentAvgDuration * totalJobs + jobData.durationMinutes) / newTotalJobs;
 
     const currentAvgQuality = Number(assignment.avgQualityScore || 0);
-    const newAvgQuality =
-      (currentAvgQuality * totalJobs + jobData.qualityScore) / newTotalJobs;
+    const newAvgQuality = (currentAvgQuality * totalJobs + jobData.qualityScore) / newTotalJobs;
 
     // Update counters and averages
     return this.prisma.providerSpecialtyAssignment.update({
@@ -409,9 +392,7 @@ export class ProviderSpecialtyService {
     });
 
     if (requirements.length === 0) {
-      this.logger.warn(
-        `Service ${serviceId} has no required specialties defined`,
-      );
+      this.logger.warn(`Service ${serviceId} has no required specialties defined`);
       return [];
     }
 
@@ -449,8 +430,8 @@ export class ProviderSpecialtyService {
       );
 
       // Check if team has all required specialties
-      const hasAllRequiredSpecialties = requiredSpecialtyIds.every(
-        (requiredId) => teamSpecialtyIds.includes(requiredId),
+      const hasAllRequiredSpecialties = requiredSpecialtyIds.every((requiredId) =>
+        teamSpecialtyIds.includes(requiredId),
       );
 
       if (!hasAllRequiredSpecialties) {
@@ -459,22 +440,13 @@ export class ProviderSpecialtyService {
 
       // Check minimum experience level if specified
       if (minimumExperienceLevel) {
-        const experienceLevels: ExperienceLevel[] = [
-          'JUNIOR',
-          'INTERMEDIATE',
-          'SENIOR',
-          'EXPERT',
-        ];
+        const experienceLevels: ExperienceLevel[] = ['JUNIOR', 'INTERMEDIATE', 'SENIOR', 'EXPERT'];
         const minLevelIndex = experienceLevels.indexOf(minimumExperienceLevel);
 
-        const meetsExperienceRequirement = team.specialtyAssignments.every(
-          (assignment) => {
-            const assignmentLevelIndex = experienceLevels.indexOf(
-              assignment.experienceLevel,
-            );
-            return assignmentLevelIndex >= minLevelIndex;
-          },
-        );
+        const meetsExperienceRequirement = team.specialtyAssignments.every((assignment) => {
+          const assignmentLevelIndex = experienceLevels.indexOf(assignment.experienceLevel);
+          return assignmentLevelIndex >= minLevelIndex;
+        });
 
         if (!meetsExperienceRequirement) {
           return false;

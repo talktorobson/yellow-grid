@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { KafkaProducerService } from '../../common/kafka/kafka-producer.service';
 import { TaskAssignmentService } from './services/task-assignment.service';
@@ -58,17 +53,12 @@ export class TasksService {
     });
 
     if (!serviceOrder) {
-      throw new NotFoundException(
-        `Service order ${createTaskDto.serviceOrderId} not found`,
-      );
+      throw new NotFoundException(`Service order ${createTaskDto.serviceOrderId} not found`);
     }
 
     // Calculate SLA deadline
     const createdAt = new Date();
-    const slaDeadline = this.slaService.calculateSlaDeadline(
-      createTaskDto.priority,
-      createdAt,
-    );
+    const slaDeadline = this.slaService.calculateSlaDeadline(createTaskDto.priority, createdAt);
 
     // Auto-assign or manual assign
     let assignedTo = createTaskDto.assignedTo;
@@ -76,11 +66,12 @@ export class TasksService {
 
     if (!assignedTo) {
       // Auto-assign
-      assignedTo = (await this.assignmentService.autoAssignTask(
-        createTaskDto.serviceOrderId, // temporary ID
-        createTaskDto.taskType,
-        serviceOrder.countryCode,
-      )) || undefined;
+      assignedTo =
+        (await this.assignmentService.autoAssignTask(
+          createTaskDto.serviceOrderId, // temporary ID
+          createTaskDto.taskType,
+          serviceOrder.countryCode,
+        )) || undefined;
       assignedBy = 'SYSTEM';
     }
 
@@ -274,9 +265,7 @@ export class TasksService {
     const task = await this.findOne(id);
 
     if (task.status !== 'OPEN' && task.status !== 'ASSIGNED') {
-      throw new BadRequestException(
-        `Cannot assign task in status ${task.status}`,
-      );
+      throw new BadRequestException(`Cannot assign task in status ${task.status}`);
     }
 
     const updatedTask = await this.prisma.task.update({
@@ -317,9 +306,7 @@ export class TasksService {
     const task = await this.findOne(id);
 
     if (task.status !== 'ASSIGNED') {
-      throw new BadRequestException(
-        `Cannot start task in status ${task.status}`,
-      );
+      throw new BadRequestException(`Cannot start task in status ${task.status}`);
     }
 
     const updatedTask = await this.prisma.task.update({
@@ -355,9 +342,7 @@ export class TasksService {
     const task = await this.findOne(id);
 
     if (task.status !== 'IN_PROGRESS' && task.status !== 'ASSIGNED') {
-      throw new BadRequestException(
-        `Cannot complete task in status ${task.status}`,
-      );
+      throw new BadRequestException(`Cannot complete task in status ${task.status}`);
     }
 
     const completedAt = new Date();
@@ -415,9 +400,7 @@ export class TasksService {
     const task = await this.findOne(id);
 
     if (task.status === 'COMPLETED' || task.status === 'CANCELLED') {
-      throw new BadRequestException(
-        `Cannot cancel task in status ${task.status}`,
-      );
+      throw new BadRequestException(`Cannot cancel task in status ${task.status}`);
     }
 
     const updatedTask = await this.prisma.task.update({
@@ -481,44 +464,43 @@ export class TasksService {
    * Get operator dashboard
    */
   async getOperatorDashboard(operatorId: string) {
-    const [inProgress, assigned, upcomingSLAs, escalated, recentlyCompleted] =
-      await Promise.all([
-        this.prisma.task.findMany({
-          where: { assignedTo: operatorId, status: 'IN_PROGRESS' },
-          orderBy: { slaDeadline: 'asc' },
-        }),
-        this.prisma.task.findMany({
-          where: { assignedTo: operatorId, status: 'ASSIGNED' },
-          orderBy: { slaDeadline: 'asc' },
-        }),
-        this.prisma.task.findMany({
-          where: {
-            assignedTo: operatorId,
-            status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
-            slaDeadline: {
-              lte: new Date(Date.now() + 4 * 60 * 60 * 1000), // Next 4 hours
-            },
+    const [inProgress, assigned, upcomingSLAs, escalated, recentlyCompleted] = await Promise.all([
+      this.prisma.task.findMany({
+        where: { assignedTo: operatorId, status: 'IN_PROGRESS' },
+        orderBy: { slaDeadline: 'asc' },
+      }),
+      this.prisma.task.findMany({
+        where: { assignedTo: operatorId, status: 'ASSIGNED' },
+        orderBy: { slaDeadline: 'asc' },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          assignedTo: operatorId,
+          status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+          slaDeadline: {
+            lte: new Date(Date.now() + 4 * 60 * 60 * 1000), // Next 4 hours
           },
-          orderBy: { slaDeadline: 'asc' },
-        }),
-        this.prisma.task.findMany({
-          where: {
-            assignedTo: operatorId,
-            escalationLevel: { gt: 0 },
-            status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+        },
+        orderBy: { slaDeadline: 'asc' },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          assignedTo: operatorId,
+          escalationLevel: { gt: 0 },
+          status: { in: ['OPEN', 'ASSIGNED', 'IN_PROGRESS'] },
+        },
+        orderBy: { escalatedAt: 'desc' },
+      }),
+      this.prisma.task.findMany({
+        where: {
+          completedBy: operatorId,
+          completedAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
           },
-          orderBy: { escalatedAt: 'desc' },
-        }),
-        this.prisma.task.findMany({
-          where: {
-            completedBy: operatorId,
-            completedAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-            },
-          },
-          orderBy: { completedAt: 'desc' },
-        }),
-      ]);
+        },
+        orderBy: { completedAt: 'desc' },
+      }),
+    ]);
 
     // Calculate statistics
     const completedToday = await this.prisma.task.count({

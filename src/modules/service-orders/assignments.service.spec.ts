@@ -27,7 +27,10 @@ describe('AssignmentsService', () => {
       id: 'so1',
       countryCode: 'ES',
     });
-    mockPrisma.assignment.create.mockImplementation(({ data }) => ({ id: `a-${data.providerId}`, ...data }));
+    mockPrisma.assignment.create.mockImplementation(({ data }) => ({
+      id: `a-${data.providerId}`,
+      ...data,
+    }));
   });
 
   it('creates direct assignment and auto-accepts', async () => {
@@ -122,7 +125,9 @@ describe('AssignmentsService', () => {
     it('throws NotFoundException when assignment not found', async () => {
       mockPrisma.assignment.findUnique.mockResolvedValue(null);
 
-      await expect(service.getAssignmentFunnel('invalid-id')).rejects.toThrow('Assignment not found');
+      await expect(service.getAssignmentFunnel('invalid-id')).rejects.toThrow(
+        'Assignment not found',
+      );
     });
 
     it('throws NotFoundException when assignment has no funnel execution', async () => {

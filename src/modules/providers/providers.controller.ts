@@ -58,7 +58,10 @@ export class ProvidersController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Create a new provider (Admin only)' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Provider successfully created' })
-  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Provider with external ID already exists' })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Provider with external ID already exists',
+  })
   async createProvider(@Body() dto: CreateProviderDto, @CurrentUser() user: CurrentUserPayload) {
     return this.providersService.createProvider(dto, user.userId);
   }
@@ -73,7 +76,10 @@ export class ProvidersController {
   @Get()
   @ApiOperation({ summary: 'Get all providers with pagination and filters' })
   @ApiResponse({ status: HttpStatus.OK, description: 'List of providers' })
-  async findAllProviders(@Query() query: QueryProvidersDto, @CurrentUser() user: CurrentUserPayload) {
+  async findAllProviders(
+    @Query() query: QueryProvidersDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.providersService.findAllProviders(query, user.countryCode, user.businessUnit);
   }
 
@@ -110,7 +116,13 @@ export class ProvidersController {
     @Body() dto: UpdateProviderDto,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.updateProvider(id, dto, user.userId, user.countryCode, user.businessUnit);
+    return this.providersService.updateProvider(
+      id,
+      dto,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -131,7 +143,13 @@ export class ProvidersController {
     @Body() dto: UpdateProviderDto,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.updateProvider(id, dto, user.userId, user.countryCode, user.businessUnit);
+    return this.providersService.updateProvider(
+      id,
+      dto,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -147,9 +165,17 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Delete provider (Admin only)' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Provider successfully deleted' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Provider not found' })
-  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Cannot delete provider with work teams' })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Cannot delete provider with work teams',
+  })
   async removeProvider(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.providersService.removeProvider(id, user.userId, user.countryCode, user.businessUnit);
+    return this.providersService.removeProvider(
+      id,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   // ============================================================================
@@ -174,7 +200,13 @@ export class ProvidersController {
     @Body() dto: CreateWorkTeamDto,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.createWorkTeam(providerId, dto, user.userId, user.countryCode, user.businessUnit);
+    return this.providersService.createWorkTeam(
+      providerId,
+      dto,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -188,7 +220,10 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Get all work teams for provider' })
   @ApiResponse({ status: HttpStatus.OK, description: 'List of work teams' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Provider not found' })
-  async findAllWorkTeams(@Param('providerId') providerId: string, @CurrentUser() user: CurrentUserPayload) {
+  async findAllWorkTeams(
+    @Param('providerId') providerId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.providersService.findAllWorkTeams(providerId, user.countryCode, user.businessUnit);
   }
 
@@ -203,7 +238,10 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Get work team by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Work team details' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Work team not found' })
-  async findOneWorkTeam(@Param('workTeamId') workTeamId: string, @CurrentUser() user: CurrentUserPayload) {
+  async findOneWorkTeam(
+    @Param('workTeamId') workTeamId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.providersService.findOneWorkTeam(workTeamId, user.countryCode);
   }
 
@@ -241,7 +279,10 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Delete work team' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Work team successfully deleted' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Work team not found' })
-  async removeWorkTeam(@Param('workTeamId') workTeamId: string, @CurrentUser() user: CurrentUserPayload) {
+  async removeWorkTeam(
+    @Param('workTeamId') workTeamId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.providersService.removeWorkTeam(workTeamId, user.userId, user.countryCode);
   }
 
@@ -269,7 +310,11 @@ export class ProvidersController {
     @Param('providerId') providerId: string,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.getProviderWorkingSchedule(providerId, user.countryCode, user.businessUnit);
+    return this.providersService.getProviderWorkingSchedule(
+      providerId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -318,7 +363,11 @@ export class ProvidersController {
     @Param('providerId') providerId: string,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.getProviderInterventionZones(providerId, user.countryCode, user.businessUnit);
+    return this.providersService.getProviderInterventionZones(
+      providerId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -388,8 +437,16 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Delete intervention zone' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Intervention zone deleted' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Intervention zone not found' })
-  async deleteInterventionZone(@Param('zoneId') zoneId: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.providersService.deleteInterventionZone(zoneId, user.userId, user.countryCode, user.businessUnit);
+  async deleteInterventionZone(
+    @Param('zoneId') zoneId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.providersService.deleteInterventionZone(
+      zoneId,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   // ============================================================================
@@ -411,7 +468,11 @@ export class ProvidersController {
     @Param('providerId') providerId: string,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.getProviderServicePriorities(providerId, user.countryCode, user.businessUnit);
+    return this.providersService.getProviderServicePriorities(
+      providerId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 
   /**
@@ -425,7 +486,10 @@ export class ProvidersController {
   @Post(':providerId/service-priorities')
   @Roles('ADMIN', 'PROVIDER_MANAGER')
   @ApiOperation({ summary: 'Create or update service priority config' })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'Service priority config created/updated' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Service priority config created/updated',
+  })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Provider or service not found' })
   async upsertServicePriorityConfig(
     @Param('providerId') providerId: string,
@@ -517,7 +581,12 @@ export class ProvidersController {
   async assignWorkTeamToZone(
     @Param('workTeamId') workTeamId: string,
     @Param('interventionZoneId') interventionZoneId: string,
-    @Body() overrides: { maxDailyJobsOverride?: number; assignmentPriorityOverride?: number; travelBufferOverride?: number },
+    @Body()
+    overrides: {
+      maxDailyJobsOverride?: number;
+      assignmentPriorityOverride?: number;
+      travelBufferOverride?: number;
+    },
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.providersService.assignWorkTeamToZone(
@@ -548,7 +617,12 @@ export class ProvidersController {
     @Param('interventionZoneId') interventionZoneId: string,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.providersService.removeWorkTeamFromZone(workTeamId, interventionZoneId, user.userId, user.countryCode);
+    return this.providersService.removeWorkTeamFromZone(
+      workTeamId,
+      interventionZoneId,
+      user.userId,
+      user.countryCode,
+    );
   }
 
   // ============================================================================
@@ -567,7 +641,10 @@ export class ProvidersController {
    */
   @Get('certifications')
   @ApiOperation({ summary: 'Get all technician certifications for verification (PSM)' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'List of certifications with verification status' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of certifications with verification status',
+  })
   async getAllCertifications(
     @Query('status') status?: 'pending' | 'approved' | 'rejected' | 'expired',
     @Query('providerId') providerId?: string,
@@ -628,6 +705,9 @@ export class ProvidersController {
   @ApiOperation({ summary: 'Get all intervention zones for coverage analysis (PSM)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'All intervention zones with provider data' })
   async getInterventionZonesForCoverage(@CurrentUser() user: CurrentUserPayload) {
-    return this.providersService.getInterventionZonesForCoverage(user.countryCode, user.businessUnit);
+    return this.providersService.getInterventionZonesForCoverage(
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 }

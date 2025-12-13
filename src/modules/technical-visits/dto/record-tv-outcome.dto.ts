@@ -1,12 +1,4 @@
-import {
-  IsString,
-  IsEnum,
-  IsOptional,
-  IsArray,
-  ValidateNested,
-  IsInt,
-  Min,
-} from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsArray, ValidateNested, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TvOutcome } from '@prisma/client';
@@ -56,8 +48,7 @@ export class RecordTvOutcomeDto {
   outcome: TvOutcome;
 
   @ApiPropertyOptional({
-    description:
-      'Modifications required (mandatory for YES_BUT, optional for others)',
+    description: 'Modifications required (mandatory for YES_BUT, optional for others)',
     type: [TvModificationDto],
   })
   @IsOptional()

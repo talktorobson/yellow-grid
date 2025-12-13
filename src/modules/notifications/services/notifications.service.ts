@@ -72,9 +72,7 @@ export class NotificationsService {
       );
 
       if (!shouldSend) {
-        this.logger.log(
-          `Notification skipped due to user preferences: ${recipientId}`,
-        );
+        this.logger.log(`Notification skipped due to user preferences: ${recipientId}`);
         return null;
       }
     }
@@ -150,10 +148,7 @@ export class NotificationsService {
 
       return notification.id;
     } catch (error) {
-      this.logger.error(
-        `Failed to send notification: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to send notification: ${error.message}`, error.stack);
 
       await this.prisma.notification.update({
         where: { id: notification.id },
@@ -193,10 +188,7 @@ export class NotificationsService {
   /**
    * Send SMS notification
    */
-  private async sendSmsNotification(
-    to: string | undefined,
-    body: string,
-  ): Promise<SmsResult> {
+  private async sendSmsNotification(to: string | undefined, body: string): Promise<SmsResult> {
     if (!to) {
       return {
         success: false,
@@ -214,10 +206,7 @@ export class NotificationsService {
   /**
    * Update notification status after sending
    */
-  private async updateNotificationStatus(
-    notificationId: string,
-    result: EmailResult | SmsResult,
-  ) {
+  private async updateNotificationStatus(notificationId: string, result: EmailResult | SmsResult) {
     const updateData: any = {
       status: result.success ? 'SENT' : 'FAILED',
       providerMessageId: result.messageId,

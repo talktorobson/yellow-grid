@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -14,28 +20,27 @@ export class ExecutionService {
 
   async checkIn(dto: CheckInDto) {
     const prismaAny = this.prisma as any;
-    const serviceOrder = await this.prisma.serviceOrder.findUnique({ where: { id: dto.serviceOrderId } });
+    const serviceOrder = await this.prisma.serviceOrder.findUnique({
+      where: { id: dto.serviceOrderId },
+    });
     if (!serviceOrder) throw new NotFoundException('Service order not found');
 
     // Geofence validation (product-docs/domain/06-execution-field-operations.md:883-888)
     // Extract service location from serviceAddress JSON field
     const serviceAddress = serviceOrder.serviceAddress as any;
     if (!serviceAddress?.lat || !serviceAddress?.lng) {
-      this.logger.warn(`Service order ${dto.serviceOrderId} missing location data, skipping geofence validation`);
+      this.logger.warn(
+        `Service order ${dto.serviceOrderId} missing location data, skipping geofence validation`,
+      );
     } else {
       const checkInLocation: GeoLocation = { lat: dto.lat, lng: dto.lng };
       const serviceLocation: GeoLocation = { lat: serviceAddress.lat, lng: serviceAddress.lng };
 
-      const geofenceResult = validateGeofence(
-        checkInLocation,
-        serviceLocation,
-        dto.accuracy,
-        {
-          radiusMeters: 100, // Default radius from API spec
-          minAccuracyMeters: 50, // Per domain spec
-          supervisorApprovalThresholdMeters: 500, // Per domain spec
-        },
-      );
+      const geofenceResult = validateGeofence(checkInLocation, serviceLocation, dto.accuracy, {
+        radiusMeters: 100, // Default radius from API spec
+        minAccuracyMeters: 50, // Per domain spec
+        supervisorApprovalThresholdMeters: 500, // Per domain spec
+      });
 
       if (!geofenceResult.valid) {
         if (geofenceResult.requiresSupervisorApproval) {
@@ -86,7 +91,9 @@ export class ExecutionService {
       },
     });
 
-    this.logger.log(`Check-in recorded for service order ${dto.serviceOrderId} by ${dto.technicianUserId}`);
+    this.logger.log(
+      `Check-in recorded for service order ${dto.serviceOrderId} by ${dto.technicianUserId}`,
+    );
     return record;
   }
 
@@ -99,14 +106,20 @@ export class ExecutionService {
       orderBy: { occurredAt: 'desc' },
     });
     if (!checkIn) {
-      throw new BadRequestException('No check-in found for this service order. Cannot check out without check-in.');
+      throw new BadRequestException(
+        'No check-in found for this service order. Cannot check out without check-in.',
+      );
     }
 
     const occurredAt = new Date(dto.occurredAt);
     const checkInTime = new Date(checkIn.occurredAt);
 
     // Import duration calculation utilities
-    const { calculateDuration, validateCheckOutTiming, formatDurationForResponse } = require('./utils/duration-calculation.util');
+    const {
+      calculateDuration,
+      validateCheckOutTiming,
+      formatDurationForResponse,
+    } = require('./utils/duration-calculation.util');
 
     // Validate timing first
     const validationResult = validateCheckOutTiming({
@@ -184,11 +197,14 @@ export class ExecutionService {
         workSummary: dto.workSummary ? JSON.stringify(dto.workSummary) : null,
         materialsUsed: dto.materialsUsed ? JSON.stringify(dto.materialsUsed) : null,
         customerSignature: dto.customerSignature ? JSON.stringify(dto.customerSignature) : null,
-        technicianSignature: dto.technicianSignature ? JSON.stringify(dto.technicianSignature) : null,
+        technicianSignature: dto.technicianSignature
+          ? JSON.stringify(dto.technicianSignature)
+          : null,
         location: dto.location ? JSON.stringify(dto.location) : null,
         notes: dto.notes ?? null,
         isMultiDay: durationResult.isMultiDay,
-        warnings: durationResult.warnings.length > 0 ? JSON.stringify(durationResult.warnings) : null,
+        warnings:
+          durationResult.warnings.length > 0 ? JSON.stringify(durationResult.warnings) : null,
       },
     });
 
@@ -280,11 +296,16 @@ export class ExecutionService {
   }
 
   async updateStatus(dto: StatusUpdateDto) {
-    const serviceOrder = await this.prisma.serviceOrder.findUnique({ where: { id: dto.serviceOrderId } });
+    const serviceOrder = await this.prisma.serviceOrder.findUnique({
+      where: { id: dto.serviceOrderId },
+    });
     if (!serviceOrder) throw new NotFoundException('Service order not found');
 
     // Basic validation: disallow regressions from CLOSED/CANCELLED
-    if (serviceOrder.state === ServiceOrderState.CLOSED || serviceOrder.state === ServiceOrderState.CANCELLED) {
+    if (
+      serviceOrder.state === ServiceOrderState.CLOSED ||
+      serviceOrder.state === ServiceOrderState.CANCELLED
+    ) {
       throw new BadRequestException('Service order is terminal');
     }
 

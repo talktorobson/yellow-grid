@@ -23,8 +23,7 @@ export class ReconciliationService {
     private readonly prisma: PrismaService,
     private readonly serviceCatalogService: ServiceCatalogService,
   ) {
-    this.isEnabled =
-      process.env.SERVICE_CATALOG_SYNC_ENABLED === 'true' || false;
+    this.isEnabled = process.env.SERVICE_CATALOG_SYNC_ENABLED === 'true' || false;
     this.driftAlertThreshold = parseFloat(
       process.env.SERVICE_CATALOG_DRIFT_ALERT_THRESHOLD || '0.05',
     );
@@ -34,13 +33,10 @@ export class ReconciliationService {
    * Daily reconciliation job (runs at 3 AM by default)
    * Schedule can be overridden via SERVICE_CATALOG_RECONCILIATION_SCHEDULE env var
    */
-  @Cron(
-    process.env.SERVICE_CATALOG_RECONCILIATION_SCHEDULE || '0 3 * * *',
-    {
-      name: 'service-catalog-reconciliation',
-      timeZone: 'Europe/Paris', // Adjust based on primary region
-    },
-  )
+  @Cron(process.env.SERVICE_CATALOG_RECONCILIATION_SCHEDULE || '0 3 * * *', {
+    name: 'service-catalog-reconciliation',
+    timeZone: 'Europe/Paris', // Adjust based on primary region
+  })
   async runDailyReconciliation() {
     if (!this.isEnabled) {
       this.logger.debug('Reconciliation job skipped (sync disabled)');
@@ -76,42 +72,33 @@ export class ReconciliationService {
     this.logger.log(`Reconciling service catalog for ${countryCode}`);
 
     // Create reconciliation record
-    const reconciliation =
-      await this.prisma.serviceCatalogReconciliation.create({
-        data: {
-          countryCode,
-          runDate,
-          status: 'RUNNING',
-          totalServicesInFile: 0,
-          totalServicesInDB: 0,
-          servicesCreated: 0,
-          servicesUpdated: 0,
-          servicesWithDrift: 0,
-        },
-      });
+    const reconciliation = await this.prisma.serviceCatalogReconciliation.create({
+      data: {
+        countryCode,
+        runDate,
+        status: 'RUNNING',
+        totalServicesInFile: 0,
+        totalServicesInDB: 0,
+        servicesCreated: 0,
+        servicesUpdated: 0,
+        servicesWithDrift: 0,
+      },
+    });
 
     try {
       // Step 1: Download CSV file from S3/Blob storage
       const csvData = await this.downloadCSVFile(countryCode, dateStr);
 
       if (!csvData) {
-        this.logger.warn(
-          `No CSV file found for ${countryCode} on ${dateStr}, skipping`,
-        );
-        await this.updateReconciliationStatus(
-          reconciliation.id,
-          'COMPLETED',
-          'No file found',
-        );
+        this.logger.warn(`No CSV file found for ${countryCode} on ${dateStr}, skipping`);
+        await this.updateReconciliationStatus(reconciliation.id, 'COMPLETED', 'No file found');
         return;
       }
 
       // Step 2: Parse CSV data
       const services = this.parseCSV(csvData);
 
-      this.logger.log(
-        `Loaded ${services.length} services from CSV for ${countryCode}`,
-      );
+      this.logger.log(`Loaded ${services.length} services from CSV for ${countryCode}`);
 
       // Step 3: Get current services from database for this country
       const dbServices = await this.prisma.serviceCatalog.findMany({
@@ -129,12 +116,8 @@ export class ReconciliationService {
       let servicesUpdated = 0;
       let servicesWithDrift = 0;
 
-      const externalCodes = new Set(
-        services.map((s) => s.external_service_code),
-      );
-      const dbCodesMap = new Map(
-        dbServices.map((s) => [s.externalServiceCode, s]),
-      );
+      const externalCodes = new Set(services.map((s) => s.external_service_code));
+      const dbCodesMap = new Map(dbServices.map((s) => [s.externalServiceCode, s]));
 
       // Process each service from CSV
       for (const csvService of services) {
@@ -142,9 +125,7 @@ export class ReconciliationService {
 
         if (!dbService) {
           // Service in CSV but not in DB - create it
-          this.logger.debug(
-            `New service found: ${csvService.external_service_code}`,
-          );
+          this.logger.debug(`New service found: ${csvService.external_service_code}`);
           // In production, this would trigger service creation
           // For now, just count it
           servicesCreated++;
@@ -160,25 +141,16 @@ export class ReconciliationService {
           description: csvService.description,
           scopeIncluded: JSON.parse(csvService.scope_included || '[]'),
           scopeExcluded: JSON.parse(csvService.scope_excluded || '[]'),
-          worksiteRequirements: JSON.parse(
-            csvService.worksite_requirements || '[]',
-          ),
-          productPrerequisites: JSON.parse(
-            csvService.product_prerequisites || '[]',
-          ),
-          estimatedDurationMinutes: parseInt(
-            csvService.estimated_duration_minutes,
-            10,
-          ),
+          worksiteRequirements: JSON.parse(csvService.worksite_requirements || '[]'),
+          productPrerequisites: JSON.parse(csvService.product_prerequisites || '[]'),
+          estimatedDurationMinutes: parseInt(csvService.estimated_duration_minutes, 10),
         });
 
         // Check for drift
         if (dbService.syncChecksum !== csvChecksum) {
           servicesWithDrift++;
 
-          this.logger.warn(
-            `Drift detected for ${csvService.external_service_code}`,
-          );
+          this.logger.warn(`Drift detected for ${csvService.external_service_code}`);
 
           // Auto-correct the drift by updating the service
           await this.prisma.serviceCatalog.update({
@@ -196,9 +168,7 @@ export class ReconciliationService {
 
       // Calculate drift percentage
       const driftPercentage =
-        dbServices.length > 0
-          ? (servicesWithDrift / dbServices.length) * 100
-          : 0;
+        dbServices.length > 0 ? (servicesWithDrift / dbServices.length) * 100 : 0;
 
       // Update reconciliation record
       await this.prisma.serviceCatalogReconciliation.update({
@@ -231,16 +201,9 @@ export class ReconciliationService {
           `${servicesWithDrift} with drift (${driftPercentage.toFixed(2)}%)`,
       );
     } catch (error) {
-      this.logger.error(
-        `Reconciliation failed for ${countryCode}: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Reconciliation failed for ${countryCode}: ${error.message}`, error.stack);
 
-      await this.updateReconciliationStatus(
-        reconciliation.id,
-        'FAILED',
-        error.message,
-      );
+      await this.updateReconciliationStatus(reconciliation.id, 'FAILED', error.message);
     }
   }
 
@@ -252,20 +215,12 @@ export class ReconciliationService {
    * @param dateStr - Date string in YYYYMMDD format
    * @returns CSV file content as string, or null if not found
    */
-  private async downloadCSVFile(
-    countryCode: string,
-    dateStr: string,
-  ): Promise<string | null> {
+  private async downloadCSVFile(countryCode: string, dateStr: string): Promise<string | null> {
     // For development/testing, read from local filesystem
     // In production, replace with S3/Blob storage download
 
     const fileName = `services_${countryCode}_${dateStr}.csv`;
-    const filePath = path.join(
-      process.cwd(),
-      'test-data',
-      'service-catalog',
-      fileName,
-    );
+    const filePath = path.join(process.cwd(), 'test-data', 'service-catalog', fileName);
 
     try {
       if (fs.existsSync(filePath)) {
@@ -357,9 +312,7 @@ export class ReconciliationService {
    * @param countryCode - Country code
    */
   async manualReconciliation(countryCode: string): Promise<void> {
-    this.logger.log(
-      `Manual reconciliation triggered for ${countryCode}`,
-    );
+    this.logger.log(`Manual reconciliation triggered for ${countryCode}`);
 
     await this.reconcileCountry(countryCode);
   }

@@ -38,19 +38,14 @@ export class SendGridProvider {
       'SENDGRID_FROM_EMAIL',
       'noreply@yellowgrid.com',
     );
-    this.fromName = this.configService.get<string>(
-      'SENDGRID_FROM_NAME',
-      'Yellow Grid Platform',
-    );
+    this.fromName = this.configService.get<string>('SENDGRID_FROM_NAME', 'Yellow Grid Platform');
     this.enabled = this.configService.get<boolean>('SENDGRID_ENABLED', false);
 
     if (this.enabled && apiKey) {
       sgMail.setApiKey(apiKey);
       this.logger.log('SendGrid email provider initialized');
     } else {
-      this.logger.warn(
-        'SendGrid email provider is disabled or not configured properly',
-      );
+      this.logger.warn('SendGrid email provider is disabled or not configured properly');
     }
   }
 
@@ -83,9 +78,7 @@ export class SendGridProvider {
 
       const [response] = await sgMail.send(msg as any);
 
-      this.logger.log(
-        `Email sent successfully. Message ID: ${response.headers['x-message-id']}`,
-      );
+      this.logger.log(`Email sent successfully. Message ID: ${response.headers['x-message-id']}`);
 
       return {
         success: true,
@@ -95,12 +88,9 @@ export class SendGridProvider {
       this.logger.error(`Failed to send email: ${error.message}`, error.stack);
 
       // Extract SendGrid specific error information
-      const errorCode =
-        error.code || (error.response?.body?.errors?.[0]?.field) || 'UNKNOWN_ERROR';
+      const errorCode = error.code || error.response?.body?.errors?.[0]?.field || 'UNKNOWN_ERROR';
       const errorMessage =
-        error.message ||
-        error.response?.body?.errors?.[0]?.message ||
-        'Failed to send email';
+        error.message || error.response?.body?.errors?.[0]?.message || 'Failed to send email';
 
       return {
         success: false,

@@ -16,10 +16,7 @@ describe('TaskSlaService', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TaskSlaService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [TaskSlaService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<TaskSlaService>(TaskSlaService);

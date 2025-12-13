@@ -175,7 +175,11 @@ export class ConfigService {
    * @param currentUserId - The ID of the user performing the update.
    * @returns {Promise<CountryConfig>} The updated country configuration.
    */
-  async updateCountryConfig(countryCode: string, dto: UpdateCountryConfigDto, currentUserId: string) {
+  async updateCountryConfig(
+    countryCode: string,
+    dto: UpdateCountryConfigDto,
+    currentUserId: string,
+  ) {
     // Validate country code
     this.validateCountryCode(countryCode);
 
@@ -198,9 +202,10 @@ export class ConfigService {
             : (countryDefaults.workingDays as any),
           globalBufferDays: countryDefaults.globalBufferDays,
           staticBufferDays: countryDefaults.staticBufferDays,
-          autoAccept: dto.autoAcceptAssignments !== undefined
-            ? dto.autoAcceptAssignments
-            : countryDefaults.autoAcceptAssignments,
+          autoAccept:
+            dto.autoAcceptAssignments !== undefined
+              ? dto.autoAcceptAssignments
+              : countryDefaults.autoAcceptAssignments,
         },
       });
 
@@ -212,7 +217,8 @@ export class ConfigService {
       if (dto.locale) updateData.locale = dto.locale;
       if (dto.currency) updateData.currency = dto.currency;
       if (dto.workingDays) updateData.workingDays = dto.workingDays as any;
-      if (dto.autoAcceptAssignments !== undefined) updateData.autoAccept = dto.autoAcceptAssignments;
+      if (dto.autoAcceptAssignments !== undefined)
+        updateData.autoAccept = dto.autoAcceptAssignments;
 
       config = await this.prisma.countryConfig.update({
         where: { countryCode },
@@ -262,7 +268,7 @@ export class ConfigService {
   private validateCountryCode(countryCode: string) {
     if (!this.VALID_COUNTRIES.includes(countryCode)) {
       throw new NotFoundException(
-        `Country code '${countryCode}' is not supported. Valid codes: ${this.VALID_COUNTRIES.join(', ')}`
+        `Country code '${countryCode}' is not supported. Valid codes: ${this.VALID_COUNTRIES.join(', ')}`,
       );
     }
   }
@@ -394,7 +400,9 @@ export class ConfigService {
         },
       });
 
-      this.logger.log(`Business unit config created for ${countryCode}/${businessUnit} by ${currentUserId}`);
+      this.logger.log(
+        `Business unit config created for ${countryCode}/${businessUnit} by ${currentUserId}`,
+      );
     } else {
       // Update existing config
       const updateData: any = {};
@@ -405,7 +413,9 @@ export class ConfigService {
         data: updateData,
       });
 
-      this.logger.log(`Business unit config updated for ${countryCode}/${businessUnit} by ${currentUserId}`);
+      this.logger.log(
+        `Business unit config updated for ${countryCode}/${businessUnit} by ${currentUserId}`,
+      );
     }
 
     return config;

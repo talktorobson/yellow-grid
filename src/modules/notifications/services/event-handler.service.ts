@@ -130,10 +130,7 @@ export class NotificationEventHandlerService {
 
       this.logger.log(`Check-in notifications sent for: ${event.orderId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to send check-in notification: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to send check-in notification: ${error.message}`, error.stack);
     }
   }
 
@@ -170,10 +167,7 @@ export class NotificationEventHandlerService {
 
       this.logger.log(`Completion notifications sent for: ${event.orderId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to send completion notification: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to send completion notification: ${error.message}`, error.stack);
     }
   }
 
@@ -231,10 +225,7 @@ export class NotificationEventHandlerService {
 
       this.logger.log(`WCF ready notifications sent for: ${event.wcfId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to send WCF ready notification: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to send WCF ready notification: ${error.message}`, error.stack);
     }
   }
 

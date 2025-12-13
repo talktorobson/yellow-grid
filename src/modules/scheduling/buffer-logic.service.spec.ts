@@ -296,9 +296,7 @@ describe('BufferLogicService (PRD-Compliant)', () => {
         { date: '2025-12-25', name: 'Christmas' },
       ];
 
-      mockHttpService.get.mockReturnValue(
-        of({ data: mockHolidays }),
-      );
+      mockHttpService.get.mockReturnValue(of({ data: mockHolidays }));
 
       const result = await service.isPublicHoliday('ES', new Date('2025-12-25'));
 
@@ -306,13 +304,9 @@ describe('BufferLogicService (PRD-Compliant)', () => {
     });
 
     it('should return false for non-holidays', async () => {
-      const mockHolidays = [
-        { date: '2025-01-01', name: 'New Year' },
-      ];
+      const mockHolidays = [{ date: '2025-01-01', name: 'New Year' }];
 
-      mockHttpService.get.mockReturnValue(
-        of({ data: mockHolidays }),
-      );
+      mockHttpService.get.mockReturnValue(of({ data: mockHolidays }));
 
       const result = await service.isPublicHoliday('ES', new Date('2025-06-15'));
 
@@ -320,9 +314,7 @@ describe('BufferLogicService (PRD-Compliant)', () => {
     });
 
     it('should return false on API error', async () => {
-      mockHttpService.get.mockReturnValue(
-        throwError(() => new Error('Network error')),
-      );
+      mockHttpService.get.mockReturnValue(throwError(() => new Error('Network error')));
 
       const result = await service.isPublicHoliday('ES', new Date('2025-12-25'));
 

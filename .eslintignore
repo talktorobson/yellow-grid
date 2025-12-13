@@ -1,0 +1,14 @@
+# Ignore frontend apps (they have their own configs)
+mobile/
+mobile-app/
+web/
+web-app/
+roadshow-mockup/
+
+# Build outputs
+dist/
+coverage/
+node_modules/
+
+# Generated files
+prisma/migrations/

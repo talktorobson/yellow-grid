@@ -152,17 +152,13 @@ describe('TasksService', () => {
         status: TaskStatus.OPEN,
       });
 
-      await expect(service.create(createTaskDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.create(createTaskDto)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException if service order not found', async () => {
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(null);
 
-      await expect(service.create(createTaskDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.create(createTaskDto)).rejects.toThrow(NotFoundException);
     });
 
     it('should create task with manual assignment', async () => {
@@ -249,9 +245,9 @@ describe('TasksService', () => {
         status: TaskStatus.COMPLETED,
       });
 
-      await expect(
-        service.complete(taskId, completeDto, 'user_123'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.complete(taskId, completeDto, 'user_123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should mark task as SLA breached if completed late', async () => {
@@ -374,9 +370,9 @@ describe('TasksService', () => {
         status: TaskStatus.COMPLETED,
       });
 
-      await expect(
-        service.assign(taskId, assignDto, 'manager_123'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.assign(taskId, assignDto, 'manager_123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

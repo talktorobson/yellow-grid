@@ -291,9 +291,7 @@ describe('OrderIntakeService', () => {
       const result = service.validate(request);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors.some((e) => e.field === 'customer.email')).toBe(
-        true,
-      );
+      expect(result.errors.some((e) => e.field === 'customer.email')).toBe(true);
     });
 
     it('should fail validation for incorrect total amount', () => {
@@ -338,6 +336,4 @@ describe('OrderIntakeService', () => {
       expect(result.errors.some((e) => e.field === 'totalAmount')).toBe(true);
     });
   });
-
-
 });

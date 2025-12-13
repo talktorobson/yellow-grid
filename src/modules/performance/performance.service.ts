@@ -8,7 +8,7 @@ export class PerformanceService {
 
   async getDashboardSummary(query: PerformanceQueryDto) {
     const { startDate, endDate, countryCode, businessUnit } = query;
-    
+
     const where: any = {};
     if (startDate && endDate) {
       where.createdAt = {
@@ -20,7 +20,7 @@ export class PerformanceService {
     if (businessUnit) where.businessUnit = businessUnit;
 
     const totalServiceOrders = await this.prisma.serviceOrder.count({ where });
-    
+
     const completedServiceOrders = await this.prisma.serviceOrder.count({
       where: {
         ...where,
@@ -28,9 +28,8 @@ export class PerformanceService {
       },
     });
 
-    const overallCompletionRate = totalServiceOrders > 0 
-      ? (completedServiceOrders / totalServiceOrders) * 100 
-      : 0;
+    const overallCompletionRate =
+      totalServiceOrders > 0 ? (completedServiceOrders / totalServiceOrders) * 100 : 0;
 
     // Mock top performers for now as we don't have enough data/logic for complex ranking
     const topPerformers = {
@@ -66,7 +65,7 @@ export class PerformanceService {
   async getOperatorPerformance(query: PerformanceQueryDto) {
     // In a real scenario, we would group service orders by operator (e.g. createdBy or assignedOperatorId)
     // For now, we'll return mock data to satisfy the frontend contract
-    
+
     const operators = [
       {
         operatorId: 'op-1',
@@ -126,7 +125,7 @@ export class PerformanceService {
 
   async getProviderPerformance(query: PerformanceQueryDto) {
     const { startDate, endDate, countryCode, businessUnit, providerId } = query;
-    
+
     // Build where clause for filtering
     const where: any = {};
     if (startDate && endDate) {
@@ -162,16 +161,15 @@ export class PerformanceService {
       take: 50,
     });
 
-    const providerMetrics = providers.map(provider => {
+    const providerMetrics = providers.map((provider) => {
       const orders = provider.serviceOrders;
       const totalAssignments = orders.length;
-      const completedOrders = orders.filter(o => 
-        ['COMPLETED', 'VALIDATED', 'CLOSED'].includes(o.state)
+      const completedOrders = orders.filter((o) =>
+        ['COMPLETED', 'VALIDATED', 'CLOSED'].includes(o.state),
       );
       const completedAssignments = completedOrders.length;
-      const completionRate = totalAssignments > 0 
-        ? (completedAssignments / totalAssignments) * 100 
-        : 0;
+      const completionRate =
+        totalAssignments > 0 ? (completedAssignments / totalAssignments) * 100 : 0;
 
       // Calculate average completion time (in days)
       let avgCompletionTime = 0;
@@ -179,22 +177,21 @@ export class PerformanceService {
         const totalDays = completedOrders.reduce((sum, order) => {
           const created = new Date(order.createdAt);
           const updated = new Date(order.updatedAt);
-          return sum + ((updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+          return sum + (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
         }, 0);
         avgCompletionTime = totalDays / completedOrders.length;
       }
 
       // Calculate on-time delivery rate
-      const scheduledOrders = orders.filter(o => o.scheduledDate);
-      const onTimeOrders = scheduledOrders.filter(o => {
+      const scheduledOrders = orders.filter((o) => o.scheduledDate);
+      const onTimeOrders = scheduledOrders.filter((o) => {
         if (!o.scheduledDate) return false;
         const scheduled = new Date(o.scheduledDate);
         const completed = new Date(o.updatedAt);
         return completed <= scheduled || ['COMPLETED', 'VALIDATED', 'CLOSED'].includes(o.state);
       });
-      const onTimeRate = scheduledOrders.length > 0 
-        ? (onTimeOrders.length / scheduledOrders.length) * 100 
-        : 100;
+      const onTimeRate =
+        scheduledOrders.length > 0 ? (onTimeOrders.length / scheduledOrders.length) * 100 : 100;
 
       return {
         providerId: provider.id,

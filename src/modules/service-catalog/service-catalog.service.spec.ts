@@ -1,11 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServiceCatalogService } from './service-catalog.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { ServiceStatus, ServiceType, ServiceCategory } from '@prisma/client';
 
 describe('ServiceCatalogService', () => {
@@ -56,10 +52,7 @@ describe('ServiceCatalogService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ServiceCatalogService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [ServiceCatalogService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<ServiceCatalogService>(ServiceCatalogService);
@@ -86,9 +79,7 @@ describe('ServiceCatalogService', () => {
         skillRequirements: [],
       };
 
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        serviceWithRelations,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(serviceWithRelations);
 
       const result = await service.findByExternalCode('PYX_ES_HVAC_001');
 
@@ -106,12 +97,8 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException when service not found', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.findByExternalCode('NONEXISTENT'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.findByExternalCode('NONEXISTENT'),
-      ).rejects.toThrow(
+      await expect(service.findByExternalCode('NONEXISTENT')).rejects.toThrow(NotFoundException);
+      await expect(service.findByExternalCode('NONEXISTENT')).rejects.toThrow(
         'Service with external code NONEXISTENT not found',
       );
     });
@@ -126,9 +113,7 @@ describe('ServiceCatalogService', () => {
         skillRequirements: [],
       };
 
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        serviceWithRelations,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(serviceWithRelations);
 
       const result = await service.findByFSMCode('SVC_ES_001');
 
@@ -146,9 +131,7 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException when FSM code not found', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(service.findByFSMCode('INVALID')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findByFSMCode('INVALID')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -161,9 +144,7 @@ describe('ServiceCatalogService', () => {
         skillRequirements: [],
       };
 
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        serviceWithRelations,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(serviceWithRelations);
 
       const result = await service.findById('service-uuid-1');
 
@@ -177,9 +158,7 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException when ID not found', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(service.findById('invalid-id')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findById('invalid-id')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -370,9 +349,7 @@ describe('ServiceCatalogService', () => {
     it('should throw ConflictException for duplicate external code', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
 
-      await expect(service.create(createData)).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(service.create(createData)).rejects.toThrow(ConflictException);
       await expect(service.create(createData)).rejects.toThrow(
         'Service with external code PYX_ES_PLUMB_001 already exists',
       );
@@ -415,17 +392,11 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        serviceWithRelations,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(serviceWithRelations);
       const updatedService = { ...serviceWithRelations, ...updateData };
       mockPrismaService.serviceCatalog.update.mockResolvedValue(updatedService);
 
-      const result = await service.update(
-        'service-uuid-1',
-        updateData,
-        'admin@test.com',
-      );
+      const result = await service.update('service-uuid-1', updateData, 'admin@test.com');
 
       expect(result).toEqual(updatedService);
       expect(prisma.serviceCatalog.update).toHaveBeenCalledWith({
@@ -441,9 +412,9 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException if service does not exist', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.update('invalid-id', updateData, 'admin@test.com'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('invalid-id', updateData, 'admin@test.com')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -460,9 +431,7 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        createdService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(createdService);
       const activatedService = { ...createdService, status: ServiceStatus.ACTIVE };
       mockPrismaService.serviceCatalog.update.mockResolvedValue(activatedService);
 
@@ -487,16 +456,14 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        activeService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(activeService);
 
-      await expect(
-        service.activate('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.activate('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow('Service service-uuid-1 is already active');
+      await expect(service.activate('service-uuid-1', 'admin@test.com')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.activate('service-uuid-1', 'admin@test.com')).rejects.toThrow(
+        'Service service-uuid-1 is already active',
+      );
     });
 
     it('should throw BadRequestException if deprecated', async () => {
@@ -507,16 +474,12 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        deprecatedService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(deprecatedService);
 
-      await expect(
-        service.activate('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.activate('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow(
+      await expect(service.activate('service-uuid-1', 'admin@test.com')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.activate('service-uuid-1', 'admin@test.com')).rejects.toThrow(
         'Cannot activate a deprecated service. Create a new service instead.',
       );
     });
@@ -531,16 +494,12 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        activeService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(activeService);
       const deprecatedService = {
         ...activeService,
         status: ServiceStatus.DEPRECATED,
       };
-      mockPrismaService.serviceCatalog.update.mockResolvedValue(
-        deprecatedService,
-      );
+      mockPrismaService.serviceCatalog.update.mockResolvedValue(deprecatedService);
 
       const result = await service.deprecate(
         'service-uuid-1',
@@ -569,13 +528,11 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        deprecatedService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(deprecatedService);
 
-      await expect(
-        service.deprecate('service-uuid-1', 'Test', 'admin@test.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.deprecate('service-uuid-1', 'Test', 'admin@test.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -588,9 +545,7 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        deprecatedService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(deprecatedService);
       const archivedService = { ...deprecatedService, status: ServiceStatus.ARCHIVED };
       mockPrismaService.serviceCatalog.update.mockResolvedValue(archivedService);
 
@@ -615,16 +570,12 @@ describe('ServiceCatalogService', () => {
         pricing: [],
         skillRequirements: [],
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        activeService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(activeService);
 
-      await expect(
-        service.archive('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow(BadRequestException);
-      await expect(
-        service.archive('service-uuid-1', 'admin@test.com'),
-      ).rejects.toThrow(
+      await expect(service.archive('service-uuid-1', 'admin@test.com')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.archive('service-uuid-1', 'admin@test.com')).rejects.toThrow(
         'Service must be deprecated before archiving. Current status: ACTIVE',
       );
     });

@@ -83,13 +83,9 @@ describe('ServiceCatalogSyncService', () => {
       ],
     }).compile();
 
-    service = module.get<ServiceCatalogSyncService>(
-      ServiceCatalogSyncService,
-    );
+    service = module.get<ServiceCatalogSyncService>(ServiceCatalogSyncService);
     prisma = module.get<PrismaService>(PrismaService);
-    serviceCatalogService = module.get<ServiceCatalogService>(
-      ServiceCatalogService,
-    );
+    serviceCatalogService = module.get<ServiceCatalogService>(ServiceCatalogService);
 
     jest.clearAllMocks();
   });
@@ -135,15 +131,12 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(mockExternalEvent);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.name).toBe('Air Conditioning Installation'); // English version
     });
 
     it('should treat duplicate as update if service already exists', async () => {
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       mockPrismaService.serviceCatalog.update.mockResolvedValue(mockService);
 
       const result = await service.handleServiceCreated(mockExternalEvent);
@@ -173,8 +166,7 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(mockExternalEvent);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.fsmServiceCode).toMatch(/^ES_HVAC_\d{5}$/);
     });
 
@@ -184,8 +176,7 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(mockExternalEvent);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.requiresPreServiceContract).toBe(true);
     });
   });
@@ -201,9 +192,7 @@ describe('ServiceCatalogSyncService', () => {
     });
 
     it('should update an existing service', async () => {
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       const updated = { ...mockService, syncChecksum: 'def456' };
       mockPrismaService.serviceCatalog.update.mockResolvedValue(updated);
 
@@ -231,9 +220,7 @@ describe('ServiceCatalogSyncService', () => {
     });
 
     it('should detect and log breaking changes', async () => {
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       mockServiceCatalogService.detectBreakingChanges.mockReturnValue(true);
       mockPrismaService.serviceCatalog.update.mockResolvedValue(mockService);
 
@@ -254,15 +241,12 @@ describe('ServiceCatalogSyncService', () => {
         scopeExcluded: ['Maintenance', 'Repair'],
       };
 
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       mockPrismaService.serviceCatalog.update.mockResolvedValue(mockService);
 
       await service.handleServiceUpdated(eventWithChangedScope);
 
-      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.scopeIncluded).toHaveLength(4);
       expect(callArgs.data.scopeExcluded).toHaveLength(2);
     });
@@ -273,15 +257,12 @@ describe('ServiceCatalogSyncService', () => {
         estimatedDuration: 240,
       };
 
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       mockPrismaService.serviceCatalog.update.mockResolvedValue(mockService);
 
       await service.handleServiceUpdated(eventWithNewDuration);
 
-      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.estimatedDurationMinutes).toBe(240);
     });
   });
@@ -292,9 +273,7 @@ describe('ServiceCatalogSyncService', () => {
 
   describe('handleServiceDeprecated', () => {
     it('should deprecate an active service', async () => {
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       const deprecated = {
         ...mockService,
         status: ServiceStatus.DEPRECATED,
@@ -329,9 +308,9 @@ describe('ServiceCatalogSyncService', () => {
         reason: 'Test',
       };
 
-      await expect(
-        service.handleServiceDeprecated(deprecationEvent),
-      ).rejects.toThrow('Service NONEXISTENT not found');
+      await expect(service.handleServiceDeprecated(deprecationEvent)).rejects.toThrow(
+        'Service NONEXISTENT not found',
+      );
     });
 
     it('should handle already deprecated service gracefully', async () => {
@@ -340,12 +319,8 @@ describe('ServiceCatalogSyncService', () => {
         status: ServiceStatus.DEPRECATED,
         deprecatedAt: new Date(),
       };
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        deprecatedService,
-      );
-      mockPrismaService.serviceCatalog.update.mockResolvedValue(
-        deprecatedService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(deprecatedService);
+      mockPrismaService.serviceCatalog.update.mockResolvedValue(deprecatedService);
 
       const deprecationEvent = {
         externalServiceCode: 'PYX_ES_HVAC_001',
@@ -360,9 +335,7 @@ describe('ServiceCatalogSyncService', () => {
     });
 
     it('should use default reason if not provided', async () => {
-      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(
-        mockService,
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(mockService);
       mockPrismaService.serviceCatalog.update.mockResolvedValue(mockService);
 
       const deprecationEvent = {
@@ -371,11 +344,8 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceDeprecated(deprecationEvent);
 
-      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock
-        .calls[0][0];
-      expect(callArgs.data.deprecationReason).toBe(
-        'Deprecated by external system',
-      );
+      const callArgs = (prisma.serviceCatalog.update as jest.Mock).mock.calls[0][0];
+      expect(callArgs.data.deprecationReason).toBe('Deprecated by external system');
     });
   });
 
@@ -405,8 +375,7 @@ describe('ServiceCatalogSyncService', () => {
         const event = { ...mockExternalEvent, type: type.external };
         await service.handleServiceCreated(event);
 
-        const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-          .calls[0][0];
+        const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
         expect(callArgs.data.serviceType).toBe(type.expected);
 
         jest.clearAllMocks();
@@ -421,8 +390,7 @@ describe('ServiceCatalogSyncService', () => {
       const event = { ...mockExternalEvent, type: 'unknown_type' };
       await service.handleServiceCreated(event);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.serviceType).toBe(ServiceType.INSTALLATION);
     });
   });
@@ -458,8 +426,7 @@ describe('ServiceCatalogSyncService', () => {
         const event = { ...mockExternalEvent, category: category.external };
         await service.handleServiceCreated(event);
 
-        const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-          .calls[0][0];
+        const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
         expect(callArgs.data.serviceCategory).toBe(category.expected);
 
         jest.clearAllMocks();
@@ -474,11 +441,8 @@ describe('ServiceCatalogSyncService', () => {
       const event = { ...mockExternalEvent, category: 'unknown_category' };
       await service.handleServiceCreated(event);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
-      expect(callArgs.data.serviceCategory).toBe(
-        ServiceCategory.OTHER,
-      );
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
+      expect(callArgs.data.serviceCategory).toBe(ServiceCategory.OTHER);
     });
   });
 
@@ -490,8 +454,7 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(mockExternalEvent);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.name).toBe('Air Conditioning Installation');
     });
 
@@ -507,8 +470,7 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(event);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.name).toBe('Simple String Name');
     });
 
@@ -524,8 +486,7 @@ describe('ServiceCatalogSyncService', () => {
 
       await service.handleServiceCreated(event);
 
-      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock
-        .calls[0][0];
+      const callArgs = (prisma.serviceCatalog.create as jest.Mock).mock.calls[0][0];
       expect(callArgs.data.name).toBe('');
     });
   });

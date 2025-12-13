@@ -7,9 +7,7 @@ import { InstallationOutcomeDto, SalesSystem } from '../dto';
 
 @Injectable()
 export class InstallationOutcomeWebhookService {
-  private readonly logger = new Logger(
-    InstallationOutcomeWebhookService.name,
-  );
+  private readonly logger = new Logger(InstallationOutcomeWebhookService.name);
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 2000; // 2 seconds
 
@@ -35,9 +33,7 @@ export class InstallationOutcomeWebhookService {
     const webhookSecret = this.getWebhookSecret(salesSystem, tenantId);
 
     if (!webhookUrl) {
-      this.logger.warn(
-        `No webhook URL configured for ${salesSystem}, skipping webhook delivery`,
-      );
+      this.logger.warn(`No webhook URL configured for ${salesSystem}, skipping webhook delivery`);
       return;
     }
 
@@ -76,9 +72,7 @@ export class InstallationOutcomeWebhookService {
         throw new Error(`Webhook failed with status ${response.status}`);
       }
 
-      this.logger.log(
-        `Installation outcome webhook delivered successfully to ${url}`,
-      );
+      this.logger.log(`Installation outcome webhook delivered successfully to ${url}`);
     } catch (error) {
       this.logger.error(
         `Webhook delivery failed (attempt ${attempt}/${this.MAX_RETRIES}): ${(error as Error).message}`,
@@ -92,9 +86,7 @@ export class InstallationOutcomeWebhookService {
       }
 
       // Max retries exceeded - log to DLQ or alert system
-      this.logger.error(
-        `Max retries exceeded for webhook delivery to ${url}`,
-      );
+      this.logger.error(`Max retries exceeded for webhook delivery to ${url}`);
       throw error;
     }
   }
@@ -110,10 +102,7 @@ export class InstallationOutcomeWebhookService {
   /**
    * Get webhook secret for sales system
    */
-  private getWebhookSecret(
-    salesSystem: SalesSystem,
-    tenantId: string,
-  ): string {
+  private getWebhookSecret(salesSystem: SalesSystem, tenantId: string): string {
     const key = `SALES_INTEGRATION_${salesSystem}_WEBHOOK_SECRET`;
     return this.configService.get<string>(key, 'default-secret');
   }
@@ -128,12 +117,7 @@ export class InstallationOutcomeWebhookService {
   /**
    * Verify webhook signature
    */
-  verifySignature(
-    payload: string,
-    signature: string,
-    secret: string,
-    timestamp: string,
-  ): boolean {
+  verifySignature(payload: string, signature: string, secret: string, timestamp: string): boolean {
     // Prevent replay attacks (reject requests older than 5 minutes)
     const requestTime = new Date(timestamp);
     const now = new Date();

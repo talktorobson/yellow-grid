@@ -12,13 +12,7 @@ import {
   HttpStatus,
   Request,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ServiceOrdersService } from './service-orders.service';
 import { CreateServiceOrderDto } from './dto/create-service-order.dto';
 import { UpdateServiceOrderDto } from './dto/update-service-order.dto';
@@ -117,7 +111,7 @@ export class ServiceOrdersController {
   ) {
     // If user is a work team member (has workTeamId), automatically filter by their team
     const effectiveWorkTeamId = req?.user?.workTeamId || assignedWorkTeamId;
-    
+
     // Work team members can ONLY see orders assigned to their team
     if (req?.user?.workTeamId && assignedWorkTeamId && assignedWorkTeamId !== req.user.workTeamId) {
       // If work team member tries to filter by another team, override with their own
@@ -267,11 +261,7 @@ export class ServiceOrdersController {
   })
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 404, description: 'Service order not found' })
-  async cancel(
-    @Param('id') id: string,
-    @Body('reason') reason: string,
-    @Request() req: any,
-  ) {
+  async cancel(@Param('id') id: string, @Body('reason') reason: string, @Request() req: any) {
     return this.serviceOrdersService.cancel(id, reason, req.user?.email);
   }
 

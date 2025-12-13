@@ -58,10 +58,7 @@ describe('GeographicService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GeographicService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
+      providers: [GeographicService, { provide: PrismaService, useValue: mockPrismaService }],
     }).compile();
 
     service = module.get<GeographicService>(GeographicService);
@@ -104,9 +101,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when postal code not found', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(null);
 
-      await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(NotFoundException);
       await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(
         'Postal code 99999 not found in geographic database',
       );
@@ -144,9 +139,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when postal code not found', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(null);
 
-      await expect(service.findCityByPostalCode('INVALID')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findCityByPostalCode('INVALID')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -245,9 +238,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when country not found', async () => {
       mockPrismaService.country.findUnique.mockResolvedValue(null);
 
-      await expect(service.findCountryByCode('ZZ')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findCountryByCode('ZZ')).rejects.toThrow(NotFoundException);
       await expect(service.findCountryByCode('ZZ')).rejects.toThrow(
         'Country with code ZZ not found',
       );
@@ -305,10 +296,7 @@ describe('GeographicService', () => {
 
   describe('findCitiesByProvince', () => {
     it('should find cities by province ID', async () => {
-      const cities = [
-        mockCity,
-        { ...mockCity, id: 'city-uuid-2', name: 'Getafe' },
-      ];
+      const cities = [mockCity, { ...mockCity, id: 'city-uuid-2', name: 'Getafe' }];
       mockPrismaService.city.findMany.mockResolvedValue(cities);
 
       const result = await service.findCitiesByProvince('province-uuid-1');
@@ -360,9 +348,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when postal code not found', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(null);
 
-      await expect(service.getGeographicHierarchy('INVALID')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getGeographicHierarchy('INVALID')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -393,20 +379,20 @@ describe('GeographicService', () => {
       };
       mockPrismaService.postalCode.findFirst.mockResolvedValue(frenchPostalCode);
 
-      await expect(
-        service.validatePostalCodeForCountry('75001', 'ES'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.validatePostalCodeForCountry('75001', 'ES'),
-      ).rejects.toThrow('Postal code 75001 does not belong to country ES');
+      await expect(service.validatePostalCodeForCountry('75001', 'ES')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.validatePostalCodeForCountry('75001', 'ES')).rejects.toThrow(
+        'Postal code 75001 does not belong to country ES',
+      );
     });
 
     it('should throw NotFoundException when postal code not found', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.validatePostalCodeForCountry('INVALID', 'ES'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.validatePostalCodeForCountry('INVALID', 'ES')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

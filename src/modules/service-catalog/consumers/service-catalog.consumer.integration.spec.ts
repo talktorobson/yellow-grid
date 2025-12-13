@@ -538,7 +538,6 @@ describe('ServiceCatalogEventConsumer (Integration)', () => {
       expect(stats.total).toBeGreaterThanOrEqual(3);
       expect(stats.completed).toBeGreaterThanOrEqual(2);
       expect(stats.failed).toBeGreaterThanOrEqual(1);
-
     });
 
     it('should return statistics since specific date', async () => {

@@ -1,5 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsEnum, ValidateNested, MinLength, MaxLength, IsNumber, IsDateString, IsUUID, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsEnum,
+  ValidateNested,
+  MinLength,
+  MaxLength,
+  IsNumber,
+  IsDateString,
+  IsUUID,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProviderStatus, ProviderTypeEnum, RiskLevel } from './create-provider.dto';
 
@@ -96,7 +109,8 @@ export class UpdateProviderDto {
   // ============================================================================
 
   @ApiProperty({
-    description: 'Provider type - P1 (primary, always accept core services) or P2 (secondary, bundle only)',
+    description:
+      'Provider type - P1 (primary, always accept core services) or P2 (secondary, bundle only)',
     enum: ProviderTypeEnum,
     required: false,
   })

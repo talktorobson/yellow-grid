@@ -44,4 +44,3 @@ describe('WcfService', () => {
   // I will comment out the old logic or adapt it if I can infer the behavior.
   // Since I don't want to write full unit tests for everything right now, I'll just ensure the service instantiates.
 });
-

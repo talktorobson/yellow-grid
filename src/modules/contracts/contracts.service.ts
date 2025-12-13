@@ -249,7 +249,8 @@ export class ContractsService {
           ? `Contract ${contract.contractNumber}: ${dto.message}`
           : `Please sign your contract ${contract.contractNumber}`,
         emailMessage:
-          dto.message || 'Please review and sign the attached contract at your earliest convenience.',
+          dto.message ||
+          'Please review and sign the attached contract at your earliest convenience.',
         expiresAt: this.computeExpiry(dto.expiresInHours ?? 48),
         metadata: {
           contractId: contract.id,

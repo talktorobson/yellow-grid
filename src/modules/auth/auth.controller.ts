@@ -1,7 +1,14 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto, AuthResponseDto, ChangePasswordDto, ChangePasswordResponseDto } from './dto';
+import {
+  LoginDto,
+  RegisterDto,
+  RefreshTokenDto,
+  AuthResponseDto,
+  ChangePasswordDto,
+  ChangePasswordResponseDto,
+} from './dto';
 import { Public } from './decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, CurrentUserPayload } from '@/common/decorators/current-user.decorator';
@@ -157,7 +164,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Validation error (passwords don\'t match, same as current, etc.)',
+    description: "Validation error (passwords don't match, same as current, etc.)",
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,

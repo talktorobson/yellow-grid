@@ -1,4 +1,14 @@
-import { IsString, IsBoolean, IsOptional, IsIn, IsInt, Min, Max, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsOptional,
+  IsIn,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -62,7 +72,10 @@ export class UpdateCountryConfigDto {
   @IsString()
   dateFormat?: string;
 
-  @ApiPropertyOptional({ description: 'Working days', example: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] })
+  @ApiPropertyOptional({
+    description: 'Working days',
+    example: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })

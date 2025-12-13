@@ -241,7 +241,9 @@ describe('AuthService', () => {
       mockJwtService.verify.mockReturnValue(tokenPayload);
       mockPrismaService.refreshToken.findUnique.mockResolvedValue(mockStoredToken);
       mockPrismaService.refreshToken.update.mockResolvedValue({});
-      mockJwtService.sign.mockReturnValueOnce('new-access-token').mockReturnValueOnce('new-refresh-token');
+      mockJwtService.sign
+        .mockReturnValueOnce('new-access-token')
+        .mockReturnValueOnce('new-refresh-token');
       mockPrismaService.refreshToken.create.mockResolvedValue({});
       mockConfigService.get.mockReturnValue('7d');
 

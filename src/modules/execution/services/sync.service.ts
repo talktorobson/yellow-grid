@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   DeltaSyncRequestDto,
@@ -27,11 +33,18 @@ export class SyncService {
   /**
    * Process delta sync: apply client changes and return server changes
    */
-  async processDeltaSync(userId: string, request: DeltaSyncRequestDto): Promise<DeltaSyncResponseDto> {
+  async processDeltaSync(
+    userId: string,
+    request: DeltaSyncRequestDto,
+  ): Promise<DeltaSyncResponseDto> {
     const startTime = Date.now();
 
     // Validate sync token and get device sync state
-    const deviceSync = await this.validateAndGetDeviceSync(request.syncToken, request.deviceId, userId);
+    const deviceSync = await this.validateAndGetDeviceSync(
+      request.syncToken,
+      request.deviceId,
+      userId,
+    );
 
     const conflicts: SyncConflictDto[] = [];
     const appliedChanges: AppliedChangesDto = {
@@ -281,7 +294,9 @@ export class SyncService {
   /**
    * Process media upload references (generate upload URLs)
    */
-  private async processMediaUploadReferences(mediaUploads: any[]): Promise<{ pendingUploads: PendingUploadDto[] }> {
+  private async processMediaUploadReferences(
+    mediaUploads: any[],
+  ): Promise<{ pendingUploads: PendingUploadDto[] }> {
     const pendingUploads: PendingUploadDto[] = mediaUploads.map((upload) => ({
       offlineId: upload.offlineId,
       uploadUrl: `/api/v1/mobile/media/photos`, // Actual endpoint
@@ -326,7 +341,8 @@ export class SyncService {
         // Compare timestamps (if available in data)
         const clientTimestamp = new Date(conflictData.clientData.timestamp || 0).getTime();
         const serverTimestamp = new Date(conflictData.serverData.updatedAt || 0).getTime();
-        resolvedValue = clientTimestamp > serverTimestamp ? conflictData.clientData : conflictData.serverData;
+        resolvedValue =
+          clientTimestamp > serverTimestamp ? conflictData.clientData : conflictData.serverData;
         appliedResolution = ConflictResolution.LAST_WRITE_WINS;
         break;
 
@@ -443,14 +459,20 @@ export class SyncService {
    */
   private async generateSyncToken(deviceSyncId: string): Promise<string> {
     const randomPart = randomBytes(32).toString('hex');
-    const hash = createHash('sha256').update(`${deviceSyncId}:${Date.now()}:${randomPart}`).digest('hex');
+    const hash = createHash('sha256')
+      .update(`${deviceSyncId}:${Date.now()}:${randomPart}`)
+      .digest('hex');
     return hash.substring(0, 64); // 64 character token
   }
 
   /**
    * Update device sync state
    */
-  private async updateDeviceSyncState(deviceSyncId: string, newSyncToken: string, conflictCount: number) {
+  private async updateDeviceSyncState(
+    deviceSyncId: string,
+    newSyncToken: string,
+    conflictCount: number,
+  ) {
     await this.prisma.deviceSync.update({
       where: { id: deviceSyncId },
       data: {
@@ -527,7 +549,12 @@ export class SyncService {
         requiresResolution: false,
       },
       syncHealth: {
-        status: deviceSync.consecutiveFailures === 0 ? 'healthy' : deviceSync.consecutiveFailures < 3 ? 'degraded' : 'unhealthy',
+        status:
+          deviceSync.consecutiveFailures === 0
+            ? 'healthy'
+            : deviceSync.consecutiveFailures < 3
+              ? 'degraded'
+              : 'unhealthy',
         lastSuccessfulSync: deviceSync.lastSuccessfulSyncAt.toISOString(),
         consecutiveFailures: deviceSync.consecutiveFailures,
         storageAvailableBytes: 0, // Would come from client

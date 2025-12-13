@@ -37,14 +37,8 @@ export class ContractsEventHandler {
       `📥 Received document.signed event | document: ${event.documentId} | type: ${event.documentType}`,
     );
 
-    const {
-      documentId,
-      orderId,
-      documentType,
-      allSignaturesComplete,
-      documentUrl,
-      tenantId,
-    } = event;
+    const { documentId, orderId, documentType, allSignaturesComplete, documentUrl, tenantId } =
+      event;
 
     try {
       // Only process WCF documents
@@ -155,9 +149,7 @@ export class ContractsEventHandler {
 
       // Check if follow-up is required
       if (requiresFollowUp) {
-        this.logger.log(
-          `🔄 Follow-up required | order: ${orderId} | Creating follow-up task`,
-        );
+        this.logger.log(`🔄 Follow-up required | order: ${orderId} | Creating follow-up task`);
 
         // TODO: Create follow-up task
         // await this.tasksService.createFollowUpTask({
@@ -167,9 +159,7 @@ export class ContractsEventHandler {
         // });
       }
 
-      this.logger.log(
-        `✅ Successfully processed appointment completion | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed appointment completion | order: ${orderId}`);
     } catch (error) {
       this.logger.error(
         `❌ Failed to process appointment.completed event | order: ${orderId}:`,
@@ -233,14 +223,9 @@ export class ContractsEventHandler {
         // });
       }
 
-      this.logger.log(
-        `✅ Successfully processed payment completion | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed payment completion | order: ${orderId}`);
     } catch (error) {
-      this.logger.error(
-        `❌ Failed to process payment.completed event | order: ${orderId}:`,
-        error,
-      );
+      this.logger.error(`❌ Failed to process payment.completed event | order: ${orderId}:`, error);
       throw error;
     }
   }
@@ -290,9 +275,7 @@ export class ContractsEventHandler {
       //   status: 'READY_FOR_SCHEDULING',
       // });
 
-      this.logger.log(
-        `✅ Successfully processed pre-service contract signing | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed pre-service contract signing | order: ${orderId}`);
     } catch (error) {
       this.logger.error(
         `❌ Failed to process pre-service contract signing | order: ${orderId}:`,

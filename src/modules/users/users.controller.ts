@@ -291,6 +291,12 @@ export class UsersController {
     @Param('roleName') roleName: string,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.usersService.revokeRole(id, roleName, user.userId, user.countryCode, user.businessUnit);
+    return this.usersService.revokeRole(
+      id,
+      roleName,
+      user.userId,
+      user.countryCode,
+      user.businessUnit,
+    );
   }
 }

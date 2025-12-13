@@ -1,11 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { KafkaProducerService } from '../../../common/kafka/kafka-producer.service';
-import {
-  OrderIntakeRequestDto,
-  SalesSystem,
-  OrderType,
-  Priority,
-} from '../dto';
+import { OrderIntakeRequestDto, SalesSystem, OrderType, Priority } from '../dto';
 
 export interface FSMServiceOrderCreatedEvent {
   eventId: string;
@@ -50,9 +45,7 @@ export class EventMappingService {
     fsmOrderId: string,
     correlationId: string,
   ): Promise<void> {
-    this.logger.log(
-      `Mapping external order ${externalOrderId} to FSM service order ${fsmOrderId}`,
-    );
+    this.logger.log(`Mapping external order ${externalOrderId} to FSM service order ${fsmOrderId}`);
 
     // Create FSM service order created event
     const fsmEvent: FSMServiceOrderCreatedEvent = {
@@ -72,12 +65,8 @@ export class EventMappingService {
         systemSource: salesSystem,
       },
       schedulingWindow: {
-        startDate:
-          orderData.schedulingPreferences?.preferredDate ||
-          new Date().toISOString(),
-        endDate: this.calculateEndDate(
-          orderData.schedulingPreferences?.preferredDate,
-        ),
+        startDate: orderData.schedulingPreferences?.preferredDate || new Date().toISOString(),
+        endDate: this.calculateEndDate(orderData.schedulingPreferences?.preferredDate),
         preferredDate: orderData.schedulingPreferences?.preferredDate,
       },
       requiredSkills: orderData.requiredSkills || [],
@@ -92,16 +81,11 @@ export class EventMappingService {
     };
 
     // Publish to Kafka
-    await this.kafkaService.send(
-      'fsm.service_order.created',
-      fsmEvent,
-      fsmOrderId,
-      {
-        'correlation-id': correlationId,
-        'event-type': 'SERVICE_ORDER_CREATED',
-        'source-system': salesSystem,
-      },
-    );
+    await this.kafkaService.send('fsm.service_order.created', fsmEvent, fsmOrderId, {
+      'correlation-id': correlationId,
+      'event-type': 'SERVICE_ORDER_CREATED',
+      'source-system': salesSystem,
+    });
 
     this.logger.log(
       `Successfully mapped and published SERVICE_ORDER_CREATED event for ${fsmOrderId}`,
@@ -119,9 +103,7 @@ export class EventMappingService {
     newStatus: string,
     correlationId: string,
   ): Promise<void> {
-    this.logger.log(
-      `Mapping service order status change: ${previousStatus} -> ${newStatus}`,
-    );
+    this.logger.log(`Mapping service order status change: ${previousStatus} -> ${newStatus}`);
 
     const salesEvent = {
       eventId: this.generateEventId(),
@@ -148,9 +130,7 @@ export class EventMappingService {
       },
     );
 
-    this.logger.log(
-      `Successfully published status update event to sales system ${salesSystem}`,
-    );
+    this.logger.log(`Successfully published status update event to sales system ${salesSystem}`);
   }
 
   /**

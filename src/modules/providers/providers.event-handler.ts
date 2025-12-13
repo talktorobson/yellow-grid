@@ -76,9 +76,7 @@ export class ProvidersEventHandler {
       // });
 
       // Send notifications
-      this.logger.log(
-        `📧 Sending acceptance notifications | order: ${orderId}`,
-      );
+      this.logger.log(`📧 Sending acceptance notifications | order: ${orderId}`);
 
       // TODO: Notify customer about assignment
       // await this.notificationService.notifyCustomerAssigned({
@@ -131,14 +129,8 @@ export class ProvidersEventHandler {
       `📥 Received assignment.offer.rejected event | assignment: ${event.assignmentId} | provider: ${event.providerId}`,
     );
 
-    const {
-      assignmentId,
-      orderId,
-      providerId,
-      rejectionReason,
-      rejectedAt,
-      remainingProviders,
-    } = event;
+    const { assignmentId, orderId, providerId, rejectionReason, rejectedAt, remainingProviders } =
+      event;
 
     try {
       // Update assignment status
@@ -161,7 +153,7 @@ export class ProvidersEventHandler {
 
         // TODO: Re-trigger assignment with different criteria or escalate
         // await this.assignmentService.retryAssignment(orderId, {
-          //   previousAssignmentId: assignmentId,
+        //   previousAssignmentId: assignmentId,
         //   excludeProviders: [providerId],
         //   escalate: true,
         // });
@@ -209,14 +201,8 @@ export class ProvidersEventHandler {
       `📥 Received technician.availability_changed event | technician: ${event.technicianId} | status: ${event.previousStatus} → ${event.newStatus}`,
     );
 
-    const {
-      technicianId,
-      previousStatus,
-      newStatus,
-      reason,
-      effectiveFrom,
-      effectiveUntil,
-    } = event;
+    const { technicianId, previousStatus, newStatus, reason, effectiveFrom, effectiveUntil } =
+      event;
 
     try {
       // Update scheduling capacity
@@ -290,20 +276,12 @@ export class ProvidersEventHandler {
       `📥 Received technician.assigned event | assignment: ${event.assignmentId} | technician: ${event.technicianId}`,
     );
 
-    const {
-      assignmentId,
-      technicianId,
-      orderId,
-      appointmentId,
-      assignmentType,
-      skillsMatched,
-    } = event;
+    const { assignmentId, technicianId, orderId, appointmentId, assignmentType, skillsMatched } =
+      event;
 
     try {
       // Update provider workload
-      this.logger.log(
-        `📊 Updating provider workload | technician: ${technicianId}`,
-      );
+      this.logger.log(`📊 Updating provider workload | technician: ${technicianId}`);
 
       // TODO: Update workload tracking
       // await this.providersService.updateWorkload(technicianId, {

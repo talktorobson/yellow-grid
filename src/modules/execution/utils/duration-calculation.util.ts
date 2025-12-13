@@ -180,7 +180,7 @@ export function calculateDuration(
   }
 
   // Calculate regular hours and overtime
-  let regularHours = Math.min(billableHours, effectiveConfig.standardWorkdayHours);
+  const regularHours = Math.min(billableHours, effectiveConfig.standardWorkdayHours);
   let overtimeHours = Math.max(0, billableHours - effectiveConfig.standardWorkdayHours);
   let doubleTimeHours = 0;
 

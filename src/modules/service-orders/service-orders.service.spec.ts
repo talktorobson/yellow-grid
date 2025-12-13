@@ -293,9 +293,9 @@ describe('ServiceOrdersService', () => {
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(mockOrder);
       mockStateMachine.isTerminalState.mockReturnValue(true);
 
-      await expect(
-        service.update('order-id', {}, 'user@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.update('order-id', {}, 'user@example.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -344,9 +344,9 @@ describe('ServiceOrdersService', () => {
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(mockOrder);
       mockStateMachine.validateTransition.mockReturnValue(undefined);
 
-      await expect(
-        service.schedule('order-id', scheduleDto, 'user@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.schedule('order-id', scheduleDto, 'user@example.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException if dependencies not satisfied', async () => {
@@ -369,9 +369,9 @@ describe('ServiceOrdersService', () => {
       mockStateMachine.validateTransition.mockReturnValue(undefined);
       mockPrismaService.serviceOrderDependency.findMany.mockResolvedValue(mockDependencies);
 
-      await expect(
-        service.schedule('order-id', scheduleDto, 'user@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.schedule('order-id', scheduleDto, 'user@example.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -416,9 +416,9 @@ describe('ServiceOrdersService', () => {
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(mockOrder);
       mockStateMachine.validateTransition.mockReturnValue(undefined);
 
-      await expect(
-        service.assign('order-id', assignDto, 'user@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.assign('order-id', assignDto, 'user@example.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if provider not found', async () => {
@@ -432,9 +432,9 @@ describe('ServiceOrdersService', () => {
       mockStateMachine.validateTransition.mockReturnValue(undefined);
       mockPrismaService.provider.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.assign('order-id', assignDto, 'user@example.com'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.assign('order-id', assignDto, 'user@example.com')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw BadRequestException if work team does not belong to provider', async () => {
@@ -452,9 +452,9 @@ describe('ServiceOrdersService', () => {
       mockPrismaService.provider.findUnique.mockResolvedValue(mockProvider);
       mockPrismaService.workTeam.findUnique.mockResolvedValue(mockWorkTeam);
 
-      await expect(
-        service.assign('order-id', assignDto, 'user@example.com'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.assign('order-id', assignDto, 'user@example.com')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 

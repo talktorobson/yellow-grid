@@ -1,7 +1,19 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { CreateUserDto, UpdateUserDto, QueryUsersDto, AssignRoleDto, UpdateProfileDto } from './dto';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  QueryUsersDto,
+  AssignRoleDto,
+  UpdateProfileDto,
+} from './dto';
 
 /**
  * Service for managing users in the system.
@@ -190,7 +202,13 @@ export class UsersService {
    * @returns {Promise<UserResponseDto>} The updated user.
    * @throws {NotFoundException} If the user is not found.
    */
-  async update(id: string, dto: UpdateUserDto, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     // Check if user exists in current tenant
     const existingUser = await this.prisma.user.findFirst({
       where: {
@@ -245,7 +263,12 @@ export class UsersService {
    * @throws {ForbiddenException} If attempting to delete own account.
    * @throws {NotFoundException} If the user is not found.
    */
-  async remove(id: string, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async remove(
+    id: string,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     // Prevent self-deletion
     if (id === currentUserId) {
       throw new ForbiddenException('You cannot delete your own account');
@@ -270,7 +293,9 @@ export class UsersService {
       data: { isActive: false },
     });
 
-    this.logger.log(`User deleted (deactivated): ${existingUser.email} (${id}) by ${currentUserId}`);
+    this.logger.log(
+      `User deleted (deactivated): ${existingUser.email} (${id}) by ${currentUserId}`,
+    );
 
     return { message: 'User successfully deleted' };
   }
@@ -287,7 +312,13 @@ export class UsersService {
    * @throws {ConflictException} If the user already has the role.
    * @throws {NotFoundException} If the user is not found.
    */
-  async assignRole(userId: string, dto: AssignRoleDto, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async assignRole(
+    userId: string,
+    dto: AssignRoleDto,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     // Check if user exists in current tenant
     const user = await this.prisma.user.findFirst({
       where: {
@@ -349,7 +380,13 @@ export class UsersService {
    * @throws {NotFoundException} If the user or role is not found.
    * @throws {ForbiddenException} If attempting to remove the last role.
    */
-  async revokeRole(userId: string, roleName: string, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async revokeRole(
+    userId: string,
+    roleName: string,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     // Check if user exists in current tenant
     const user = await this.prisma.user.findFirst({
       where: {

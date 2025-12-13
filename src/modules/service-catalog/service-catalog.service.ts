@@ -60,9 +60,7 @@ export class ServiceCatalogService {
     });
 
     if (!service) {
-      throw new NotFoundException(
-        `Service with external code ${externalServiceCode} not found`,
-      );
+      throw new NotFoundException(`Service with external code ${externalServiceCode} not found`);
     }
 
     return service;
@@ -88,9 +86,7 @@ export class ServiceCatalogService {
     });
 
     if (!service) {
-      throw new NotFoundException(
-        `Service with FSM code ${fsmServiceCode} not found`,
-      );
+      throw new NotFoundException(`Service with FSM code ${fsmServiceCode} not found`);
     }
 
     return service;
@@ -182,12 +178,7 @@ export class ServiceCatalogService {
    * @param limit - Maximum results to return (default: 20)
    * @returns List of matching services
    */
-  async search(
-    searchTerm: string,
-    countryCode: string,
-    businessUnit: string,
-    limit: number = 20,
-  ) {
+  async search(searchTerm: string, countryCode: string, businessUnit: string, limit: number = 20) {
     return this.prisma.serviceCatalog.findMany({
       where: {
         countryCode,
@@ -451,10 +442,7 @@ export class ServiceCatalogService {
       estimatedDurationMinutes: serviceData.estimatedDurationMinutes,
     };
 
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(canonical))
-      .digest('hex');
+    return crypto.createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
   }
 
   /**
@@ -481,38 +469,24 @@ export class ServiceCatalogService {
     // Breaking change: Items removed from scope included
     const existingIncluded = existingService.scopeIncluded as string[];
     const newIncluded = newData.scopeIncluded;
-    const includedRemoved = existingIncluded.some(
-      (item) => !newIncluded.includes(item),
-    );
+    const includedRemoved = existingIncluded.some((item) => !newIncluded.includes(item));
 
     // Breaking change: Items added to scope excluded
     const existingExcluded = existingService.scopeExcluded as string[];
     const newExcluded = newData.scopeExcluded;
-    const excludedAdded = newExcluded.some(
-      (item) => !existingExcluded.includes(item),
-    );
+    const excludedAdded = newExcluded.some((item) => !existingExcluded.includes(item));
 
     // Breaking change: New requirements added
-    const existingRequirements =
-      existingService.worksiteRequirements as string[];
+    const existingRequirements = existingService.worksiteRequirements as string[];
     const newRequirements = newData.worksiteRequirements;
-    const requirementsAdded = newRequirements.some(
-      (item) => !existingRequirements.includes(item),
-    );
+    const requirementsAdded = newRequirements.some((item) => !existingRequirements.includes(item));
 
     // Breaking change: New prerequisites added
     const existingPrereqs = existingService.productPrerequisites as string[];
     const newPrereqs = newData.productPrerequisites;
-    const prereqsAdded = newPrereqs.some(
-      (item) => !existingPrereqs.includes(item),
-    );
+    const prereqsAdded = newPrereqs.some((item) => !existingPrereqs.includes(item));
 
-    return (
-      includedRemoved ||
-      excludedAdded ||
-      requirementsAdded ||
-      prereqsAdded
-    );
+    return includedRemoved || excludedAdded || requirementsAdded || prereqsAdded;
   }
 
   /**
@@ -522,43 +496,36 @@ export class ServiceCatalogService {
    * @returns Service statistics
    */
   async getStatistics(countryCode: string, businessUnit: string) {
-    const [
-      total,
-      active,
-      deprecated,
-      archived,
-      byType,
-      byCategory,
-      byExternalSource,
-    ] = await Promise.all([
-      this.prisma.serviceCatalog.count({
-        where: { countryCode, businessUnit },
-      }),
-      this.prisma.serviceCatalog.count({
-        where: { countryCode, businessUnit, status: ServiceStatus.ACTIVE },
-      }),
-      this.prisma.serviceCatalog.count({
-        where: { countryCode, businessUnit, status: ServiceStatus.DEPRECATED },
-      }),
-      this.prisma.serviceCatalog.count({
-        where: { countryCode, businessUnit, status: ServiceStatus.ARCHIVED },
-      }),
-      this.prisma.serviceCatalog.groupBy({
-        by: ['serviceType'],
-        where: { countryCode, businessUnit },
-        _count: true,
-      }),
-      this.prisma.serviceCatalog.groupBy({
-        by: ['serviceCategory'],
-        where: { countryCode, businessUnit },
-        _count: true,
-      }),
-      this.prisma.serviceCatalog.groupBy({
-        by: ['externalSource'],
-        where: { countryCode, businessUnit },
-        _count: true,
-      }),
-    ]);
+    const [total, active, deprecated, archived, byType, byCategory, byExternalSource] =
+      await Promise.all([
+        this.prisma.serviceCatalog.count({
+          where: { countryCode, businessUnit },
+        }),
+        this.prisma.serviceCatalog.count({
+          where: { countryCode, businessUnit, status: ServiceStatus.ACTIVE },
+        }),
+        this.prisma.serviceCatalog.count({
+          where: { countryCode, businessUnit, status: ServiceStatus.DEPRECATED },
+        }),
+        this.prisma.serviceCatalog.count({
+          where: { countryCode, businessUnit, status: ServiceStatus.ARCHIVED },
+        }),
+        this.prisma.serviceCatalog.groupBy({
+          by: ['serviceType'],
+          where: { countryCode, businessUnit },
+          _count: true,
+        }),
+        this.prisma.serviceCatalog.groupBy({
+          by: ['serviceCategory'],
+          where: { countryCode, businessUnit },
+          _count: true,
+        }),
+        this.prisma.serviceCatalog.groupBy({
+          by: ['externalSource'],
+          where: { countryCode, businessUnit },
+          _count: true,
+        }),
+      ]);
 
     return {
       total,

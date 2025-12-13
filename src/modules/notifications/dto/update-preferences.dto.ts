@@ -35,11 +35,14 @@ export class UpdateNotificationPreferencesDto {
   })
   @IsOptional()
   @IsObject()
-  eventPreferences?: Record<string, {
-    email?: boolean;
-    sms?: boolean;
-    push?: boolean;
-  }>;
+  eventPreferences?: Record<
+    string,
+    {
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+    }
+  >;
 
   @ApiPropertyOptional({
     description: 'Enable/disable quiet hours',

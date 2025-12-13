@@ -50,13 +50,16 @@ export class AssignmentsService {
       throw new BadRequestException('At least one providerId is required');
     }
 
-    const serviceOrder = await this.prisma.serviceOrder.findUnique({ where: { id: serviceOrderId } });
+    const serviceOrder = await this.prisma.serviceOrder.findUnique({
+      where: { id: serviceOrderId },
+    });
     if (!serviceOrder) {
       throw new NotFoundException('Service order not found');
     }
 
     const autoAcceptCountries = ['ES', 'IT'];
-    const isAutoAcceptMode = mode === AssignmentMode.AUTO_ACCEPT || autoAcceptCountries.includes(serviceOrder.countryCode);
+    const isAutoAcceptMode =
+      mode === AssignmentMode.AUTO_ACCEPT || autoAcceptCountries.includes(serviceOrder.countryCode);
 
     const assignments = [];
     for (const [index, providerId] of providerIds.entries()) {
@@ -72,7 +75,10 @@ export class AssignmentsService {
           funnelExecutionId: funnelExecutionId ?? null,
           providerScore: scoreData?.score ?? null,
           scoreBreakdown: scoreData?.scoreBreakdown ?? null,
-          state: isAutoAcceptMode || mode === AssignmentMode.DIRECT ? AssignmentState.ACCEPTED : AssignmentState.OFFERED,
+          state:
+            isAutoAcceptMode || mode === AssignmentMode.DIRECT
+              ? AssignmentState.ACCEPTED
+              : AssignmentState.OFFERED,
           acceptedAt: isAutoAcceptMode || mode === AssignmentMode.DIRECT ? new Date() : null,
           stateChangedAt: new Date(),
         },

@@ -158,15 +158,11 @@ export class PricingService {
     // Step 1: Resolve postal code to ID if provided
     if (postalCode) {
       try {
-        const postalEntity =
-          await this.geographicService.findPostalCodeByCode(postalCode);
+        const postalEntity = await this.geographicService.findPostalCodeByCode(postalCode);
         postalCodeId = postalEntity.id;
 
         // Validate postal code belongs to country
-        await this.geographicService.validatePostalCodeForCountry(
-          postalCode,
-          countryCode,
-        );
+        await this.geographicService.validatePostalCodeForCountry(postalCode, countryCode);
       } catch (error) {
         this.logger.warn(
           `Postal code ${postalCode} not found or invalid, falling back to country default`,
@@ -260,15 +256,11 @@ export class PricingService {
 
     // Resolve postal code to ID if provided
     if (postalCode) {
-      const postalEntity =
-        await this.geographicService.findPostalCodeByCode(postalCode);
+      const postalEntity = await this.geographicService.findPostalCodeByCode(postalCode);
       postalCodeId = postalEntity.id;
 
       // Validate postal code belongs to country
-      await this.geographicService.validatePostalCodeForCountry(
-        postalCode,
-        countryCode,
-      );
+      await this.geographicService.validatePostalCodeForCountry(postalCode, countryCode);
     }
 
     // Create pricing record
@@ -306,10 +298,7 @@ export class PricingService {
    * @param includeExpired - Include expired pricing records (default: false)
    * @returns List of pricing records
    */
-  async getPricingForService(
-    serviceId: string,
-    includeExpired: boolean = false,
-  ) {
+  async getPricingForService(serviceId: string, includeExpired: boolean = false) {
     const now = new Date();
     const where: any = { serviceId };
 

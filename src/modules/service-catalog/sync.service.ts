@@ -1,11 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import {
-  ServiceStatus,
-  ServiceType,
-  ServiceCategory,
-  ServiceCatalog,
-} from '@prisma/client';
+import { ServiceStatus, ServiceType, ServiceCategory, ServiceCatalog } from '@prisma/client';
 import { ServiceCatalogService } from './service-catalog.service';
 
 /**
@@ -91,9 +86,7 @@ export class ServiceCatalogSyncService {
       },
     });
 
-    this.logger.log(
-      `✅ Service created: ${service.fsmServiceCode} (${service.id})`,
-    );
+    this.logger.log(`✅ Service created: ${service.fsmServiceCode} (${service.id})`);
 
     return service;
   }
@@ -111,9 +104,7 @@ export class ServiceCatalogSyncService {
     });
 
     if (!existing) {
-      this.logger.warn(
-        `⚠️  Service ${data.externalServiceCode} not found, creating new`,
-      );
+      this.logger.warn(`⚠️  Service ${data.externalServiceCode} not found, creating new`);
       return this.handleServiceCreated(data);
     }
 
@@ -127,9 +118,7 @@ export class ServiceCatalogSyncService {
     );
 
     if (hasBreakingChanges) {
-      this.logger.warn(
-        `⚠️  Breaking changes detected for ${data.externalServiceCode}`,
-      );
+      this.logger.warn(`⚠️  Breaking changes detected for ${data.externalServiceCode}`);
       // TODO: Create pending change record for manual review
       // For now, we'll apply the changes but log the warning
     }
@@ -183,16 +172,12 @@ export class ServiceCatalogSyncService {
     });
 
     if (!service) {
-      this.logger.error(
-        `❌ Cannot deprecate: service ${data.externalServiceCode} not found`,
-      );
+      this.logger.error(`❌ Cannot deprecate: service ${data.externalServiceCode} not found`);
       throw new Error(`Service ${data.externalServiceCode} not found`);
     }
 
     if (service.status === ServiceStatus.DEPRECATED) {
-      this.logger.warn(
-        `⚠️  Service ${data.externalServiceCode} already deprecated`,
-      );
+      this.logger.warn(`⚠️  Service ${data.externalServiceCode} already deprecated`);
       return service;
     }
 
@@ -224,12 +209,8 @@ export class ServiceCatalogSyncService {
       serviceCategory: this.mapServiceCategory(data.category),
       name: this.extractLocalizedString(data.name),
       description: this.extractLocalizedString(data.description),
-      scopeIncluded: Array.isArray(data.scopeIncluded)
-        ? data.scopeIncluded
-        : [],
-      scopeExcluded: Array.isArray(data.scopeExcluded)
-        ? data.scopeExcluded
-        : [],
+      scopeIncluded: Array.isArray(data.scopeIncluded) ? data.scopeIncluded : [],
+      scopeExcluded: Array.isArray(data.scopeExcluded) ? data.scopeExcluded : [],
       worksiteRequirements: Array.isArray(data.worksiteRequirements)
         ? data.worksiteRequirements
         : [],
@@ -246,9 +227,7 @@ export class ServiceCatalogSyncService {
    * @returns FSM service code (e.g., ES_HVAC_00123)
    */
   private generateFsmCode(data: any): string {
-    const category = this.mapServiceCategory(data.category)
-      .substring(0, 4)
-      .toUpperCase();
+    const category = this.mapServiceCategory(data.category).substring(0, 4).toUpperCase();
     const timestamp = Date.now().toString().slice(-5);
     return `${data.countryCode}_${category}_${timestamp}`;
   }
@@ -268,9 +247,7 @@ export class ServiceCatalogSyncService {
       complex: ServiceType.COMPLEX,
     };
 
-    return (
-      mapping[clientType?.toLowerCase()] || ServiceType.INSTALLATION
-    );
+    return mapping[clientType?.toLowerCase()] || ServiceType.INSTALLATION;
   }
 
   /**
@@ -295,10 +272,7 @@ export class ServiceCatalogSyncService {
       general: ServiceCategory.OTHER,
     };
 
-    return (
-      mapping[clientCategory?.toLowerCase()] ||
-      ServiceCategory.OTHER
-    );
+    return mapping[clientCategory?.toLowerCase()] || ServiceCategory.OTHER;
   }
 
   /**

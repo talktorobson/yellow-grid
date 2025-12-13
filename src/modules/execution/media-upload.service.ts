@@ -40,25 +40,15 @@ export class MediaUploadService {
   private readonly THUMBNAIL_QUALITY = 80;
 
   // Supported MIME types
-  private readonly SUPPORTED_IMAGE_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'image/heic',
-  ];
-  private readonly SUPPORTED_VIDEO_TYPES = [
-    'video/mp4',
-    'video/quicktime',
-    'video/x-msvideo',
-  ];
-  private readonly SUPPORTED_DOCUMENT_TYPES = [
-    'application/pdf',
-  ];
+  private readonly SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+  private readonly SUPPORTED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
+  private readonly SUPPORTED_DOCUMENT_TYPES = ['application/pdf'];
 
   constructor(private readonly configService: ConfigService) {
     this.projectId = this.configService.get<string>('GCS_PROJECT_ID');
     this.bucketName = this.configService.get<string>('GCS_BUCKET') || 'yellow-grid-media';
-    this.cdnBase = this.configService.get<string>('MEDIA_CDN_BASE') ||
+    this.cdnBase =
+      this.configService.get<string>('MEDIA_CDN_BASE') ||
       `https://storage.googleapis.com/${this.bucketName}`;
 
     const keyFilename = this.configService.get<string>('GCS_KEY_FILE');
@@ -87,19 +77,19 @@ export class MediaUploadService {
     if (this.SUPPORTED_IMAGE_TYPES.includes(contentType)) {
       if (sizeBytes > this.MAX_PHOTO_SIZE) {
         throw new BadRequestException(
-          `Photo size exceeds maximum allowed size of ${this.MAX_PHOTO_SIZE / 1024 / 1024}MB`
+          `Photo size exceeds maximum allowed size of ${this.MAX_PHOTO_SIZE / 1024 / 1024}MB`,
         );
       }
     } else if (this.SUPPORTED_VIDEO_TYPES.includes(contentType)) {
       if (sizeBytes > this.MAX_VIDEO_SIZE) {
         throw new BadRequestException(
-          `Video size exceeds maximum allowed size of ${this.MAX_VIDEO_SIZE / 1024 / 1024 / 1024}GB`
+          `Video size exceeds maximum allowed size of ${this.MAX_VIDEO_SIZE / 1024 / 1024 / 1024}GB`,
         );
       }
     } else if (this.SUPPORTED_DOCUMENT_TYPES.includes(contentType)) {
       if (sizeBytes > this.MAX_DOCUMENT_SIZE) {
         throw new BadRequestException(
-          `Document size exceeds maximum allowed size of ${this.MAX_DOCUMENT_SIZE / 1024 / 1024}MB`
+          `Document size exceeds maximum allowed size of ${this.MAX_DOCUMENT_SIZE / 1024 / 1024}MB`,
         );
       }
     } else {
@@ -218,10 +208,7 @@ export class MediaUploadService {
   /**
    * Upload file buffer directly to GCS (server-side upload)
    */
-  async uploadFile(
-    buffer: Buffer,
-    dto: MediaUploadRequestDto,
-  ): Promise<MediaUploadResponse> {
+  async uploadFile(buffer: Buffer, dto: MediaUploadRequestDto): Promise<MediaUploadResponse> {
     this.logger.debug(`Uploading file: ${dto.filename} (${dto.sizeBytes} bytes)`);
 
     // Validate file size

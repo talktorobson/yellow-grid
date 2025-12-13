@@ -62,10 +62,7 @@ export class ProfileController {
     description: 'Profile updated successfully',
     type: UserResponseDto,
   })
-  async updateProfile(
-    @CurrentUser() user: CurrentUserPayload,
-    @Body() dto: UpdateProfileDto,
-  ) {
+  async updateProfile(@CurrentUser() user: CurrentUserPayload, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(user.userId, dto);
   }
 

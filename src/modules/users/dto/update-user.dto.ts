@@ -25,7 +25,8 @@ export class UpdateUserDto {
   lastName?: string;
 
   @ApiProperty({
-    description: 'New password (min 8 chars, must include uppercase, lowercase, number, special char)',
+    description:
+      'New password (min 8 chars, must include uppercase, lowercase, number, special char)',
     example: 'NewStrongP@ssw0rd',
     required: false,
     minLength: 8,

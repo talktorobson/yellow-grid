@@ -74,7 +74,11 @@ export class DistanceCalculationService {
 
     if (method === 'google_distance_matrix' && this.googleMapsApiKey) {
       try {
-        distanceKm = await this.calculateDistanceViaGoogleAPI(from, to, options?.travelMode || 'driving');
+        distanceKm = await this.calculateDistanceViaGoogleAPI(
+          from,
+          to,
+          options?.travelMode || 'driving',
+        );
       } catch (error) {
         this.logger.warn(
           `Google Distance Matrix API failed, falling back to Haversine: ${error.message}`,
@@ -87,7 +91,10 @@ export class DistanceCalculationService {
 
     return {
       distanceKm: Math.round(distanceKm * 100) / 100, // Round to 2 decimal places
-      method: method === 'google_distance_matrix' && this.googleMapsApiKey ? 'google_distance_matrix' : 'haversine',
+      method:
+        method === 'google_distance_matrix' && this.googleMapsApiKey
+          ? 'google_distance_matrix'
+          : 'haversine',
       calculatedAt: new Date(),
     };
   }

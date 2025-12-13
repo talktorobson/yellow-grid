@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { RedisBitmapService } from './redis-bitmap.service';
@@ -44,7 +39,10 @@ export class BookingService {
     private readonly configService: ConfigService,
   ) {
     this.holdTtlHours = this.configService.get<number>('PREBOOK_TTL_HOURS', 48);
-    this.maxHoldsPerServiceOrder = this.configService.get<number>('PREBOOK_MAX_HOLDS_PER_CUSTOMER', 3);
+    this.maxHoldsPerServiceOrder = this.configService.get<number>(
+      'PREBOOK_MAX_HOLDS_PER_CUSTOMER',
+      3,
+    );
   }
 
   async preBook(request: PreBookRequest) {
@@ -60,7 +58,12 @@ export class BookingService {
       throw new BadRequestException('End slot must be after start slot');
     }
 
-    await this.ensureShiftAllowsStart(request.workTeamId, request.bookingDate, request.startSlot, request.endSlot);
+    await this.ensureShiftAllowsStart(
+      request.workTeamId,
+      request.bookingDate,
+      request.startSlot,
+      request.endSlot,
+    );
     await this.enforceHoldLimit(request.serviceOrderId);
 
     // Idempotency check
@@ -102,7 +105,9 @@ export class BookingService {
       },
     });
 
-    this.logger.log(`Pre-booked slots ${request.startSlot}-${request.endSlot} for workTeam ${request.workTeamId}`);
+    this.logger.log(
+      `Pre-booked slots ${request.startSlot}-${request.endSlot} for workTeam ${request.workTeamId}`,
+    );
     return booking;
   }
 
@@ -185,7 +190,10 @@ export class BookingService {
     bookingDate: string;
     durationMinutes?: number;
   }): Promise<{ availableStartSlots: number[]; availability: boolean[] }> {
-    const availability = await this.redisBitmap.getAvailability(params.workTeamId, params.bookingDate);
+    const availability = await this.redisBitmap.getAvailability(
+      params.workTeamId,
+      params.bookingDate,
+    );
     const availableStartSlots: number[] = [];
 
     const requiredSlots = params.durationMinutes
@@ -209,7 +217,7 @@ export class BookingService {
     countryCode?: string;
   }) {
     const { startDate, endDate, providerIds, countryCode } = params;
-    
+
     // Ensure end date covers the full day
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
@@ -253,7 +261,7 @@ export class BookingService {
     });
 
     const providerCount = providers.length;
-    const providerIdsList = providers.map(p => p.id);
+    const providerIdsList = providers.map((p) => p.id);
 
     // Get all orders for these providers in the range
     const orders = await this.prisma.serviceOrder.findMany({
@@ -273,7 +281,8 @@ export class BookingService {
       },
     });
 
-    const dailyMetrics: Record<string, { scheduledMinutes: number; totalCapacityMinutes: number }> = {};
+    const dailyMetrics: Record<string, { scheduledMinutes: number; totalCapacityMinutes: number }> =
+      {};
 
     // Initialize days
     const currentDate = new Date(start);
@@ -290,9 +299,9 @@ export class BookingService {
     for (const order of orders) {
       if (!order.scheduledDate) continue;
       const dateStr = order.scheduledDate.toISOString().split('T')[0];
-      
+
       if (dailyMetrics[dateStr]) {
-        dailyMetrics[dateStr].scheduledMinutes += (order.estimatedDurationMinutes || 0);
+        dailyMetrics[dateStr].scheduledMinutes += order.estimatedDurationMinutes || 0;
       }
     }
 
@@ -301,7 +310,7 @@ export class BookingService {
       const scheduledHours = metrics.scheduledMinutes / 60;
       const totalHours = metrics.totalCapacityMinutes / 60;
       const availableHours = Math.max(0, totalHours - scheduledHours);
-      const utilizationRate = totalHours > 0 ? (scheduledHours / totalHours) : 0;
+      const utilizationRate = totalHours > 0 ? scheduledHours / totalHours : 0;
 
       return {
         date,
@@ -339,17 +348,17 @@ export class BookingService {
     // Iterate days
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
-      
+
       for (const provider of providers) {
         // Simplified: Use the first work team's shift or default 08:00-17:00
         const workTeam = provider.workTeams[0];
         let shifts = [{ start: '08:00', end: '17:00' }];
-        
+
         if (workTeam && workTeam.shifts && Array.isArray(workTeam.shifts)) {
-             const teamShifts = workTeam.shifts as any[];
-             if (teamShifts.length > 0) {
-                 shifts = teamShifts.map(s => ({ start: s.startLocal, end: s.endLocal }));
-             }
+          const teamShifts = workTeam.shifts as any[];
+          if (teamShifts.length > 0) {
+            shifts = teamShifts.map((s) => ({ start: s.startLocal, end: s.endLocal }));
+          }
         }
 
         // Get orders for this day
@@ -360,44 +369,46 @@ export class BookingService {
               gte: new Date(dateStr + 'T00:00:00Z'),
               lt: new Date(dateStr + 'T23:59:59Z'),
             },
-            state: { in: ['SCHEDULED', 'IN_PROGRESS'] }
-          }
+            state: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+          },
         });
 
         const slots = [];
         // Create available slots from shifts
         for (const shift of shifts) {
-            slots.push({
-                id: `slot-${provider.id}-${dateStr}-${shift.start}`,
-                providerId: provider.id,
-                startTime: `${dateStr}T${shift.start}:00`,
-                endTime: `${dateStr}T${shift.end}:00`,
-                status: 'available'
-            });
+          slots.push({
+            id: `slot-${provider.id}-${dateStr}-${shift.start}`,
+            providerId: provider.id,
+            startTime: `${dateStr}T${shift.start}:00`,
+            endTime: `${dateStr}T${shift.end}:00`,
+            status: 'available',
+          });
         }
 
         // Mark busy slots
         for (const order of orders) {
-             if (!order.scheduledDate) continue;
-             const orderStart = new Date(order.scheduledDate);
-             const orderEnd = new Date(orderStart.getTime() + (order.estimatedDurationMinutes || 60) * 60000);
-             
-             slots.push({
-                id: `order-${order.id}`,
-                providerId: provider.id,
-                startTime: orderStart.toISOString(),
-                endTime: orderEnd.toISOString(),
-                status: 'busy'
-             });
+          if (!order.scheduledDate) continue;
+          const orderStart = new Date(order.scheduledDate);
+          const orderEnd = new Date(
+            orderStart.getTime() + (order.estimatedDurationMinutes || 60) * 60000,
+          );
+
+          slots.push({
+            id: `order-${order.id}`,
+            providerId: provider.id,
+            startTime: orderStart.toISOString(),
+            endTime: orderEnd.toISOString(),
+            status: 'busy',
+          });
         }
 
         result.push({
-            providerId: provider.id,
-            providerName: provider.name,
-            date: dateStr,
-            slots,
-            totalAvailableHours: 8, // Mock
-            utilization: orders.length > 0 ? 0.5 : 0 // Mock
+          providerId: provider.id,
+          providerName: provider.name,
+          date: dateStr,
+          slots,
+          totalAvailableHours: 8, // Mock
+          utilization: orders.length > 0 ? 0.5 : 0, // Mock
         });
       }
     }

@@ -32,9 +32,7 @@ export class TwilioProvider {
       this.client = twilio(accountSid, authToken);
       this.logger.log('Twilio SMS provider initialized');
     } else {
-      this.logger.warn(
-        'Twilio SMS provider is disabled or not configured properly',
-      );
+      this.logger.warn('Twilio SMS provider is disabled or not configured properly');
     }
   }
 
@@ -98,10 +96,7 @@ export class TwilioProvider {
         dateUpdated: message.dateUpdated,
       };
     } catch (error) {
-      this.logger.error(
-        `Failed to fetch message status: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to fetch message status: ${error.message}`, error.stack);
       throw error;
     }
   }

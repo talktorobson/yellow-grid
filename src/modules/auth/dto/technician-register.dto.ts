@@ -1,4 +1,12 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsUUID, IsOptional, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsUUID,
+  IsOptional,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TechnicianRegisterDto {
@@ -10,7 +18,8 @@ export class TechnicianRegisterDto {
   email: string;
 
   @ApiProperty({
-    description: 'Password (minimum 8 characters, must include uppercase, lowercase, number, and special character)',
+    description:
+      'Password (minimum 8 characters, must include uppercase, lowercase, number, and special character)',
     example: 'SecureP@ss123',
     minLength: 8,
   })

@@ -180,7 +180,7 @@ describe('Contracts API (E2E)', () => {
         countryCode: 'ES',
         businessUnit: 'LM_ES',
         customFields: {
-          actualCost: 315.50,
+          actualCost: 315.5,
           workDuration: 180, // minutes
           materialsUsed: ['Material A', 'Material B'],
         },
@@ -236,7 +236,12 @@ describe('Contracts API (E2E)', () => {
         message: 'Please review and sign the contract for your service order.',
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/send`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/send`,
+        operatorToken,
+      )
         .send(sendDto)
         .expect(200);
 
@@ -260,7 +265,12 @@ describe('Contracts API (E2E)', () => {
         message: 'Contract ready for signature. Link: https://example.com/sign/...',
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/send`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/send`,
+        operatorToken,
+      )
         .send(sendDto)
         .expect(200);
 
@@ -297,7 +307,12 @@ describe('Contracts API (E2E)', () => {
         message: 'Test message',
       };
 
-      await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/send`, operatorToken)
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/send`,
+        operatorToken,
+      )
         .send(sendDto)
         .expect(400);
     });
@@ -309,7 +324,12 @@ describe('Contracts API (E2E)', () => {
         message: 'Test message',
       };
 
-      await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/send`, operatorToken)
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/send`,
+        operatorToken,
+      )
         .send(sendDto)
         .expect(400);
     });
@@ -339,7 +359,12 @@ describe('Contracts API (E2E)', () => {
         consentGiven: true,
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/sign`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/sign`,
+        operatorToken,
+      )
         .send(signDto)
         .expect(200);
 
@@ -370,7 +395,12 @@ describe('Contracts API (E2E)', () => {
         consentGiven: false, // No consent
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/sign`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/sign`,
+        operatorToken,
+      )
         .send(signDto)
         .expect(400);
 
@@ -439,7 +469,12 @@ describe('Contracts API (E2E)', () => {
         consentGiven: true,
       };
 
-      await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/sign`, operatorToken)
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/sign`,
+        operatorToken,
+      )
         .send(signDto)
         .expect(400);
     });
@@ -459,7 +494,12 @@ describe('Contracts API (E2E)', () => {
         consentGiven: true,
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/sign`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/sign`,
+        operatorToken,
+      )
         .send(signDto)
         .expect(200);
 
@@ -477,14 +517,27 @@ describe('Contracts API (E2E)', () => {
   describe('GET /api/v1/contracts - List Contracts', () => {
     beforeEach(async () => {
       // Create multiple contracts for filtering
-      await factory.createContract(testServiceOrder.id, { status: 'DRAFT', contractType: 'PRE_SERVICE' });
-      await factory.createContract(testServiceOrder.id, { status: 'SENT', contractType: 'PRE_SERVICE' });
-      await factory.createContract(testServiceOrder.id, { status: 'SIGNED', contractType: 'POST_SERVICE' });
+      await factory.createContract(testServiceOrder.id, {
+        status: 'DRAFT',
+        contractType: 'PRE_SERVICE',
+      });
+      await factory.createContract(testServiceOrder.id, {
+        status: 'SENT',
+        contractType: 'PRE_SERVICE',
+      });
+      await factory.createContract(testServiceOrder.id, {
+        status: 'SIGNED',
+        contractType: 'POST_SERVICE',
+      });
     });
 
     it('should list all contracts with pagination', async () => {
-      const response = await authenticatedRequest(app, 'get', '/api/v1/contracts?page=1&limit=10', operatorToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        '/api/v1/contracts?page=1&limit=10',
+        operatorToken,
+      ).expect(200);
 
       expect(response.body).toHaveProperty('data');
       expect(response.body).toHaveProperty('pagination');
@@ -498,8 +551,12 @@ describe('Contracts API (E2E)', () => {
     });
 
     it('should filter contracts by status', async () => {
-      const response = await authenticatedRequest(app, 'get', '/api/v1/contracts?status=SIGNED', operatorToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        '/api/v1/contracts?status=SIGNED',
+        operatorToken,
+      ).expect(200);
 
       expect(response.body.data.every((c: any) => c.status === 'SIGNED')).toBe(true);
     });
@@ -523,12 +580,18 @@ describe('Contracts API (E2E)', () => {
         operatorToken,
       ).expect(200);
 
-      expect(response.body.data.every((c: any) => c.serviceOrderId === testServiceOrder.id)).toBe(true);
+      expect(response.body.data.every((c: any) => c.serviceOrderId === testServiceOrder.id)).toBe(
+        true,
+      );
     });
 
     it('should filter contracts by country code', async () => {
-      const response = await authenticatedRequest(app, 'get', '/api/v1/contracts?countryCode=ES', operatorToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        '/api/v1/contracts?countryCode=ES',
+        operatorToken,
+      ).expect(200);
 
       expect(response.body.data.every((c: any) => c.countryCode === 'ES')).toBe(true);
     });
@@ -548,16 +611,24 @@ describe('Contracts API (E2E)', () => {
     });
 
     it('should retrieve contract by ID', async () => {
-      const response = await authenticatedRequest(app, 'get', `/api/v1/contracts/${contract.id}`, operatorToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/contracts/${contract.id}`,
+        operatorToken,
+      ).expect(200);
 
       expect(response.body.id).toBe(contract.id);
       expect(response.body.serviceOrderId).toBe(testServiceOrder.id);
     });
 
     it('should include status history in response', async () => {
-      const response = await authenticatedRequest(app, 'get', `/api/v1/contracts/${contract.id}`, operatorToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/contracts/${contract.id}`,
+        operatorToken,
+      ).expect(200);
 
       expect(response.body).toHaveProperty('statusHistory');
       expect(Array.isArray(response.body.statusHistory)).toBe(true);
@@ -569,8 +640,12 @@ describe('Contracts API (E2E)', () => {
     it('should return 404 for non-existent contract', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
 
-      const response = await authenticatedRequest(app, 'get', `/api/v1/contracts/${fakeId}`, operatorToken)
-        .expect(404);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/contracts/${fakeId}`,
+        operatorToken,
+      ).expect(404);
 
       expect(response.body.message).toContain('not found');
     });
@@ -604,7 +679,12 @@ describe('Contracts API (E2E)', () => {
         message: 'Please sign the contract',
       };
 
-      const sent = await authenticatedRequest(app, 'post', `/api/v1/contracts/${generated.body.id}/send`, operatorToken)
+      const sent = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${generated.body.id}/send`,
+        operatorToken,
+      )
         .send(sendDto)
         .expect(200);
 
@@ -620,7 +700,12 @@ describe('Contracts API (E2E)', () => {
         consentGiven: true,
       };
 
-      const signed = await authenticatedRequest(app, 'post', `/api/v1/contracts/${generated.body.id}/sign`, operatorToken)
+      const signed = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${generated.body.id}/sign`,
+        operatorToken,
+      )
         .send(signDto)
         .expect(200);
 
@@ -647,7 +732,12 @@ describe('Contracts API (E2E)', () => {
         rejectedBy: 'customer@example.com',
       };
 
-      const response = await authenticatedRequest(app, 'post', `/api/v1/contracts/${contract.id}/reject`, operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/contracts/${contract.id}/reject`,
+        operatorToken,
+      )
         .send(rejectDto)
         .expect(200);
 

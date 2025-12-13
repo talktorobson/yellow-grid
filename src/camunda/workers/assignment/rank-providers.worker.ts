@@ -34,9 +34,9 @@ interface RankProvidersOutput {
 
 /**
  * Rank Providers Worker
- * 
+ *
  * Task Type: rank-providers
- * 
+ *
  * Applies advanced ranking criteria:
  * - Historical performance
  * - Customer ratings
@@ -71,12 +71,12 @@ export class RankProvidersWorker extends BaseWorker<RankProvidersInput, RankProv
       .map((provider, index) => {
         // Apply urgency weighting
         let finalScore = provider.score * urgencyMultiplier[urgency];
-        
+
         // Bonus for capacity
         if (provider.hasCapacity) {
           finalScore += 5;
         }
-        
+
         // Penalty for distance (for urgent jobs)
         if (urgency === 'URGENT' && provider.distanceKm > 20) {
           finalScore -= 10;
@@ -98,7 +98,7 @@ export class RankProvidersWorker extends BaseWorker<RankProvidersInput, RankProv
     const topProvider = rankedProviders[0];
 
     this.logger.log(
-      `Ranked ${rankedProviders.length} providers. Top: ${topProvider?.providerName} (score: ${topProvider?.finalScore})`
+      `Ranked ${rankedProviders.length} providers. Top: ${topProvider?.providerName} (score: ${topProvider?.finalScore})`,
     );
 
     return {

@@ -7,5 +7,5 @@ import { CreateServiceDto } from './create-service.dto';
  * Cannot update externalServiceCode or externalSource
  */
 export class UpdateServiceDto extends PartialType(
-  OmitType(CreateServiceDto, ['externalServiceCode', 'externalSource'] as const)
+  OmitType(CreateServiceDto, ['externalServiceCode', 'externalSource'] as const),
 ) {}

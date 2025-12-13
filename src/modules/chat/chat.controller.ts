@@ -35,7 +35,7 @@ import { ParticipantType } from '@prisma/client';
 
 /**
  * Chat Controller
- * 
+ *
  * Endpoints for managing service order conversations.
  * All participants (Customer, Operator, WorkTeam, Provider Manager)
  * can communicate in a shared conversation context.
@@ -60,7 +60,7 @@ export class ChatController {
     @Request() req: any,
   ) {
     const user = req.user;
-    
+
     // Determine participant type based on user context
     let participantType: ParticipantType;
     if (user.workTeamId) {
@@ -104,10 +104,7 @@ export class ChatController {
   @ApiQuery({ name: 'take', required: false, type: Number })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'List of conversations' })
-  async getConversations(
-    @Query() query: ListConversationsQueryDto,
-    @Request() req: any,
-  ) {
+  async getConversations(@Query() query: ListConversationsQueryDto, @Request() req: any) {
     return this.chatService.getConversations(req.user.userId, query);
   }
 
@@ -119,10 +116,7 @@ export class ChatController {
   @ApiParam({ name: 'id', description: 'Conversation ID' })
   @ApiResponse({ status: 200, description: 'Conversation details' })
   @ApiResponse({ status: 404, description: 'Conversation not found' })
-  async getConversation(
-    @Param('id') id: string,
-    @Request() req: any,
-  ) {
+  async getConversation(@Param('id') id: string, @Request() req: any) {
     return this.chatService.getConversation(id, req.user.userId);
   }
 
@@ -134,10 +128,7 @@ export class ChatController {
   @ApiParam({ name: 'id', description: 'Conversation ID' })
   @ApiResponse({ status: 201, description: 'Participant added' })
   @ApiResponse({ status: 404, description: 'Conversation not found' })
-  async addParticipant(
-    @Param('id') id: string,
-    @Body() dto: AddParticipantDto,
-  ) {
+  async addParticipant(@Param('id') id: string, @Body() dto: AddParticipantDto) {
     return this.chatService.addParticipant(id, dto);
   }
 
@@ -168,11 +159,7 @@ export class ChatController {
   @ApiParam({ name: 'id', description: 'Conversation ID' })
   @ApiResponse({ status: 201, description: 'Message sent' })
   @ApiResponse({ status: 403, description: 'Not a participant' })
-  async sendMessage(
-    @Param('id') id: string,
-    @Body() dto: SendMessageDto,
-    @Request() req: any,
-  ) {
+  async sendMessage(@Param('id') id: string, @Body() dto: SendMessageDto, @Request() req: any) {
     return this.chatService.sendMessage(id, req.user.userId, dto);
   }
 
@@ -184,11 +171,7 @@ export class ChatController {
   @ApiOperation({ summary: 'Mark messages as read' })
   @ApiParam({ name: 'id', description: 'Conversation ID' })
   @ApiResponse({ status: 200, description: 'Messages marked as read' })
-  async markAsRead(
-    @Param('id') id: string,
-    @Body() dto: MarkAsReadDto,
-    @Request() req: any,
-  ) {
+  async markAsRead(@Param('id') id: string, @Body() dto: MarkAsReadDto, @Request() req: any) {
     return this.chatService.markAsRead(id, req.user.userId, dto);
   }
 
@@ -200,11 +183,7 @@ export class ChatController {
   @ApiParam({ name: 'id', description: 'Message ID' })
   @ApiResponse({ status: 200, description: 'Message updated' })
   @ApiResponse({ status: 403, description: 'Can only edit own messages' })
-  async updateMessage(
-    @Param('id') id: string,
-    @Body() dto: UpdateMessageDto,
-    @Request() req: any,
-  ) {
+  async updateMessage(@Param('id') id: string, @Body() dto: UpdateMessageDto, @Request() req: any) {
     return this.chatService.updateMessage(id, req.user.userId, dto);
   }
 
@@ -217,10 +196,7 @@ export class ChatController {
   @ApiParam({ name: 'id', description: 'Message ID' })
   @ApiResponse({ status: 204, description: 'Message deleted' })
   @ApiResponse({ status: 403, description: 'Can only delete own messages' })
-  async deleteMessage(
-    @Param('id') id: string,
-    @Request() req: any,
-  ) {
+  async deleteMessage(@Param('id') id: string, @Request() req: any) {
     await this.chatService.deleteMessage(id, req.user.userId);
   }
 

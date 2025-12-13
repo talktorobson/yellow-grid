@@ -18,11 +18,7 @@ import { NotificationsController } from './controllers/notifications.controller'
 import { WebhooksController } from './controllers/webhooks.controller';
 
 @Module({
-  imports: [
-    ConfigModule,
-    PrismaModule,
-    KafkaModule,
-  ],
+  imports: [ConfigModule, PrismaModule, KafkaModule],
   providers: [
     // External providers
     TwilioProvider,
@@ -34,10 +30,7 @@ import { WebhooksController } from './controllers/webhooks.controller';
     NotificationPreferencesService,
     NotificationEventHandlerService,
   ],
-  controllers: [
-    NotificationsController,
-    WebhooksController,
-  ],
+  controllers: [NotificationsController, WebhooksController],
   exports: [
     NotificationsService,
     TemplateEngineService,

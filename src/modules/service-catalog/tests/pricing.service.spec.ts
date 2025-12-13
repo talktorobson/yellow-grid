@@ -65,7 +65,7 @@ describe('PricingService', () => {
       countryCode: 'ES',
       businessUnit: 'LM_ES',
       postalCodeId: null,
-      baseRate: new Decimal(150.00),
+      baseRate: new Decimal(150.0),
       currency: 'EUR',
       rateType: 'FIXED' as const,
       overtimeMultiplier: new Decimal(1.5),
@@ -94,12 +94,12 @@ describe('PricingService', () => {
       expect(result).toEqual({
         serviceId: 'service-1',
         serviceName: 'HVAC Installation',
-        baseRate: 150.00,
+        baseRate: 150.0,
         currency: 'EUR',
         rateType: 'FIXED',
         appliedMultipliers: {},
-        finalRate: 150.00,
-        totalCost: 150.00,
+        finalRate: 150.0,
+        totalCost: 150.0,
         pricingLevel: 'COUNTRY_DEFAULT',
         postalCodeId: null,
         validFrom: basePricing.validFrom,
@@ -120,8 +120,8 @@ describe('PricingService', () => {
       const result = await service.calculatePrice(context);
 
       expect(result.appliedMultipliers.overtime).toBe(1.5);
-      expect(result.finalRate).toBe(225.00); // 150 * 1.5
-      expect(result.totalCost).toBe(225.00);
+      expect(result.finalRate).toBe(225.0); // 150 * 1.5
+      expect(result.totalCost).toBe(225.0);
     });
 
     it('should apply weekend multiplier', async () => {
@@ -137,7 +137,7 @@ describe('PricingService', () => {
       const result = await service.calculatePrice(context);
 
       expect(result.appliedMultipliers.weekend).toBe(1.3);
-      expect(result.finalRate).toBe(195.00); // 150 * 1.3
+      expect(result.finalRate).toBe(195.0); // 150 * 1.3
     });
 
     it('should apply multiple multipliers (stacking)', async () => {
@@ -158,15 +158,15 @@ describe('PricingService', () => {
       expect(result.appliedMultipliers.weekend).toBe(1.3);
       expect(result.appliedMultipliers.urgent).toBe(1.2);
       // 150 * 1.5 * 1.3 * 1.2 = 351
-      expect(result.finalRate).toBe(351.00);
-      expect(result.totalCost).toBe(351.00);
+      expect(result.finalRate).toBe(351.0);
+      expect(result.totalCost).toBe(351.0);
     });
 
     it('should calculate hourly rate with duration', async () => {
       const hourlyPricing = {
         ...basePricing,
         rateType: 'HOURLY' as const,
-        baseRate: new Decimal(50.00),
+        baseRate: new Decimal(50.0),
       };
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(hourlyPricing);
 
@@ -180,15 +180,15 @@ describe('PricingService', () => {
       const result = await service.calculatePrice(context);
 
       expect(result.rateType).toBe('HOURLY');
-      expect(result.finalRate).toBe(50.00);
-      expect(result.totalCost).toBe(150.00); // 50 * 3
+      expect(result.finalRate).toBe(50.0);
+      expect(result.totalCost).toBe(150.0); // 50 * 3
     });
 
     it('should use postal code-specific pricing when available', async () => {
       const postalCodePricing = {
         ...basePricing,
         postalCodeId: 'postal-1',
-        baseRate: new Decimal(175.00), // Premium pricing for Madrid center
+        baseRate: new Decimal(175.0), // Premium pricing for Madrid center
       };
 
       mockGeographicService.findPostalCodeByCode.mockResolvedValue({
@@ -207,7 +207,7 @@ describe('PricingService', () => {
 
       const result = await service.calculatePrice(context);
 
-      expect(result.baseRate).toBe(175.00);
+      expect(result.baseRate).toBe(175.0);
       expect(result.pricingLevel).toBe('POSTAL_CODE');
       expect(result.postalCodeId).toBe('postal-1');
     });
@@ -221,9 +221,7 @@ describe('PricingService', () => {
         businessUnit: 'LM_ES',
       };
 
-      await expect(service.calculatePrice(context)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.calculatePrice(context)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -234,7 +232,7 @@ describe('PricingService', () => {
       countryCode: 'ES',
       businessUnit: 'LM_ES',
       postalCodeId: null,
-      baseRate: new Decimal(150.00),
+      baseRate: new Decimal(150.0),
       validFrom: new Date('2025-01-01'),
       validUntil: null,
     };
@@ -243,7 +241,7 @@ describe('PricingService', () => {
       const postalCodePricing = {
         ...basePricing,
         postalCodeId: 'postal-1',
-        baseRate: new Decimal(175.00),
+        baseRate: new Decimal(175.0),
       };
 
       mockGeographicService.findPostalCodeByCode.mockResolvedValue({
@@ -251,18 +249,12 @@ describe('PricingService', () => {
         code: '28001',
       });
       mockGeographicService.validatePostalCodeForCountry.mockResolvedValue(true);
-      mockPrismaService.servicePricing.findFirst
-        .mockResolvedValueOnce(postalCodePricing);
+      mockPrismaService.servicePricing.findFirst.mockResolvedValueOnce(postalCodePricing);
 
-      const result = await service.findApplicablePricing(
-        'service-1',
-        'ES',
-        'LM_ES',
-        '28001',
-      );
+      const result = await service.findApplicablePricing('service-1', 'ES', 'LM_ES', '28001');
 
       expect(result.postalCodeId).toBe('postal-1');
-      expect(Number(result.baseRate)).toBe(175.00);
+      expect(Number(result.baseRate)).toBe(175.0);
     });
 
     it('should fall back to country default when no postal code pricing', async () => {
@@ -275,29 +267,17 @@ describe('PricingService', () => {
         .mockResolvedValueOnce(null) // No postal code pricing
         .mockResolvedValueOnce(basePricing); // Country default
 
-      const result = await service.findApplicablePricing(
-        'service-1',
-        'ES',
-        'LM_ES',
-        '28001',
-      );
+      const result = await service.findApplicablePricing('service-1', 'ES', 'LM_ES', '28001');
 
       expect(result.postalCodeId).toBe(null);
-      expect(Number(result.baseRate)).toBe(150.00);
+      expect(Number(result.baseRate)).toBe(150.0);
     });
 
     it('should fall back to country default when postal code not found', async () => {
-      mockGeographicService.findPostalCodeByCode.mockRejectedValue(
-        new NotFoundException(),
-      );
+      mockGeographicService.findPostalCodeByCode.mockRejectedValue(new NotFoundException());
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(basePricing);
 
-      const result = await service.findApplicablePricing(
-        'service-1',
-        'ES',
-        'LM_ES',
-        '99999',
-      );
+      const result = await service.findApplicablePricing('service-1', 'ES', 'LM_ES', '99999');
 
       expect(result.postalCodeId).toBe(null);
     });
@@ -305,12 +285,12 @@ describe('PricingService', () => {
     it('should throw NotFoundException when no pricing found', async () => {
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.findApplicablePricing('service-1', 'ES', 'LM_ES'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.findApplicablePricing('service-1', 'ES', 'LM_ES'),
-      ).rejects.toThrow('No pricing found for service');
+      await expect(service.findApplicablePricing('service-1', 'ES', 'LM_ES')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findApplicablePricing('service-1', 'ES', 'LM_ES')).rejects.toThrow(
+        'No pricing found for service',
+      );
     });
   });
 
@@ -326,7 +306,7 @@ describe('PricingService', () => {
       });
 
       const pricingData = {
-        baseRate: 175.00,
+        baseRate: 175.0,
         currency: 'EUR',
         rateType: 'FIXED' as const,
         validFrom: new Date('2025-01-01'),
@@ -358,7 +338,7 @@ describe('PricingService', () => {
       });
 
       const pricingData = {
-        baseRate: 150.00,
+        baseRate: 150.0,
         currency: 'EUR',
         rateType: 'FIXED' as const,
         validFrom: new Date('2025-01-01'),

@@ -74,9 +74,7 @@ export class ServiceOrdersEventHandler {
         // await this.schedulingService.cancelSchedules(orderId);
       }
 
-      this.logger.log(
-        `✅ Successfully processed order.status_changed event | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed order.status_changed event | order: ${orderId}`);
     } catch (error) {
       this.logger.error(
         `❌ Failed to process order.status_changed event | order: ${orderId}:`,
@@ -120,22 +118,15 @@ export class ServiceOrdersEventHandler {
 
       // Route urgent orders differently
       if (urgency === 'URGENT') {
-        this.logger.log(
-          `🚨 Urgent order detected | order: ${orderId} | urgency: ${urgency}`,
-        );
+        this.logger.log(`🚨 Urgent order detected | order: ${orderId} | urgency: ${urgency}`);
 
         // TODO: Trigger urgent routing
         // await this.assignmentService.initiateUrgentAssignment(orderId);
       }
 
-      this.logger.log(
-        `✅ Successfully processed order.created event | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed order.created event | order: ${orderId}`);
     } catch (error) {
-      this.logger.error(
-        `❌ Failed to process order.created event | order: ${orderId}:`,
-        error,
-      );
+      this.logger.error(`❌ Failed to process order.created event | order: ${orderId}:`, error);
       throw error;
     }
   }
@@ -167,9 +158,7 @@ export class ServiceOrdersEventHandler {
 
     try {
       // Update service order with scheduling information
-      this.logger.log(
-        `📝 Updating service order with scheduling info | order: ${orderId}`,
-      );
+      this.logger.log(`📝 Updating service order with scheduling info | order: ${orderId}`);
 
       // TODO: Update service order status to SCHEDULED
       // await this.serviceOrdersService.updateSchedulingInfo(orderId, {
@@ -179,9 +168,7 @@ export class ServiceOrdersEventHandler {
       //   technicianId,
       // });
 
-      this.logger.log(
-        `✅ Successfully processed appointment.scheduled event | order: ${orderId}`,
-      );
+      this.logger.log(`✅ Successfully processed appointment.scheduled event | order: ${orderId}`);
     } catch (error) {
       this.logger.error(
         `❌ Failed to process appointment.scheduled event | order: ${orderId}:`,

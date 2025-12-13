@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { KafkaProducerService } from '../../common/kafka/kafka-producer.service';
 import {
@@ -13,12 +8,7 @@ import {
   TvOutcomeRecordedEvent,
   TvOutcomeEnum,
 } from './dto';
-import {
-  TvOutcome,
-  ServiceType,
-  DependencyType,
-  ServiceOrderState,
-} from '@prisma/client';
+import { TvOutcome, ServiceType, DependencyType, ServiceOrderState } from '@prisma/client';
 
 @Injectable()
 export class TechnicalVisitsService {
@@ -47,9 +37,7 @@ export class TechnicalVisitsService {
     });
 
     if (!tvServiceOrder) {
-      throw new NotFoundException(
-        `TV Service Order ${recordDto.tvServiceOrderId} not found`,
-      );
+      throw new NotFoundException(`TV Service Order ${recordDto.tvServiceOrderId} not found`);
     }
 
     // Validate service type is CONFIRMATION_TV or QUOTATION_TV
@@ -74,9 +62,7 @@ export class TechnicalVisitsService {
       recordDto.outcome === TvOutcome.YES_BUT &&
       (!recordDto.modifications || recordDto.modifications.length === 0)
     ) {
-      throw new BadRequestException(
-        'Modifications are required for YES_BUT outcome',
-      );
+      throw new BadRequestException('Modifications are required for YES_BUT outcome');
     }
 
     // Validate linked installation order if provided
@@ -94,10 +80,7 @@ export class TechnicalVisitsService {
       }
 
       // Validate it's an installation type
-      if (
-        linkedInstallationOrder.service.serviceType !==
-        ServiceType.INSTALLATION
-      ) {
+      if (linkedInstallationOrder.service.serviceType !== ServiceType.INSTALLATION) {
         throw new BadRequestException(
           `Linked service order ${recordDto.linkedInstallationOrderId} is not an INSTALLATION (type: ${linkedInstallationOrder.service.serviceType})`,
         );
@@ -108,16 +91,13 @@ export class TechnicalVisitsService {
         linkedInstallationOrder.projectId !== tvServiceOrder.projectId &&
         tvServiceOrder.projectId
       ) {
-        throw new BadRequestException(
-          'TV and Installation orders must belong to the same project',
-        );
+        throw new BadRequestException('TV and Installation orders must belong to the same project');
       }
     }
 
     // Determine if installation should be blocked
     const shouldBlockInstallation =
-      recordDto.outcome === TvOutcome.NO ||
-      recordDto.outcome === TvOutcome.YES_BUT;
+      recordDto.outcome === TvOutcome.NO || recordDto.outcome === TvOutcome.YES_BUT;
 
     // Create TV outcome record
     const tvOutcome = await this.prisma.technicalVisitOutcome.create({
@@ -125,16 +105,12 @@ export class TechnicalVisitsService {
         tvServiceOrderId: recordDto.tvServiceOrderId,
         linkedInstallationOrderId: recordDto.linkedInstallationOrderId,
         outcome: recordDto.outcome,
-        modifications: recordDto.modifications
-          ? (recordDto.modifications as any)
-          : null,
+        modifications: recordDto.modifications ? (recordDto.modifications as any) : null,
         technicianNotes: recordDto.technicianNotes,
         recordedBy: userId,
         installationBlocked: shouldBlockInstallation,
-        scopeChangeRequested:
-          recordDto.outcome === TvOutcome.YES_BUT ? true : false,
-        scopeChangeRequestedAt:
-          recordDto.outcome === TvOutcome.YES_BUT ? new Date() : null,
+        scopeChangeRequested: recordDto.outcome === TvOutcome.YES_BUT ? true : false,
+        scopeChangeRequestedAt: recordDto.outcome === TvOutcome.YES_BUT ? new Date() : null,
       },
     });
 
@@ -148,10 +124,7 @@ export class TechnicalVisitsService {
 
     // If outcome is YES and installation was previously blocked, unblock it
     if (recordDto.outcome === TvOutcome.YES && recordDto.linkedInstallationOrderId) {
-      await this.unblockInstallation(
-        recordDto.linkedInstallationOrderId,
-        tvOutcome.id,
-      );
+      await this.unblockInstallation(recordDto.linkedInstallationOrderId, tvOutcome.id);
     }
 
     // Publish Kafka event for downstream consumers
@@ -181,9 +154,7 @@ export class TechnicalVisitsService {
     });
 
     if (!tvOutcome) {
-      throw new NotFoundException(
-        `No TV outcome found for service order ${tvServiceOrderId}`,
-      );
+      throw new NotFoundException(`No TV outcome found for service order ${tvServiceOrderId}`);
     }
 
     // Validate installation order
@@ -214,10 +185,7 @@ export class TechnicalVisitsService {
 
     // Create dependency if installation should be blocked
     if (tvOutcome.installationBlocked) {
-      await this.createInstallationDependency(
-        tvServiceOrderId,
-        linkDto.installationServiceOrderId,
-      );
+      await this.createInstallationDependency(tvServiceOrderId, linkDto.installationServiceOrderId);
     }
 
     this.logger.log(
@@ -236,9 +204,7 @@ export class TechnicalVisitsService {
     });
 
     if (!tvOutcome) {
-      throw new NotFoundException(
-        `No TV outcome found for service order ${tvServiceOrderId}`,
-      );
+      throw new NotFoundException(`No TV outcome found for service order ${tvServiceOrderId}`);
     }
 
     return this.mapToResponseDto(tvOutcome);
@@ -262,10 +228,7 @@ export class TechnicalVisitsService {
   /**
    * Approve scope change for YES_BUT outcome
    */
-  async approveScopeChange(
-    outcomeId: string,
-    approvedBy: string,
-  ): Promise<TvOutcomeResponseDto> {
+  async approveScopeChange(outcomeId: string, approvedBy: string): Promise<TvOutcomeResponseDto> {
     this.logger.log(`Approving scope change for TV outcome ${outcomeId}`);
 
     const tvOutcome = await this.prisma.technicalVisitOutcome.findUnique({
@@ -301,9 +264,7 @@ export class TechnicalVisitsService {
       await this.unblockInstallation(updated.linkedInstallationOrderId, outcomeId);
     }
 
-    this.logger.log(
-      `Scope change approved for TV outcome ${outcomeId} by ${approvedBy}`,
-    );
+    this.logger.log(`Scope change approved for TV outcome ${outcomeId} by ${approvedBy}`);
 
     return this.mapToResponseDto(updated);
   }
@@ -397,10 +358,7 @@ export class TechnicalVisitsService {
    * - Sales Adapter: Send modifications for repricing (YES_BUT) or cancellation (NO)
    * - Assignment Service: Re-assign installation if needed
    */
-  private async publishTvOutcomeRecordedEvent(
-    tvOutcome: any,
-    tvServiceOrder: any,
-  ): Promise<void> {
+  private async publishTvOutcomeRecordedEvent(tvOutcome: any, tvServiceOrder: any): Promise<void> {
     try {
       // Map Prisma TvOutcome enum to event TvOutcomeEnum
       const outcomeMap: Record<TvOutcome, TvOutcomeEnum> = {

@@ -146,9 +146,10 @@ export class AdobeSignProvider implements IESignatureProvider {
         signers: this.mapAdobeSignParticipants(participantsResponse.data.participantSets),
         createdAt: new Date(agreement.createdDate),
         sentAt: agreement.latestVersionId ? new Date(agreement.createdDate) : undefined,
-        completedAt: agreement.signatureType === 'ESIGN' && agreement.status === 'SIGNED'
-          ? new Date(agreement.latestVersionId)
-          : undefined,
+        completedAt:
+          agreement.signatureType === 'ESIGN' && agreement.status === 'SIGNED'
+            ? new Date(agreement.latestVersionId)
+            : undefined,
         expiresAt: agreement.expirationTime ? new Date(agreement.expirationTime) : undefined,
         providerData: {
           state: agreement.state,
@@ -551,8 +552,7 @@ export class AdobeSignProvider implements IESignatureProvider {
   }
 
   private verifyWebhookSignature(payload: unknown, headers: Record<string, string>): void {
-    const signature =
-      headers['x-adobesign-clientid'] || headers['X-AdobeSign-ClientId'];
+    const signature = headers['x-adobesign-clientid'] || headers['X-AdobeSign-ClientId'];
     if (!signature) {
       throw new ESignatureProviderError(
         'Missing webhook signature',

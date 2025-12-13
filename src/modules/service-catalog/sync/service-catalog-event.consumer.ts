@@ -22,8 +22,7 @@ export class ServiceCatalogEventConsumer implements OnModuleInit {
     private readonly syncService: SyncService,
   ) {
     // Check if sync is enabled via environment variable
-    this.isEnabled =
-      process.env.SERVICE_CATALOG_SYNC_ENABLED === 'true' || false;
+    this.isEnabled = process.env.SERVICE_CATALOG_SYNC_ENABLED === 'true' || false;
   }
 
   async onModuleInit() {
@@ -60,9 +59,7 @@ export class ServiceCatalogEventConsumer implements OnModuleInit {
       const eventId = message.key?.toString() || `evt_${Date.now()}`;
 
       // Parse message payload
-      const payload: ServiceEventPayload = JSON.parse(
-        message.value?.toString() || '{}',
-      );
+      const payload: ServiceEventPayload = JSON.parse(message.value?.toString() || '{}');
 
       this.logger.log(
         `Received event ${eventId}: ${payload.eventType} for ${payload.data.externalServiceCode}`,
@@ -75,16 +72,12 @@ export class ServiceCatalogEventConsumer implements OnModuleInit {
 
       if (existingLog) {
         if (existingLog.processingStatus === 'COMPLETED') {
-          this.logger.warn(
-            `Event ${eventId} already processed successfully, skipping`,
-          );
+          this.logger.warn(`Event ${eventId} already processed successfully, skipping`);
           return;
         }
 
         if (existingLog.processingStatus === 'PROCESSING') {
-          this.logger.warn(
-            `Event ${eventId} is currently being processed, skipping duplicate`,
-          );
+          this.logger.warn(`Event ${eventId} is currently being processed, skipping duplicate`);
           return;
         }
 
@@ -93,17 +86,19 @@ export class ServiceCatalogEventConsumer implements OnModuleInit {
       }
 
       // Step 2: Log event to database (for idempotency tracking)
-      const eventLog = existingLog || await this.prisma.serviceCatalogEventLog.create({
-        data: {
-          eventId,
-          eventType: payload.eventType,
-          externalSource: payload.source,
-          externalServiceCode: payload.data.externalServiceCode,
-          processingStatus: 'PENDING',
-          payload: payload as any,
-          receivedAt: new Date(payload.timestamp),
-        },
-      });
+      const eventLog =
+        existingLog ||
+        (await this.prisma.serviceCatalogEventLog.create({
+          data: {
+            eventId,
+            eventType: payload.eventType,
+            externalSource: payload.source,
+            externalServiceCode: payload.data.externalServiceCode,
+            processingStatus: 'PENDING',
+            payload: payload as any,
+            receivedAt: new Date(payload.timestamp),
+          },
+        }));
 
       // Step 3: Mark as processing
       await this.prisma.serviceCatalogEventLog.update({
@@ -132,17 +127,12 @@ export class ServiceCatalogEventConsumer implements OnModuleInit {
       }
 
       const processingTime = Date.now() - startTime;
-      this.logger.log(
-        `Event ${eventId} processed successfully in ${processingTime}ms`,
-      );
+      this.logger.log(`Event ${eventId} processed successfully in ${processingTime}ms`);
 
       // Step 5: Event log status is updated by SyncService methods
       // No need to update here
     } catch (error) {
-      this.logger.error(
-        `Failed to process Kafka message: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error(`Failed to process Kafka message: ${error.message}`, error.stack);
       throw error; // Let Kafka consumer handle retry
     }
   }

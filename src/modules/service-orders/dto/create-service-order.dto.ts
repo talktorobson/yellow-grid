@@ -237,7 +237,7 @@ export class CreateServiceOrderDto {
 
   @ApiProperty({
     description: 'Pre-estimation value',
-    example: 1500.00,
+    example: 1500.0,
     required: false,
   })
   @IsNumber()

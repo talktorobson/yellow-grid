@@ -86,7 +86,8 @@ export class ServiceCatalogEventLogService {
     }
 
     const retries = (eventLog.retryCount || 0) + 1;
-    const status: EventProcessingStatus = retries >= 3 ? EventProcessingStatus.DEAD_LETTER : EventProcessingStatus.FAILED;
+    const status: EventProcessingStatus =
+      retries >= 3 ? EventProcessingStatus.DEAD_LETTER : EventProcessingStatus.FAILED;
 
     await this.prisma.serviceCatalogEventLog.update({
       where: { id: eventLog.id },
@@ -98,9 +99,7 @@ export class ServiceCatalogEventLogService {
     });
 
     if (status === EventProcessingStatus.DEAD_LETTER) {
-      this.logger.error(
-        `⚠️ Event ${eventId} moved to dead letter queue after ${retries} attempts`
-      );
+      this.logger.error(`⚠️ Event ${eventId} moved to dead letter queue after ${retries} attempts`);
     }
   }
 

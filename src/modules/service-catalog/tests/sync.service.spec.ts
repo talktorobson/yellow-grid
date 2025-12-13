@@ -139,14 +139,12 @@ describe('SyncService', () => {
 
     it('should update event log to FAILED on error', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
-      mockServiceCatalogService.create.mockRejectedValue(
-        new Error('Database error'),
-      );
+      mockServiceCatalogService.create.mockRejectedValue(new Error('Database error'));
       mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue({});
 
-      await expect(
-        service.handleServiceCreated(eventPayload, 'event-log-1'),
-      ).rejects.toThrow('Database error');
+      await expect(service.handleServiceCreated(eventPayload, 'event-log-1')).rejects.toThrow(
+        'Database error',
+      );
 
       expect(prisma.serviceCatalogEventLog.update).toHaveBeenCalledWith({
         where: { id: 'event-log-1' },
@@ -252,9 +250,7 @@ describe('SyncService', () => {
 
       await service.handleServiceUpdated(eventPayload, 'event-log-1');
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Breaking changes detected'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Breaking changes detected'));
       expect(serviceCatalogService.detectBreakingChanges).toHaveBeenCalled();
     });
   });
@@ -442,9 +438,7 @@ describe('SyncService', () => {
 
       mockPrismaService.serviceCatalogEventLog.findMany.mockResolvedValue([maxRetriesEvent]);
       mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue({});
-      mockPrismaService.serviceCatalog.findUnique.mockRejectedValue(
-        new Error('Persistent error'),
-      );
+      mockPrismaService.serviceCatalog.findUnique.mockRejectedValue(new Error('Persistent error'));
 
       await service.retryFailedEvents(3);
 
@@ -462,10 +456,10 @@ describe('SyncService', () => {
     it('should return sync statistics', async () => {
       mockPrismaService.serviceCatalogEventLog.count
         .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(80)  // completed
-        .mockResolvedValueOnce(10)  // failed
-        .mockResolvedValueOnce(5)   // pending
-        .mockResolvedValueOnce(5);  // processing
+        .mockResolvedValueOnce(80) // completed
+        .mockResolvedValueOnce(10) // failed
+        .mockResolvedValueOnce(5) // pending
+        .mockResolvedValueOnce(5); // processing
 
       const result = await service.getSyncStatistics('PYXIS');
 

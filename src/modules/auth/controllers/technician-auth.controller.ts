@@ -1,7 +1,24 @@
-import { Controller, Post, Get, Delete, Body, Param, UseGuards, HttpCode, HttpStatus, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { TechnicianAuthService } from '../services/technician-auth.service';
-import { TechnicianRegisterDto, TechnicianLoginDto, BiometricSetupDto, BiometricLoginDto, AuthResponseDto } from '../dto';
+import {
+  TechnicianRegisterDto,
+  TechnicianLoginDto,
+  BiometricSetupDto,
+  BiometricLoginDto,
+  AuthResponseDto,
+} from '../dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserTypeGuard } from '../guards/user-type.guard';
 import { UserType } from '../decorators/user-type.decorator';
@@ -14,7 +31,8 @@ export class TechnicianAuthController {
   @Post('register')
   @ApiOperation({
     summary: 'Register a new technician user',
-    description: 'Creates a new external technician user account and links to an existing work team',
+    description:
+      'Creates a new external technician user account and links to an existing work team',
   })
   @ApiBody({ type: TechnicianRegisterDto })
   @ApiResponse({

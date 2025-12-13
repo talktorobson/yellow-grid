@@ -100,9 +100,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when postal code not found', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(null);
 
-      await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(NotFoundException);
       await expect(service.findPostalCodeByCode('99999')).rejects.toThrow(
         'Postal code 99999 not found in geographic database',
       );
@@ -135,9 +133,7 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when country not found', async () => {
       mockPrismaService.country.findUnique.mockResolvedValue(null);
 
-      await expect(service.findCountryByCode('XX')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findCountryByCode('XX')).rejects.toThrow(NotFoundException);
       await expect(service.findCountryByCode('XX')).rejects.toThrow(
         'Country with code XX not found',
       );
@@ -146,10 +142,38 @@ describe('GeographicService', () => {
 
   describe('findAllCountries', () => {
     const mockCountries = [
-      { id: '1', code: 'ES', name: 'Spain', timezone: 'Europe/Madrid', currency: 'EUR', locale: 'es-ES' },
-      { id: '2', code: 'FR', name: 'France', timezone: 'Europe/Paris', currency: 'EUR', locale: 'fr-FR' },
-      { id: '3', code: 'IT', name: 'Italy', timezone: 'Europe/Rome', currency: 'EUR', locale: 'it-IT' },
-      { id: '4', code: 'PL', name: 'Poland', timezone: 'Europe/Warsaw', currency: 'PLN', locale: 'pl-PL' },
+      {
+        id: '1',
+        code: 'ES',
+        name: 'Spain',
+        timezone: 'Europe/Madrid',
+        currency: 'EUR',
+        locale: 'es-ES',
+      },
+      {
+        id: '2',
+        code: 'FR',
+        name: 'France',
+        timezone: 'Europe/Paris',
+        currency: 'EUR',
+        locale: 'fr-FR',
+      },
+      {
+        id: '3',
+        code: 'IT',
+        name: 'Italy',
+        timezone: 'Europe/Rome',
+        currency: 'EUR',
+        locale: 'it-IT',
+      },
+      {
+        id: '4',
+        code: 'PL',
+        name: 'Poland',
+        timezone: 'Europe/Warsaw',
+        currency: 'PLN',
+        locale: 'pl-PL',
+      },
     ];
 
     it('should return all countries ordered by code', async () => {
@@ -245,12 +269,12 @@ describe('GeographicService', () => {
     it('should throw NotFoundException when postal code does not belong to country', async () => {
       mockPrismaService.postalCode.findFirst.mockResolvedValue(mockPostalCode);
 
-      await expect(
-        service.validatePostalCodeForCountry('28001', 'FR'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.validatePostalCodeForCountry('28001', 'FR'),
-      ).rejects.toThrow('Postal code 28001 does not belong to country FR');
+      await expect(service.validatePostalCodeForCountry('28001', 'FR')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.validatePostalCodeForCountry('28001', 'FR')).rejects.toThrow(
+        'Postal code 28001 does not belong to country FR',
+      );
     });
   });
 

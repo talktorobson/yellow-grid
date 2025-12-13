@@ -6,11 +6,14 @@ export interface NotificationPreferenceData {
   emailEnabled?: boolean;
   smsEnabled?: boolean;
   pushEnabled?: boolean;
-  eventPreferences?: Record<string, {
-    email?: boolean;
-    sms?: boolean;
-    push?: boolean;
-  }>;
+  eventPreferences?: Record<
+    string,
+    {
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+    }
+  >;
   quietHoursEnabled?: boolean;
   quietHoursStart?: string;
   quietHoursEnd?: string;
@@ -138,9 +141,7 @@ export class NotificationPreferencesService {
     if (preferences.quietHoursEnabled) {
       const quietHoursCheck = this.isQuietHours(preferences);
       if (quietHoursCheck.isQuietHours) {
-        this.logger.debug(
-          `Quiet hours active for user: ${userId} - ${quietHoursCheck.reason}`,
-        );
+        this.logger.debug(`Quiet hours active for user: ${userId} - ${quietHoursCheck.reason}`);
         return false;
       }
     }
@@ -152,7 +153,11 @@ export class NotificationPreferencesService {
    * Check if current time is within user's quiet hours
    */
   private isQuietHours(preferences: any): QuietHoursCheck {
-    if (!preferences.quietHoursEnabled || !preferences.quietHoursStart || !preferences.quietHoursEnd) {
+    if (
+      !preferences.quietHoursEnabled ||
+      !preferences.quietHoursStart ||
+      !preferences.quietHoursEnd
+    ) {
       return { isQuietHours: false };
     }
 

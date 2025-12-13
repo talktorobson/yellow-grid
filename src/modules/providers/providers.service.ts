@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import {
   CreateProviderDto,
@@ -119,7 +125,11 @@ export class ProvidersService {
    * @param currentUserBU - The business unit of the current user.
    * @returns A paginated list of providers.
    */
-  async findAllProviders(query: QueryProvidersDto, currentUserCountry: string, currentUserBU: string) {
+  async findAllProviders(
+    query: QueryProvidersDto,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const { page = 1, limit = 20, search, countryCode, businessUnit, status } = query;
     const skip = (page - 1) * limit;
 
@@ -355,7 +365,12 @@ export class ProvidersService {
    * @throws {NotFoundException} If the provider is not found.
    * @throws {ForbiddenException} If the provider has associated work teams.
    */
-  async removeProvider(id: string, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async removeProvider(
+    id: string,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const existing = await this.prisma.provider.findFirst({
       where: {
         id,
@@ -373,7 +388,9 @@ export class ProvidersService {
 
     // Check if provider has work teams
     if (existing.workTeams.length > 0) {
-      throw new ForbiddenException('Cannot delete provider with existing work teams. Delete work teams first.');
+      throw new ForbiddenException(
+        'Cannot delete provider with existing work teams. Delete work teams first.',
+      );
     }
 
     await this.prisma.provider.delete({
@@ -447,7 +464,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Work team created: ${workTeam.name} (${workTeam.id}) for provider ${providerId} by ${currentUserId}`);
+    this.logger.log(
+      `Work team created: ${workTeam.name} (${workTeam.id}) for provider ${providerId} by ${currentUserId}`,
+    );
     return workTeam;
   }
 
@@ -653,7 +672,11 @@ export class ProvidersService {
    * @returns {Promise<ProviderWorkingScheduleResponseDto>} The working schedule.
    * @throws {NotFoundException} If the provider is not found.
    */
-  async getProviderWorkingSchedule(providerId: string, currentUserCountry: string, currentUserBU: string) {
+  async getProviderWorkingSchedule(
+    providerId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const provider = await this.prisma.provider.findFirst({
       where: {
         id: providerId,
@@ -775,7 +798,11 @@ export class ProvidersService {
    * @returns {Promise<InterventionZoneResponseDto[]>} A list of intervention zones.
    * @throws {NotFoundException} If the provider is not found.
    */
-  async getProviderInterventionZones(providerId: string, currentUserCountry: string, currentUserBU: string) {
+  async getProviderInterventionZones(
+    providerId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const provider = await this.prisma.provider.findFirst({
       where: {
         id: providerId,
@@ -843,7 +870,9 @@ export class ProvidersService {
         zoneCode: dto.zoneCode,
         zoneType: dto.zoneType,
         postalCodes: dto.postalCodes || [],
-        postalCodeVectors: dto.postalCodeVectors ? (dto.postalCodeVectors as unknown as any) : undefined,
+        postalCodeVectors: dto.postalCodeVectors
+          ? (dto.postalCodeVectors as unknown as any)
+          : undefined,
         boundaryGeoJson: dto.boundaryGeoJson ? (dto.boundaryGeoJson as unknown as any) : undefined,
         maxCommuteMinutes: dto.maxCommuteMinutes ?? 60,
         defaultTravelBuffer: dto.defaultTravelBuffer ?? 30,
@@ -859,7 +888,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Intervention zone created: ${zone.name} (${zone.id}) for provider ${providerId} by ${currentUserId}`);
+    this.logger.log(
+      `Intervention zone created: ${zone.name} (${zone.id}) for provider ${providerId} by ${currentUserId}`,
+    );
     return zone;
   }
 
@@ -902,7 +933,9 @@ export class ProvidersService {
         zoneCode: dto.zoneCode,
         zoneType: dto.zoneType,
         postalCodes: dto.postalCodes,
-        postalCodeVectors: dto.postalCodeVectors ? (dto.postalCodeVectors as unknown as any) : undefined,
+        postalCodeVectors: dto.postalCodeVectors
+          ? (dto.postalCodeVectors as unknown as any)
+          : undefined,
         boundaryGeoJson: dto.boundaryGeoJson ? (dto.boundaryGeoJson as unknown as any) : undefined,
         maxCommuteMinutes: dto.maxCommuteMinutes,
         defaultTravelBuffer: dto.defaultTravelBuffer,
@@ -932,7 +965,12 @@ export class ProvidersService {
    * @returns {Promise<{ message: string }>} A confirmation message.
    * @throws {NotFoundException} If the intervention zone is not found.
    */
-  async deleteInterventionZone(zoneId: string, currentUserId: string, currentUserCountry: string, currentUserBU: string) {
+  async deleteInterventionZone(
+    zoneId: string,
+    currentUserId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const zone = await this.prisma.interventionZone.findFirst({
       where: {
         id: zoneId,
@@ -978,7 +1016,11 @@ export class ProvidersService {
    * @returns {Promise<ServicePriorityConfigResponseDto[]>} A list of service priority configs.
    * @throws {NotFoundException} If the provider is not found.
    */
-  async getProviderServicePriorities(providerId: string, currentUserCountry: string, currentUserBU: string) {
+  async getProviderServicePriorities(
+    providerId: string,
+    currentUserCountry: string,
+    currentUserBU: string,
+  ) {
     const provider = await this.prisma.provider.findFirst({
       where: {
         id: providerId,
@@ -1082,7 +1124,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Service priority config upserted for provider ${providerId}, specialty ${dto.specialtyId} by ${currentUserId}`);
+    this.logger.log(
+      `Service priority config upserted for provider ${providerId}, specialty ${dto.specialtyId} by ${currentUserId}`,
+    );
     return config;
   }
 
@@ -1117,7 +1161,7 @@ export class ProvidersService {
     }
 
     const results = await Promise.all(
-      dto.priorities.map(priorityConfig =>
+      dto.priorities.map((priorityConfig) =>
         this.prisma.servicePriorityConfig.upsert({
           where: {
             providerId_specialtyId: {
@@ -1152,11 +1196,13 @@ export class ProvidersService {
               },
             },
           },
-        })
-      )
+        }),
+      ),
     );
 
-    this.logger.log(`Bulk service priority config upsert for provider ${providerId} by ${currentUserId}`);
+    this.logger.log(
+      `Bulk service priority config upsert for provider ${providerId} by ${currentUserId}`,
+    );
     return results;
   }
 
@@ -1202,7 +1248,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Service priority config deleted for provider ${providerId}, specialty ${specialtyId} by ${currentUserId}`);
+    this.logger.log(
+      `Service priority config deleted for provider ${providerId}, specialty ${specialtyId} by ${currentUserId}`,
+    );
     return { message: 'Service priority config successfully deleted' };
   }
 
@@ -1224,7 +1272,11 @@ export class ProvidersService {
   async assignWorkTeamToZone(
     workTeamId: string,
     interventionZoneId: string,
-    overrides: { maxDailyJobsOverride?: number; assignmentPriorityOverride?: number; travelBufferOverride?: number } = {},
+    overrides: {
+      maxDailyJobsOverride?: number;
+      assignmentPriorityOverride?: number;
+      travelBufferOverride?: number;
+    } = {},
     currentUserId: string,
     currentUserCountry: string,
   ) {
@@ -1272,7 +1324,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Work team ${workTeamId} assigned to zone ${interventionZoneId} by ${currentUserId}`);
+    this.logger.log(
+      `Work team ${workTeamId} assigned to zone ${interventionZoneId} by ${currentUserId}`,
+    );
     return assignment;
   }
 
@@ -1315,7 +1369,9 @@ export class ProvidersService {
       },
     });
 
-    this.logger.log(`Work team ${workTeamId} removed from zone ${interventionZoneId} by ${currentUserId}`);
+    this.logger.log(
+      `Work team ${workTeamId} removed from zone ${interventionZoneId} by ${currentUserId}`,
+    );
     return { message: 'Work team zone assignment successfully deleted' };
   }
 

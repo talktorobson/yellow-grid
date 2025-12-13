@@ -156,7 +156,10 @@ describe('AuthController', () => {
 
       await controller.logout(currentUser, refreshTokenDto);
 
-      expect(authService.logout).toHaveBeenCalledWith(currentUser.userId, refreshTokenDto.refreshToken);
+      expect(authService.logout).toHaveBeenCalledWith(
+        currentUser.userId,
+        refreshTokenDto.refreshToken,
+      );
     });
 
     it('should not return any value (NO_CONTENT)', async () => {

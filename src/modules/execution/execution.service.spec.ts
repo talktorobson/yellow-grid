@@ -55,7 +55,9 @@ describe('ExecutionService', () => {
 
       expect(result.id).toBe('ci1');
       expect(mockPrisma.serviceOrder.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ state: ServiceOrderState.IN_PROGRESS }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ state: ServiceOrderState.IN_PROGRESS }),
+        }),
       );
     });
 
@@ -207,7 +209,9 @@ describe('ExecutionService', () => {
 
       expect(result.id).toBe('co1');
       expect(mockPrisma.serviceOrder.update).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ state: ServiceOrderState.COMPLETED }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ state: ServiceOrderState.COMPLETED }),
+        }),
       );
     });
   });

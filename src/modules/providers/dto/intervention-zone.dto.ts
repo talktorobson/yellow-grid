@@ -1,11 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsArray, IsInt, Min, Max, MinLength, MaxLength, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsArray,
+  IsInt,
+  Min,
+  Max,
+  MinLength,
+  MaxLength,
+  IsObject,
+} from 'class-validator';
 
 // Match the Prisma enum exactly
 export enum ZoneType {
-  PRIMARY = 'PRIMARY',     // Main coverage area - prioritized
+  PRIMARY = 'PRIMARY', // Main coverage area - prioritized
   SECONDARY = 'SECONDARY', // Extended coverage - lower priority
-  OVERFLOW = 'OVERFLOW',   // Emergency coverage only
+  OVERFLOW = 'OVERFLOW', // Emergency coverage only
 }
 
 class PostalCodeVectorDto {
@@ -63,7 +74,17 @@ export class CreateInterventionZoneDto {
 
   @ApiProperty({
     description: 'GeoJSON Polygon for zone boundary',
-    example: { type: 'Polygon', coordinates: [[[-3.71, 40.42], [-3.70, 40.41], [-3.72, 40.40], [-3.71, 40.42]]] },
+    example: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-3.71, 40.42],
+          [-3.7, 40.41],
+          [-3.72, 40.4],
+          [-3.71, 40.42],
+        ],
+      ],
+    },
     required: false,
   })
   @IsOptional()
@@ -166,7 +187,17 @@ export class UpdateInterventionZoneDto {
 
   @ApiProperty({
     description: 'GeoJSON Polygon for zone boundary',
-    example: { type: 'Polygon', coordinates: [[[-3.71, 40.42], [-3.70, 40.41], [-3.72, 40.40], [-3.71, 40.42]]] },
+    example: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-3.71, 40.42],
+          [-3.7, 40.41],
+          [-3.72, 40.4],
+          [-3.71, 40.42],
+        ],
+      ],
+    },
     required: false,
   })
   @IsOptional()

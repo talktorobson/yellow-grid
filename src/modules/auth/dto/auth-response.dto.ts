@@ -19,7 +19,11 @@ export class UserDto {
   @ApiProperty({ description: 'Business unit', example: 'LM_ES' })
   businessUnit: string;
 
-  @ApiProperty({ description: 'User type', example: 'INTERNAL', enum: ['INTERNAL', 'EXTERNAL_PROVIDER', 'EXTERNAL_TECHNICIAN'] })
+  @ApiProperty({
+    description: 'User type',
+    example: 'INTERNAL',
+    enum: ['INTERNAL', 'EXTERNAL_PROVIDER', 'EXTERNAL_TECHNICIAN'],
+  })
   userType: string;
 
   @ApiProperty({ description: 'Assigned roles', example: ['OPERATOR'] })

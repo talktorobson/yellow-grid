@@ -46,9 +46,7 @@ export class EventHandlerRegistry implements OnModuleInit {
   /**
    * Discover all event handlers from providers
    */
-  private discoverEventHandlers(
-    providers: InstanceWrapper[],
-  ): Array<{
+  private discoverEventHandlers(providers: InstanceWrapper[]): Array<{
     instance: any;
     methodName: string;
     config: EventHandlerConfig;
@@ -164,9 +162,7 @@ export class EventHandlerRegistry implements OnModuleInit {
       const eventName = headers['event-name'] || data?.event_name;
 
       if (!eventName) {
-        this.logger.warn(
-          `⚠️  No event name found in message from topic: ${topic}`,
-        );
+        this.logger.warn(`⚠️  No event name found in message from topic: ${topic}`);
         return;
       }
 
@@ -176,9 +172,7 @@ export class EventHandlerRegistry implements OnModuleInit {
       );
 
       if (matchingHandlers.length === 0) {
-        this.logger.debug(
-          `No handlers found for event: ${eventName} in group: ${groupId}`,
-        );
+        this.logger.debug(`No handlers found for event: ${eventName} in group: ${groupId}`);
         return;
       }
 
@@ -228,7 +222,8 @@ export class EventHandlerRegistry implements OnModuleInit {
     const topicsSet = new Set<string>();
 
     for (const handler of handlers) {
-      const topics = handler.config.topics || this.deriveTopicsFromEventName(handler.config.eventName);
+      const topics =
+        handler.config.topics || this.deriveTopicsFromEventName(handler.config.eventName);
 
       for (const topic of topics) {
         topicsSet.add(topic);
@@ -266,18 +261,13 @@ export class EventHandlerRegistry implements OnModuleInit {
   /**
    * Get consumer group ID for a handler
    */
-  private getConsumerGroupId(handler: {
-    instance: any;
-    config: EventHandlerConfig;
-  }): string {
+  private getConsumerGroupId(handler: { instance: any; config: EventHandlerConfig }): string {
     if (handler.config.groupId) {
       return handler.config.groupId;
     }
 
     // Default: service-name + event-name
-    const serviceName = handler.instance.constructor.name
-      .replace(/Service$/, '')
-      .toLowerCase();
+    const serviceName = handler.instance.constructor.name.replace(/Service$/, '').toLowerCase();
     const eventSlug = handler.config.eventName.replace(/\*/g, 'all').replace(/\./g, '-');
 
     return `${serviceName}-${eventSlug}`;
@@ -293,9 +283,7 @@ export class EventHandlerRegistry implements OnModuleInit {
     }
 
     // Pattern matching with wildcards
-    const regexPattern = pattern
-      .replace(/\./g, '\\.')
-      .replace(/\*/g, '.*');
+    const regexPattern = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*');
 
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(eventName);

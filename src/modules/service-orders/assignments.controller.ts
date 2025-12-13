@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AssignmentsService } from './assignments.service';
 import { AssignmentMode, AssignmentState } from '@prisma/client';
@@ -157,7 +166,8 @@ export class AssignmentsController {
   @ApiResponse({
     status: 200,
     type: AssignmentFunnelResponseDto,
-    description: 'Returns detailed funnel execution data showing how providers were filtered and scored'
+    description:
+      'Returns detailed funnel execution data showing how providers were filtered and scored',
   })
   @ApiResponse({ status: 404, description: 'Assignment or funnel data not found' })
   async getFunnel(@Param('id') id: string): Promise<AssignmentFunnelResponseDto> {

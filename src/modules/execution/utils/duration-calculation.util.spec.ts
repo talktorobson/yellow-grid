@@ -80,9 +80,7 @@ describe('Duration Calculation Utility', () => {
       expect(result.isMultiDay).toBe(true);
       expect(result.daysSpanned).toBe(2);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('Multi-day work session detected'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('Multi-day work session detected')]),
       );
     });
 
@@ -104,9 +102,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.totalHours).toBe(18);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('exceeds maximum allowed'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('exceeds maximum allowed')]),
       );
     });
 
@@ -121,9 +117,7 @@ describe('Duration Calculation Utility', () => {
       });
 
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('more than 50% of total time'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('more than 50% of total time')]),
       );
     });
 
@@ -148,9 +142,7 @@ describe('Duration Calculation Utility', () => {
       expect(result.overtimeHours).toBe(0);
       expect(result.doubleTimeHours).toBe(2);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('Weekend work detected'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('Weekend work detected')]),
       );
     });
 
@@ -221,9 +213,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(false);
       expect(result.errors).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('must be after check-in time'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('must be after check-in time')]),
       );
     });
 
@@ -253,9 +243,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(false);
       expect(result.errors).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('cannot exceed total duration'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('cannot exceed total duration')]),
       );
     });
 
@@ -270,9 +258,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(true);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('Very short work session'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('Very short work session')]),
       );
     });
 
@@ -287,9 +273,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(true);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('exceeds 24 hours'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('exceeds 24 hours')]),
       );
     });
 
@@ -305,9 +289,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(true);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('No break time recorded'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('No break time recorded')]),
       );
     });
 
@@ -362,9 +344,7 @@ describe('Duration Calculation Utility', () => {
 
       expect(result.valid).toBe(true);
       expect(result.warnings).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('more than 7 days ago'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('more than 7 days ago')]),
       );
     });
   });

@@ -81,13 +81,8 @@ export class OrderMappingService {
   /**
    * Map external order intake request to internal service order format
    */
-  mapToInternalFormat(
-    request: OrderIntakeRequestDto,
-    fsmOrderId: string,
-  ): InternalServiceOrder {
-    this.logger.log(
-      `Mapping external order ${request.externalOrderId} to internal format`,
-    );
+  mapToInternalFormat(request: OrderIntakeRequestDto, fsmOrderId: string): InternalServiceOrder {
+    this.logger.log(`Mapping external order ${request.externalOrderId} to internal format`);
 
     const now = new Date().toISOString();
 
@@ -137,8 +132,7 @@ export class OrderMappingService {
         preferredDate: request.schedulingPreferences?.preferredDate,
         timeWindow: request.schedulingPreferences?.timeWindow,
         excludedDates: request.schedulingPreferences?.excludedDates || [],
-        technicianPreference:
-          request.schedulingPreferences?.technicianPreference,
+        technicianPreference: request.schedulingPreferences?.technicianPreference,
         notes: request.schedulingPreferences?.notes,
       },
       requiredSkills: request.requiredSkills || [],
@@ -176,9 +170,7 @@ export class OrderMappingService {
   /**
    * Map internal service order to external format for status updates
    */
-  mapToExternalFormat(
-    internalOrder: InternalServiceOrder,
-  ): Record<string, unknown> {
+  mapToExternalFormat(internalOrder: InternalServiceOrder): Record<string, unknown> {
     this.logger.log(`Mapping internal order ${internalOrder.id} to external format`);
 
     return {
@@ -268,10 +260,8 @@ export class OrderMappingService {
     if (!order.customerId) errors.push('Customer ID is required');
     if (!order.orderType) errors.push('Order type is required');
     if (!order.status) errors.push('Status is required');
-    if (order.serviceItems.length === 0)
-      errors.push('At least one service item is required');
-    if (!order.serviceAddress.country)
-      errors.push('Service address country is required');
+    if (order.serviceItems.length === 0) errors.push('At least one service item is required');
+    if (!order.serviceAddress.country) errors.push('Service address country is required');
 
     return {
       isValid: errors.length === 0,

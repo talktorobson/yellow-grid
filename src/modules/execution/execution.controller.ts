@@ -107,7 +107,8 @@ export class ExecutionController {
   @Get('sync/status')
   @ApiOperation({
     summary: 'Get sync status - check pending uploads, conflicts, and sync health',
-    description: 'Returns current sync state for device including pending operations and health metrics.',
+    description:
+      'Returns current sync state for device including pending operations and health metrics.',
   })
   @ApiResponse({ status: 200, description: 'Sync status retrieved', type: SyncStatusResponseDto })
   @ApiResponse({ status: 404, description: 'Device sync not found' })

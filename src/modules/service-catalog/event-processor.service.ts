@@ -106,25 +106,17 @@ export class ServiceCatalogEventProcessor {
    * @param events - Array of events
    * @returns Batch processing results
    */
-  async processEventBatch(
-    events: ServiceCatalogEvent[],
-  ): Promise<BatchProcessingResult> {
+  async processEventBatch(events: ServiceCatalogEvent[]): Promise<BatchProcessingResult> {
     this.logger.log(`📦 Processing batch of ${events.length} events`);
 
-    const results = await Promise.allSettled(
-      events.map((event) => this.processEvent(event)),
-    );
+    const results = await Promise.allSettled(events.map((event) => this.processEvent(event)));
 
-    const successful = results.filter(
-      (r) => r.status === 'fulfilled' && r.value.success,
-    ).length;
+    const successful = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
     const failed = results.filter(
       (r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success),
     ).length;
 
-    this.logger.log(
-      `✅ Batch processed: ${successful} successful, ${failed} failed`,
-    );
+    this.logger.log(`✅ Batch processed: ${successful} successful, ${failed} failed`);
 
     const processedResults: ProcessingResult[] = results.map((r) =>
       r.status === 'fulfilled'
@@ -166,10 +158,7 @@ export class ServiceCatalogEventProcessor {
           retriedCount++;
         }
       } catch (error) {
-        this.logger.error(
-          `Failed to retry event ${eventLog.eventId}:`,
-          error,
-        );
+        this.logger.error(`Failed to retry event ${eventLog.eventId}:`, error);
       }
     }
 

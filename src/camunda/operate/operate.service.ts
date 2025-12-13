@@ -63,7 +63,7 @@ export interface FlowNodeInstance {
 
 /**
  * Operate Service
- * 
+ *
  * Provides access to Camunda Operate API for:
  * - Process instance monitoring
  * - Incident management
@@ -78,10 +78,10 @@ export class OperateService {
 
   constructor(private readonly configService: ConfigService) {
     this.baseUrl = this.configService.get<string>('OPERATE_URL', 'http://localhost:8081');
-    
+
     const username = this.configService.get<string>('OPERATE_USERNAME');
     const password = this.configService.get<string>('OPERATE_PASSWORD');
-    
+
     if (username && password) {
       this.auth = { username, password };
     } else {
@@ -92,17 +92,19 @@ export class OperateService {
   /**
    * Get process instances with optional filtering
    */
-  async getProcessInstances(options: {
-    bpmnProcessId?: string;
-    state?: ProcessInstance['state'];
-    startDateAfter?: Date;
-    startDateBefore?: Date;
-    size?: number;
-  } = {}): Promise<ProcessInstance[]> {
+  async getProcessInstances(
+    options: {
+      bpmnProcessId?: string;
+      state?: ProcessInstance['state'];
+      startDateAfter?: Date;
+      startDateBefore?: Date;
+      size?: number;
+    } = {},
+  ): Promise<ProcessInstance[]> {
     const { bpmnProcessId, state, startDateAfter, startDateBefore, size = 50 } = options;
-    
+
     const filter: Record<string, any> = {};
-    
+
     if (bpmnProcessId) filter.bpmnProcessId = bpmnProcessId;
     if (state) filter.state = state;
     if (startDateAfter) filter.startDate = { $gte: startDateAfter.toISOString() };
@@ -129,7 +131,7 @@ export class OperateService {
    */
   async getIncidents(processInstanceKey?: number): Promise<Incident[]> {
     const filter: Record<string, any> = { state: 'ACTIVE' };
-    
+
     if (processInstanceKey) {
       filter.processInstanceKey = processInstanceKey;
     }
@@ -286,7 +288,9 @@ export class OperateService {
     };
 
     if (this.auth) {
-      const credentials = Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64');
+      const credentials = Buffer.from(`${this.auth.username}:${this.auth.password}`).toString(
+        'base64',
+      );
       headers['Authorization'] = `Basic ${credentials}`;
     }
 

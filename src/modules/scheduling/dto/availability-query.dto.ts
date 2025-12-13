@@ -11,7 +11,8 @@ export class AvailabilityQueryDto {
   bookingDate: string;
 
   @ApiProperty({
-    description: 'Desired duration in minutes (optional). When provided, only start slots that fit are returned.',
+    description:
+      'Desired duration in minutes (optional). When provided, only start slots that fit are returned.',
     required: false,
     minimum: 15,
   })

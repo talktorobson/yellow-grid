@@ -122,7 +122,9 @@ export class ProviderRankingService {
 
       // Eligibility: postal code (simple exact match list)
       if (postalCode) {
-        const postalList = Array.isArray(candidate.postalCodes) ? (candidate.postalCodes as string[]) : [];
+        const postalList = Array.isArray(candidate.postalCodes)
+          ? (candidate.postalCodes as string[])
+          : [];
         if (!postalList.includes(postalCode)) {
           reasons.push('postal_code_not_covered');
           funnel.push({
@@ -146,14 +148,18 @@ export class ProviderRankingService {
 
       // Capacity heuristic: fewer completed jobs means more availability; normalized
       const avgCompleted =
-        candidate.specialtyAssignments.reduce((sum, sa) => sum + (sa.totalJobsCompleted ?? 0), 0) || 0;
-      const capacityScore = candidate.maxDailyJobs > 0 ? 1 - Math.min(avgCompleted / candidate.maxDailyJobs, 1) : 0.5;
+        candidate.specialtyAssignments.reduce((sum, sa) => sum + (sa.totalJobsCompleted ?? 0), 0) ||
+        0;
+      const capacityScore =
+        candidate.maxDailyJobs > 0 ? 1 - Math.min(avgCompleted / candidate.maxDailyJobs, 1) : 0.5;
 
       // Quality heuristic
       const qualityScores = candidate.specialtyAssignments
         .map((sa) => (sa.avgQualityScore ? Number(sa.avgQualityScore as Decimal) : null))
         .filter((v) => v !== null) as number[];
-      const avgQuality = qualityScores.length ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length : 3;
+      const avgQuality = qualityScores.length
+        ? qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length
+        : 3;
       const qualityScore = avgQuality / 5; // normalize 0-1
 
       // Distance calculation
@@ -162,7 +168,10 @@ export class ProviderRankingService {
 
       if (postalCode) {
         try {
-          const distance = await this.calculateDistanceToWorkTeam(postalCode, candidate.postalCodes as string[]);
+          const distance = await this.calculateDistanceToWorkTeam(
+            postalCode,
+            candidate.postalCodes as string[],
+          );
           if (distance !== null) {
             distanceKm = distance;
             // Convert distance to normalized score (0-1) based on 20-point scale
@@ -192,9 +201,7 @@ export class ProviderRankingService {
       });
     }
 
-    const rankings = scored
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    const rankings = scored.sort((a, b) => b.score - a.score).slice(0, limit);
 
     // Persist funnel execution if serviceOrderId provided
     if (serviceOrderId) {
@@ -238,7 +245,10 @@ export class ProviderRankingService {
       return null;
     }
 
-    const jobCoords = this.distanceService.decimalToCoordinates(jobPostal.latitude, jobPostal.longitude);
+    const jobCoords = this.distanceService.decimalToCoordinates(
+      jobPostal.latitude,
+      jobPostal.longitude,
+    );
     if (!jobCoords) {
       return null;
     }

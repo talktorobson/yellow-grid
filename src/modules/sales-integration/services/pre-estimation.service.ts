@@ -11,12 +11,8 @@ export class PreEstimationService {
   /**
    * Process pre-estimation created event from sales system
    */
-  async handlePreEstimationCreated(
-    event: PreEstimationCreatedEventDto,
-  ): Promise<void> {
-    this.logger.log(
-      `Processing pre-estimation created event: ${event.preEstimationId}`,
-    );
+  async handlePreEstimationCreated(event: PreEstimationCreatedEventDto): Promise<void> {
+    this.logger.log(`Processing pre-estimation created event: ${event.preEstimationId}`);
 
     // TODO: Store pre-estimation in database
     // TODO: Find related TV/Quotation service orders for this customer
@@ -26,9 +22,7 @@ export class PreEstimationService {
     // Publish internal event for processing
     await this.publishPreEstimationEvent(event);
 
-    this.logger.log(
-      `Pre-estimation ${event.preEstimationId} processed successfully`,
-    );
+    this.logger.log(`Pre-estimation ${event.preEstimationId} processed successfully`);
   }
 
   /**
@@ -38,11 +32,9 @@ export class PreEstimationService {
     preEstimationId: string,
     serviceOrderId: string,
   ): Promise<void> {
-    this.logger.log(
-      `Linking pre-estimation ${preEstimationId} to service order ${serviceOrderId}`,
-    );
+    this.logger.log(`Linking pre-estimation ${preEstimationId} to service order ${serviceOrderId}`);
 
-        // Publish event to trigger AI sales potential assessment
+    // Publish event to trigger AI sales potential assessment
     await this.kafkaService.send(
       'fsm.service_order.pre_estimation_linked',
       {
@@ -56,9 +48,7 @@ export class PreEstimationService {
       },
     );
 
-    this.logger.log(
-      `Pre-estimation linked successfully. Triggering sales potential assessment.`,
-    );
+    this.logger.log(`Pre-estimation linked successfully. Triggering sales potential assessment.`);
   }
 
   /**
@@ -75,31 +65,20 @@ export class PreEstimationService {
    */
   async findPreEstimationsForCustomer(customerId: string): Promise<any[]> {
     // TODO: Implement database lookup
-    this.logger.log(
-      `Finding pre-estimations for customer: ${customerId}`,
-    );
+    this.logger.log(`Finding pre-estimations for customer: ${customerId}`);
     return [];
   }
 
   /**
    * Publish pre-estimation event to Kafka
    */
-  private async publishPreEstimationEvent(
-    event: PreEstimationCreatedEventDto,
-  ): Promise<void> {
-    await this.kafkaService.send(
-      'sales.pre_estimation.created',
-      event,
-      event.preEstimationId,
-      {
-        'event-type': 'PRE_ESTIMATION_CREATED',
-        'sales-system': event.salesSystemSource,
-      },
-    );
+  private async publishPreEstimationEvent(event: PreEstimationCreatedEventDto): Promise<void> {
+    await this.kafkaService.send('sales.pre_estimation.created', event, event.preEstimationId, {
+      'event-type': 'PRE_ESTIMATION_CREATED',
+      'sales-system': event.salesSystemSource,
+    });
 
-    this.logger.log(
-      `Published pre-estimation created event to Kafka: ${event.preEstimationId}`,
-    );
+    this.logger.log(`Published pre-estimation created event to Kafka: ${event.preEstimationId}`);
   }
 
   /**

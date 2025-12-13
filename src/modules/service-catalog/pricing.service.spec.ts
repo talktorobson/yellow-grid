@@ -241,9 +241,7 @@ describe('PricingService', () => {
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(mockPricing);
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(service.calculatePrice(context)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.calculatePrice(context)).rejects.toThrow(NotFoundException);
       await expect(service.calculatePrice(context)).rejects.toThrow(
         'Service service-uuid-1 not found',
       );
@@ -258,11 +256,7 @@ describe('PricingService', () => {
     it('should return country default pricing when no postal code provided', async () => {
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(mockPricing);
 
-      const result = await service.findApplicablePricing(
-        'service-uuid-1',
-        'ES',
-        'LM',
-      );
+      const result = await service.findApplicablePricing('service-uuid-1', 'ES', 'LM');
 
       expect(result).toEqual(mockPricing);
       expect(prisma.servicePricing.findFirst).toHaveBeenCalledWith({
@@ -283,16 +277,9 @@ describe('PricingService', () => {
       mockGeographicService.validatePostalCodeForCountry.mockResolvedValue(true);
 
       const postalCodePricing = { ...mockPricing, postalCodeId: 'postal-uuid-1' };
-      mockPrismaService.servicePricing.findFirst.mockResolvedValue(
-        postalCodePricing,
-      );
+      mockPrismaService.servicePricing.findFirst.mockResolvedValue(postalCodePricing);
 
-      const result = await service.findApplicablePricing(
-        'service-uuid-1',
-        'ES',
-        'LM',
-        '28001',
-      );
+      const result = await service.findApplicablePricing('service-uuid-1', 'ES', 'LM', '28001');
 
       expect(result).toEqual(postalCodePricing);
       expect(result.postalCodeId).toBe('postal-uuid-1');
@@ -307,12 +294,7 @@ describe('PricingService', () => {
         .mockResolvedValueOnce(null) // Postal code pricing not found
         .mockResolvedValueOnce(mockPricing); // Country default found
 
-      const result = await service.findApplicablePricing(
-        'service-uuid-1',
-        'ES',
-        'LM',
-        '28001',
-      );
+      const result = await service.findApplicablePricing('service-uuid-1', 'ES', 'LM', '28001');
 
       expect(result).toEqual(mockPricing);
       expect(result.postalCodeId).toBeNull();
@@ -326,12 +308,7 @@ describe('PricingService', () => {
 
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(mockPricing);
 
-      const result = await service.findApplicablePricing(
-        'service-uuid-1',
-        'ES',
-        'LM',
-        'INVALID',
-      );
+      const result = await service.findApplicablePricing('service-uuid-1', 'ES', 'LM', 'INVALID');
 
       expect(result).toEqual(mockPricing);
       expect(result.postalCodeId).toBeNull();
@@ -358,12 +335,10 @@ describe('PricingService', () => {
     it('should throw NotFoundException if no pricing found', async () => {
       mockPrismaService.servicePricing.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.findApplicablePricing('service-uuid-1', 'ES', 'LM'),
-      ).rejects.toThrow(NotFoundException);
-      await expect(
-        service.findApplicablePricing('service-uuid-1', 'ES', 'LM'),
-      ).rejects.toThrow(
+      await expect(service.findApplicablePricing('service-uuid-1', 'ES', 'LM')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findApplicablePricing('service-uuid-1', 'ES', 'LM')).rejects.toThrow(
         'No pricing found for service service-uuid-1 in ES/LM',
       );
     });
@@ -388,10 +363,7 @@ describe('PricingService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             validFrom: { lte: expect.any(Date) },
-            OR: [
-              { validUntil: null },
-              { validUntil: { gte: expect.any(Date) } },
-            ],
+            OR: [{ validUntil: null }, { validUntil: { gte: expect.any(Date) } }],
           }),
         }),
       );
@@ -480,9 +452,7 @@ describe('PricingService', () => {
       );
 
       expect(geographicService.findPostalCodeByCode).toHaveBeenCalledWith('28001');
-      expect(
-        geographicService.validatePostalCodeForCountry,
-      ).toHaveBeenCalledWith('28001', 'ES');
+      expect(geographicService.validatePostalCodeForCountry).toHaveBeenCalledWith('28001', 'ES');
       expect(prisma.servicePricing.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -539,10 +509,7 @@ describe('PricingService', () => {
       expect(prisma.servicePricing.findMany).toHaveBeenCalledWith({
         where: {
           serviceId: 'service-uuid-1',
-          OR: [
-            { validUntil: null },
-            { validUntil: { gte: expect.any(Date) } },
-          ],
+          OR: [{ validUntil: null }, { validUntil: { gte: expect.any(Date) } }],
         },
         include: expect.any(Object),
         orderBy: [

@@ -81,12 +81,7 @@ export class ServiceCatalogController {
     @Query('businessUnit') businessUnit: string,
     @Query('limit') limit?: number,
   ) {
-    return this.serviceCatalogService.search(
-      searchTerm,
-      countryCode,
-      businessUnit,
-      limit,
-    );
+    return this.serviceCatalogService.search(searchTerm, countryCode, businessUnit, limit);
   }
 
   /**
@@ -138,12 +133,21 @@ export class ServiceCatalogController {
   @ApiResponse({ status: 409, description: 'Service with external code already exists' })
   async createService(@Body() dto: CreateServiceDto) {
     // Extract English name as default (fallback to first available language)
-    const name = dto.name.en || dto.name.es || dto.name.fr || dto.name.it || dto.name.pl || 'Unnamed Service';
-    const description = dto.description?.en || dto.description?.es || dto.description?.fr || dto.description?.it || dto.description?.pl || undefined;
+    const name =
+      dto.name.en || dto.name.es || dto.name.fr || dto.name.it || dto.name.pl || 'Unnamed Service';
+    const description =
+      dto.description?.en ||
+      dto.description?.es ||
+      dto.description?.fr ||
+      dto.description?.it ||
+      dto.description?.pl ||
+      undefined;
 
     // Generate FSM service code
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0');
     const fsmServiceCode = `${dto.countryCode}_${dto.serviceCategory.substring(0, 4)}_${timestamp}${random}`;
 
     return this.serviceCatalogService.create({
@@ -176,10 +180,7 @@ export class ServiceCatalogController {
   @ApiOperation({ summary: 'Update an existing service' })
   @ApiResponse({ status: 200, description: 'Service updated successfully' })
   @ApiResponse({ status: 404, description: 'Service not found' })
-  async updateService(
-    @Param('id') id: string,
-    @Body() dto: UpdateServiceDto,
-  ) {
+  async updateService(@Param('id') id: string, @Body() dto: UpdateServiceDto) {
     // Extract English name as default if provided
     const updateData: any = {};
 
@@ -188,7 +189,12 @@ export class ServiceCatalogController {
     }
 
     if (dto.description) {
-      updateData.description = dto.description.en || dto.description.es || dto.description.fr || dto.description.it || dto.description.pl;
+      updateData.description =
+        dto.description.en ||
+        dto.description.es ||
+        dto.description.fr ||
+        dto.description.it ||
+        dto.description.pl;
     }
 
     if (dto.scopeIncluded !== undefined) {
@@ -239,10 +245,7 @@ export class ServiceCatalogController {
   @ApiResponse({ status: 200, description: 'Service deprecated successfully' })
   @ApiResponse({ status: 404, description: 'Service not found' })
   @ApiResponse({ status: 400, description: 'Service already deprecated' })
-  async deprecateService(
-    @Param('id') id: string,
-    @Body() dto: DeprecateServiceDto,
-  ) {
+  async deprecateService(@Param('id') id: string, @Body() dto: DeprecateServiceDto) {
     return this.serviceCatalogService.deprecate(
       id,
       dto.reason || 'Deprecated via API',
@@ -283,10 +286,7 @@ export class ServiceCatalogController {
     @Param('serviceId') serviceId: string,
     @Query('includeExpired') includeExpired?: boolean,
   ) {
-    return this.pricingService.getPricingForService(
-      serviceId,
-      includeExpired === true,
-    );
+    return this.pricingService.getPricingForService(serviceId, includeExpired === true);
   }
 
   // ============================================================================
@@ -330,11 +330,7 @@ export class ServiceCatalogController {
     @Query('countryCode') countryCode?: string,
     @Query('limit') limit?: number,
   ) {
-    return this.geographicService.searchPostalCodes(
-      searchTerm,
-      countryCode,
-      limit,
-    );
+    return this.geographicService.searchPostalCodes(searchTerm, countryCode, limit);
   }
 
   /**
@@ -377,10 +373,7 @@ export class ServiceCatalogController {
     @Param('workTeamId') workTeamId: string,
     @Query('activeOnly') activeOnly?: boolean,
   ) {
-    return this.providerSpecialtyService.getWorkTeamSpecialties(
-      workTeamId,
-      activeOnly !== false,
-    );
+    return this.providerSpecialtyService.getWorkTeamSpecialties(workTeamId, activeOnly !== false);
   }
 
   /**
@@ -409,10 +402,7 @@ export class ServiceCatalogController {
     @Param('serviceId') serviceId: string,
     @Query('countryCode') countryCode: string,
   ) {
-    return this.providerSpecialtyService.findQualifiedWorkTeamsForService(
-      serviceId,
-      countryCode,
-    );
+    return this.providerSpecialtyService.findQualifiedWorkTeamsForService(serviceId, countryCode);
   }
 
   /**
@@ -424,10 +414,7 @@ export class ServiceCatalogController {
     @Query('days') days?: number,
     @Query('workTeamId') workTeamId?: string,
   ) {
-    return this.providerSpecialtyService.getExpiringCertifications(
-      days || 30,
-      workTeamId,
-    );
+    return this.providerSpecialtyService.getExpiringCertifications(days || 30, workTeamId);
   }
 
   /**
@@ -466,9 +453,7 @@ export class ServiceCatalogController {
   @Post('admin/sync/retry')
   @HttpCode(HttpStatus.OK)
   async retryFailedEvents(@Query('maxRetries') maxRetries?: number) {
-    const retriedCount = await this.syncService.retryFailedEvents(
-      maxRetries || 3,
-    );
+    const retriedCount = await this.syncService.retryFailedEvents(maxRetries || 3);
     return {
       retriedCount,
       message: `Successfully retried ${retriedCount} failed events`,

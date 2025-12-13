@@ -1,5 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEmail, IsIn, IsEnum, ValidateNested, MinLength, MaxLength, IsNumber, IsDateString, IsUUID, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsIn,
+  IsEnum,
+  ValidateNested,
+  MinLength,
+  MaxLength,
+  IsNumber,
+  IsDateString,
+  IsUUID,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class AddressDto {
@@ -138,7 +153,8 @@ export class CreateProviderDto {
   // ============================================================================
 
   @ApiProperty({
-    description: 'Provider type - P1 (primary, always accept core services) or P2 (secondary, bundle only)',
+    description:
+      'Provider type - P1 (primary, always accept core services) or P2 (secondary, bundle only)',
     enum: ProviderTypeEnum,
     default: ProviderTypeEnum.P1,
     required: false,

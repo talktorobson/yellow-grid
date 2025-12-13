@@ -58,12 +58,8 @@ describe('EventSyncController', () => {
     }).compile();
 
     controller = module.get<EventSyncController>(EventSyncController);
-    eventLogService = module.get<ServiceCatalogEventLogService>(
-      ServiceCatalogEventLogService,
-    );
-    eventProcessor = module.get<ServiceCatalogEventProcessor>(
-      ServiceCatalogEventProcessor,
-    );
+    eventLogService = module.get<ServiceCatalogEventLogService>(ServiceCatalogEventLogService);
+    eventProcessor = module.get<ServiceCatalogEventProcessor>(ServiceCatalogEventProcessor);
 
     jest.clearAllMocks();
   });
@@ -259,9 +255,7 @@ describe('EventSyncController', () => {
       const result = await controller.getStatistics(sinceDate);
 
       expect(result.total).toBe(500);
-      expect(mockEventLogService.getStatistics).toHaveBeenCalledWith(
-        new Date(sinceDate),
-      );
+      expect(mockEventLogService.getStatistics).toHaveBeenCalledWith(new Date(sinceDate));
     });
   });
 

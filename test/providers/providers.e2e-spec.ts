@@ -51,12 +51,10 @@ describe('Provider Management API (E2E)', () => {
     });
 
     // Login as admin
-    const loginResponse = await request(app.getHttpServer())
-      .post('/api/v1/auth/login')
-      .send({
-        email: adminUser.email,
-        password: 'TestPassword123!@#', // This won't work with real auth, adjust if needed
-      });
+    const loginResponse = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+      email: adminUser.email,
+      password: 'TestPassword123!@#', // This won't work with real auth, adjust if needed
+    });
 
     // For testing purposes, generate a test token or mock auth
     // In real scenario, you'd need proper credentials
@@ -207,10 +205,7 @@ describe('Provider Management API (E2E)', () => {
       };
 
       // This should fail without admin role
-      await request(app.getHttpServer())
-        .post('/api/v1/providers')
-        .send(createDto)
-        .expect(401); // No auth or wrong role
+      await request(app.getHttpServer()).post('/api/v1/providers').send(createDto).expect(401); // No auth or wrong role
 
       // Cleanup
       await prisma.user.delete({ where: { id: regularUser.id } });
@@ -219,8 +214,12 @@ describe('Provider Management API (E2E)', () => {
 
   describe('GET /api/v1/providers - List Providers', () => {
     it('should list all providers with pagination', async () => {
-      const response = await authenticatedRequest(app, 'get', '/api/v1/providers?page=1&limit=10', adminToken)
-        .expect(200);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        '/api/v1/providers?page=1&limit=10',
+        adminToken,
+      ).expect(200);
 
       expect(response.body).toHaveProperty('data');
       expect(response.body).toHaveProperty('pagination');
@@ -286,8 +285,12 @@ describe('Provider Management API (E2E)', () => {
 
     it('should return 404 for non-existent provider', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
-      const response = await authenticatedRequest(app, 'get', `/api/v1/providers/${fakeId}`, adminToken)
-        .expect(404);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/providers/${fakeId}`,
+        adminToken,
+      ).expect(404);
 
       expect(response.body).toHaveProperty('message');
       expect(response.body.message).toContain('not found');
@@ -372,8 +375,12 @@ describe('Provider Management API (E2E)', () => {
         email: randomEmail('deletable'),
       });
 
-      await authenticatedRequest(app, 'delete', `/api/v1/providers/${deletableProvider.id}`, adminToken)
-        .expect(204);
+      await authenticatedRequest(
+        app,
+        'delete',
+        `/api/v1/providers/${deletableProvider.id}`,
+        adminToken,
+      ).expect(204);
 
       // Verify deletion
       const dbProvider = await prisma.provider.findUnique({
@@ -502,8 +509,12 @@ describe('Provider Management API (E2E)', () => {
 
   describe('DELETE /api/v1/providers/work-teams/:workTeamId - Delete Work Team', () => {
     it('should delete work team successfully', async () => {
-      await authenticatedRequest(app, 'delete', `/api/v1/providers/work-teams/${testWorkTeam.id}`, adminToken)
-        .expect(204);
+      await authenticatedRequest(
+        app,
+        'delete',
+        `/api/v1/providers/work-teams/${testWorkTeam.id}`,
+        adminToken,
+      ).expect(204);
 
       // Verify deletion
       const dbWorkTeam = await prisma.workTeam.findUnique({

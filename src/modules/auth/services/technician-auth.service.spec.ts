@@ -4,7 +4,12 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { TechnicianAuthService } from './technician-auth.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { TechnicianRegisterDto, TechnicianLoginDto, BiometricSetupDto, BiometricLoginDto } from '../dto';
+import {
+  TechnicianRegisterDto,
+  TechnicianLoginDto,
+  BiometricSetupDto,
+  BiometricLoginDto,
+} from '../dto';
 
 // Mock bcrypt
 jest.mock('bcrypt', () => ({
@@ -256,7 +261,9 @@ describe('TechnicianAuthService', () => {
         userType: 'INTERNAL',
       });
 
-      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw BadRequestException if max devices limit reached', async () => {
@@ -265,8 +272,12 @@ describe('TechnicianAuthService', () => {
         devices: [{}, {}, {}], // 3 devices (max limit)
       });
 
-      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(BadRequestException);
-      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow('Maximum 3 devices allowed');
+      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(
+        'Maximum 3 devices allowed',
+      );
     });
 
     it('should throw ConflictException if device already registered', async () => {
@@ -276,7 +287,9 @@ describe('TechnicianAuthService', () => {
       });
 
       await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(ConflictException);
-      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow('Device already registered');
+      await expect(service.setupBiometric('user-123', setupDto)).rejects.toThrow(
+        'Device already registered',
+      );
     });
   });
 
@@ -336,7 +349,9 @@ describe('TechnicianAuthService', () => {
       mockPrismaService.registeredDevice.findUnique.mockResolvedValue(null);
 
       await expect(service.biometricLogin(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(service.biometricLogin(loginDto)).rejects.toThrow('Device not found or inactive');
+      await expect(service.biometricLogin(loginDto)).rejects.toThrow(
+        'Device not found or inactive',
+      );
     });
 
     it('should throw UnauthorizedException if device is inactive', async () => {
@@ -402,7 +417,9 @@ describe('TechnicianAuthService', () => {
     it('should throw UnauthorizedException if device not found', async () => {
       mockPrismaService.registeredDevice.findFirst.mockResolvedValue(null);
 
-      await expect(service.generateOfflineToken('user-123', 'device-123')).rejects.toThrow(UnauthorizedException);
+      await expect(service.generateOfflineToken('user-123', 'device-123')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -473,8 +490,12 @@ describe('TechnicianAuthService', () => {
     it('should throw BadRequestException if device not found', async () => {
       mockPrismaService.registeredDevice.findFirst.mockResolvedValue(null);
 
-      await expect(service.revokeDevice('user-123', 'device-123')).rejects.toThrow(BadRequestException);
-      await expect(service.revokeDevice('user-123', 'device-123')).rejects.toThrow('Device not found');
+      await expect(service.revokeDevice('user-123', 'device-123')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.revokeDevice('user-123', 'device-123')).rejects.toThrow(
+        'Device not found',
+      );
     });
   });
 });

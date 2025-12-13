@@ -71,9 +71,7 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException when service not found', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(service.findByExternalCode('NON_EXISTENT')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findByExternalCode('NON_EXISTENT')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -123,12 +121,8 @@ describe('ServiceCatalogService', () => {
         id: 'existing-service',
       });
 
-      await expect(service.create(serviceData)).rejects.toThrow(
-        ConflictException,
-      );
-      await expect(service.create(serviceData)).rejects.toThrow(
-        'already exists',
-      );
+      await expect(service.create(serviceData)).rejects.toThrow(ConflictException);
+      await expect(service.create(serviceData)).rejects.toThrow('already exists');
     });
   });
 
@@ -149,11 +143,7 @@ describe('ServiceCatalogService', () => {
         name: 'New Name',
       });
 
-      await service.update(
-        'service-1',
-        { name: 'New Name' },
-        'admin@example.com',
-      );
+      await service.update('service-1', { name: 'New Name' }, 'admin@example.com');
 
       expect(prisma.serviceCatalog.update).toHaveBeenCalledWith({
         where: { id: 'service-1' },
@@ -168,9 +158,9 @@ describe('ServiceCatalogService', () => {
     it('should throw NotFoundException when service not found', async () => {
       mockPrismaService.serviceCatalog.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.update('non-existent', { name: 'New Name' }, 'admin'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('non-existent', { name: 'New Name' }, 'admin')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -203,12 +193,8 @@ describe('ServiceCatalogService', () => {
         status: ServiceStatus.ACTIVE,
       });
 
-      await expect(service.activate('service-1', 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.activate('service-1', 'admin')).rejects.toThrow(
-        'already active',
-      );
+      await expect(service.activate('service-1', 'admin')).rejects.toThrow(BadRequestException);
+      await expect(service.activate('service-1', 'admin')).rejects.toThrow('already active');
     });
 
     it('should throw BadRequestException when trying to activate deprecated service', async () => {
@@ -217,9 +203,7 @@ describe('ServiceCatalogService', () => {
         status: ServiceStatus.DEPRECATED,
       });
 
-      await expect(service.activate('service-1', 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.activate('service-1', 'admin')).rejects.toThrow(BadRequestException);
       await expect(service.activate('service-1', 'admin')).rejects.toThrow(
         'Cannot activate a deprecated service',
       );
@@ -257,9 +241,9 @@ describe('ServiceCatalogService', () => {
         status: ServiceStatus.DEPRECATED,
       });
 
-      await expect(
-        service.deprecate('service-1', 'reason', 'admin'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.deprecate('service-1', 'reason', 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -292,9 +276,7 @@ describe('ServiceCatalogService', () => {
         status: ServiceStatus.ACTIVE,
       });
 
-      await expect(service.archive('service-1', 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.archive('service-1', 'admin')).rejects.toThrow(BadRequestException);
       await expect(service.archive('service-1', 'admin')).rejects.toThrow(
         'must be deprecated before archiving',
       );
@@ -478,9 +460,9 @@ describe('ServiceCatalogService', () => {
     it('should return service statistics', async () => {
       mockPrismaService.serviceCatalog.count
         .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(80)  // active
-        .mockResolvedValueOnce(15)  // deprecated
-        .mockResolvedValueOnce(5);  // archived
+        .mockResolvedValueOnce(80) // active
+        .mockResolvedValueOnce(15) // deprecated
+        .mockResolvedValueOnce(5); // archived
 
       mockPrismaService.serviceCatalog.groupBy
         .mockResolvedValueOnce([

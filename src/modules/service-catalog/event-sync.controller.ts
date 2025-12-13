@@ -8,12 +8,7 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ServiceCatalogEventLogService } from './event-log.service';
 import { ServiceCatalogEventProcessor } from './event-processor.service';
 import { Roles } from '../users/decorators/roles.decorator';
@@ -54,8 +49,7 @@ export class EventSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Process service catalog event',
-    description:
-      'Process a single event from external systems with idempotency',
+    description: 'Process a single event from external systems with idempotency',
   })
   @ApiResponse({
     status: 200,

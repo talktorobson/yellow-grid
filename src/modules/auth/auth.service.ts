@@ -1,10 +1,22 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { LoginDto, RegisterDto, AuthResponseDto, ChangePasswordDto, ChangePasswordResponseDto } from './dto';
+import {
+  LoginDto,
+  RegisterDto,
+  AuthResponseDto,
+  ChangePasswordDto,
+  ChangePasswordResponseDto,
+} from './dto';
 
 /**
  * Service handling authentication logic.
@@ -340,10 +352,7 @@ export class AuthService {
       tokenId: refreshTokenId,
     };
 
-    const refreshTokenExpiration = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRATION',
-      '7d',
-    );
+    const refreshTokenExpiration = this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d');
 
     const refreshToken = this.jwtService.sign(refreshTokenPayload, {
       expiresIn: refreshTokenExpiration,

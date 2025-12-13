@@ -9,7 +9,12 @@ import {
   EntityType,
   ClientChangeDto,
 } from '../dto/delta-sync.dto';
-import { ServiceOrderState, ConflictResolution, SyncOperationType, SyncOperationStatus } from '@prisma/client';
+import {
+  ServiceOrderState,
+  ConflictResolution,
+  SyncOperationType,
+  SyncOperationStatus,
+} from '@prisma/client';
 
 describe('SyncService', () => {
   let service: SyncService;
@@ -210,7 +215,11 @@ describe('SyncService', () => {
         conflictResolutionStrategy: ConflictResolutionStrategy.CLIENT_WINS,
       };
 
-      const higherVersionServiceOrder = { ...mockServiceOrder, version: 3, state: ServiceOrderState.IN_PROGRESS };
+      const higherVersionServiceOrder = {
+        ...mockServiceOrder,
+        version: 3,
+        state: ServiceOrderState.IN_PROGRESS,
+      };
 
       jest.spyOn(prisma.deviceSync, 'findFirst').mockResolvedValue(mockDeviceSync);
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(mockUser as any);
@@ -221,7 +230,11 @@ describe('SyncService', () => {
         const mockTx = {
           serviceOrder: {
             findUnique: jest.fn().mockResolvedValue(higherVersionServiceOrder),
-            update: jest.fn().mockResolvedValue({ ...higherVersionServiceOrder, version: 4, state: ServiceOrderState.COMPLETED }),
+            update: jest.fn().mockResolvedValue({
+              ...higherVersionServiceOrder,
+              version: 4,
+              state: ServiceOrderState.COMPLETED,
+            }),
           },
           syncOperation: {
             create: jest.fn().mockResolvedValue({}),
@@ -332,7 +345,9 @@ describe('SyncService', () => {
 
       jest.spyOn(prisma.deviceSync, 'findFirst').mockResolvedValue(null);
 
-      await expect(service.processDeltaSync('user-101', request)).rejects.toThrow(BadRequestException);
+      await expect(service.processDeltaSync('user-101', request)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -352,7 +367,9 @@ describe('SyncService', () => {
     it('should throw NotFoundException for invalid device', async () => {
       jest.spyOn(prisma.deviceSync, 'findFirst').mockResolvedValue(null);
 
-      await expect(service.getSyncStatus('invalid-device', 'user-101')).rejects.toThrow(NotFoundException);
+      await expect(service.getSyncStatus('invalid-device', 'user-101')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should report degraded health for devices with failures', async () => {

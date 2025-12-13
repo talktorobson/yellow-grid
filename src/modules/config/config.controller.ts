@@ -46,7 +46,10 @@ export class ConfigController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Update system configuration (Admin only)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'System configuration updated' })
-  async updateSystemConfig(@Body() dto: UpdateSystemConfigDto, @CurrentUser() user: CurrentUserPayload) {
+  async updateSystemConfig(
+    @Body() dto: UpdateSystemConfigDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.configService.updateSystemConfig(dto, user.userId);
   }
 
@@ -61,7 +64,10 @@ export class ConfigController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Partially update system configuration (Admin only)' })
   @ApiResponse({ status: HttpStatus.OK, description: 'System configuration updated' })
-  async patchSystemConfig(@Body() dto: UpdateSystemConfigDto, @CurrentUser() user: CurrentUserPayload) {
+  async patchSystemConfig(
+    @Body() dto: UpdateSystemConfigDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.configService.updateSystemConfig(dto, user.userId);
   }
 
@@ -140,7 +146,10 @@ export class ConfigController {
     @Param('countryCode') countryCode: string,
     @Param('businessUnit') businessUnit: string,
   ) {
-    return this.configService.getBusinessUnitConfig(countryCode.toUpperCase(), businessUnit.toUpperCase());
+    return this.configService.getBusinessUnitConfig(
+      countryCode.toUpperCase(),
+      businessUnit.toUpperCase(),
+    );
   }
 
   /**

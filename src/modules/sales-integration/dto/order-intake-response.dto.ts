@@ -51,7 +51,10 @@ export class OrderIntakeResponseDto {
   @ApiProperty({ description: 'Timestamp when received (ISO 8601)' })
   receivedAt: string;
 
-  @ApiPropertyOptional({ description: 'Appointment details if scheduled', type: AppointmentInfoDto })
+  @ApiPropertyOptional({
+    description: 'Appointment details if scheduled',
+    type: AppointmentInfoDto,
+  })
   appointment?: AppointmentInfoDto;
 
   @ApiPropertyOptional({ description: 'Validation errors if any', type: [ValidationErrorDto] })

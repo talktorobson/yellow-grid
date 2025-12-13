@@ -92,9 +92,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     headers?: Record<string, string>,
   ): Promise<any[] | null> {
     if (!this.isConnected) {
-      this.logger.warn(
-        `⚠️  Kafka producer not connected, skipping message to topic: ${topic}`,
-      );
+      this.logger.warn(`⚠️  Kafka producer not connected, skipping message to topic: ${topic}`);
       return null;
     }
 
@@ -137,9 +135,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     }>,
   ): Promise<any[] | null> {
     if (!this.isConnected) {
-      this.logger.warn(
-        `⚠️  Kafka producer not connected, skipping batch to topic: ${topic}`,
-      );
+      this.logger.warn(`⚠️  Kafka producer not connected, skipping batch to topic: ${topic}`);
       return null;
     }
 
@@ -155,16 +151,11 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
         messages: kafkaMessages,
       });
 
-      this.logger.debug(
-        `📤 Sent ${messages.length} messages to topic: ${topic}`,
-      );
+      this.logger.debug(`📤 Sent ${messages.length} messages to topic: ${topic}`);
 
       return result;
     } catch (error) {
-      this.logger.error(
-        `❌ Failed to send batch to topic ${topic}:`,
-        error,
-      );
+      this.logger.error(`❌ Failed to send batch to topic ${topic}:`, error);
       throw error;
     }
   }
@@ -235,9 +226,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     const password = process.env.KAFKA_SASL_PASSWORD;
 
     if (!username || !password) {
-      this.logger.warn(
-        '⚠️  KAFKA_SASL_MECHANISM set but credentials missing',
-      );
+      this.logger.warn('⚠️  KAFKA_SASL_MECHANISM set but credentials missing');
       return undefined;
     }
 
@@ -254,9 +243,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
    * @param headers - Key-value pair of headers.
    * @returns Headers with values converted to Buffers, or undefined.
    */
-  private serializeHeaders(
-    headers?: Record<string, string>,
-  ): Record<string, Buffer> | undefined {
+  private serializeHeaders(headers?: Record<string, string>): Record<string, Buffer> | undefined {
     if (!headers) {
       return undefined;
     }

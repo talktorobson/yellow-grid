@@ -28,7 +28,7 @@ export class KafkaHealthIndicator {
         status: isHealthy ? 'up' : 'down',
         connected: status.connected,
         brokers: status.brokers,
-      }
+      },
     };
 
     if (!isHealthy) {
@@ -51,7 +51,7 @@ export class KafkaHealthIndicator {
         enabled: status.enabled,
         totalConsumers: status.totalConsumers,
         consumerGroups: status.consumerGroups,
-      }
+      },
     };
 
     return result;
@@ -78,7 +78,7 @@ export class KafkaHealthIndicator {
           totalConsumers: consumerStatus.totalConsumers,
           consumerGroups: consumerStatus.consumerGroups,
         },
-      }
+      },
     };
 
     if (!isHealthy) {

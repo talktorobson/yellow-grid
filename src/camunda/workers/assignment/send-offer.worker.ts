@@ -24,9 +24,9 @@ interface SendOfferOutput {
 
 /**
  * Send Offer Worker (Stub)
- * 
+ *
  * Task Type: send-offer
- * 
+ *
  * Sends an assignment offer to a provider and waits for acceptance.
  * Creates an Assignment record with OFFERED state.
  */
@@ -41,17 +41,12 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
   }
 
   async handle(job: ZeebeJob<SendOfferInput>): Promise<SendOfferOutput> {
-    const {
-      serviceOrderId,
-      providerId,
-      providerName,
-      offerExpirationHours = 4,
-    } = job.variables;
+    const { serviceOrderId, providerId, providerName, offerExpirationHours = 4 } = job.variables;
 
     // Simplified stub for infrastructure testing
     // TODO: Implement full assignment creation logic
     this.logger.log(
-      `Sending offer to provider ${providerName} (${providerId}) for order ${serviceOrderId}`
+      `Sending offer to provider ${providerName} (${providerId}) for order ${serviceOrderId}`,
     );
 
     const offerSentAt = new Date();

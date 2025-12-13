@@ -59,10 +59,13 @@ export class DashboardService {
       }),
     ]);
 
-    const statusMap = ordersByStatus.reduce((acc, curr) => {
-      acc[curr.state] = curr._count;
-      return acc;
-    }, {} as Record<string, number>);
+    const statusMap = ordersByStatus.reduce(
+      (acc, curr) => {
+        acc[curr.state] = curr._count;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       serviceOrders: {
@@ -100,9 +103,12 @@ export class DashboardService {
     } else if (range === '90d') {
       days = 90;
     }
-    
+
     const startDate = DateTime.now().minus({ days }).startOf('day').toJSDate();
-    const previousStartDate = DateTime.now().minus({ days: days * 2 }).startOf('day').toJSDate();
+    const previousStartDate = DateTime.now()
+      .minus({ days: days * 2 })
+      .startOf('day')
+      .toJSDate();
 
     // Helper to calculate percentage change
     const calculateChange = (current: number, previous: number) => {
@@ -129,7 +135,10 @@ export class DashboardService {
         where: { state: ServiceOrderState.COMPLETED, updatedAt: { gte: startDate } },
       }),
       this.prisma.serviceOrder.count({
-        where: { state: ServiceOrderState.COMPLETED, updatedAt: { gte: previousStartDate, lt: startDate } },
+        where: {
+          state: ServiceOrderState.COMPLETED,
+          updatedAt: { gte: previousStartDate, lt: startDate },
+        },
       }),
     ]);
 
@@ -140,7 +149,8 @@ export class DashboardService {
     // Success Rate (Completed / (Completed + Cancelled))
     // Simplified: Completed / Total Created in period
     const successRateValue = currentOrders > 0 ? (currentCompleted / currentOrders) * 100 : 0;
-    const prevSuccessRateValue = previousOrders > 0 ? (previousCompleted / previousOrders) * 100 : 0;
+    const prevSuccessRateValue =
+      previousOrders > 0 ? (previousCompleted / previousOrders) * 100 : 0;
     const successRateChange = calculateChange(successRateValue, prevSuccessRateValue);
 
     // 2. Assignments Analytics
@@ -156,7 +166,10 @@ export class DashboardService {
         where: { state: AssignmentState.ACCEPTED, createdAt: { gte: startDate } },
       }),
       this.prisma.assignment.count({
-        where: { state: AssignmentState.ACCEPTED, createdAt: { gte: previousStartDate, lt: startDate } },
+        where: {
+          state: AssignmentState.ACCEPTED,
+          createdAt: { gte: previousStartDate, lt: startDate },
+        },
       }),
     ]);
 
@@ -183,7 +196,9 @@ export class DashboardService {
     const interval = Math.ceil(days / trendPoints);
 
     for (let i = trendPoints - 1; i >= 0; i--) {
-      const date = DateTime.now().minus({ days: i * interval }).startOf('day');
+      const date = DateTime.now()
+        .minus({ days: i * interval })
+        .startOf('day');
       const nextDate = date.plus({ days: interval });
       labels.push(date.toFormat('MMM dd'));
 
@@ -285,7 +300,11 @@ export class DashboardService {
     const now = new Date();
     const fourHoursFromNow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const activeStates = [ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED, ServiceOrderState.ASSIGNED];
+    const activeStates = [
+      ServiceOrderState.CREATED,
+      ServiceOrderState.SCHEDULED,
+      ServiceOrderState.ASSIGNED,
+    ];
     const activeTaskStatuses = [TaskStatus.OPEN, TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS];
 
     const [
@@ -309,7 +328,10 @@ export class DashboardService {
       this.prisma.assignment.count({ where: { state: AssignmentState.OFFERED } }),
       // DECLINED = Rejected by provider
       this.prisma.assignment.count({
-        where: { state: { in: [AssignmentState.DECLINED, AssignmentState.EXPIRED] }, updatedAt: { gte: oneDayAgo } },
+        where: {
+          state: { in: [AssignmentState.DECLINED, AssignmentState.EXPIRED] },
+          updatedAt: { gte: oneDayAgo },
+        },
       }),
       this.prisma.task.count({
         where: { escalationLevel: { gt: 0 }, status: { in: activeTaskStatuses } },
@@ -317,29 +339,71 @@ export class DashboardService {
     ]);
 
     const actionConfigs = [
-      { count: unassignedHighPriority, id: 'unassigned-urgent', type: 'UNASSIGNED', title: 'Unassigned Urgent Orders',
-        singular: '1 urgent service order needs assignment', plural: `${unassignedHighPriority} urgent service orders need assignment`,
-        priority: 'critical' as const, link: '/service-orders?state=CREATED&urgency=URGENT' },
-      { count: overdueServiceOrders, id: 'overdue-orders', type: 'OVERDUE', title: 'Overdue Service Orders',
-        singular: '1 service order is past the scheduled date', plural: `${overdueServiceOrders} service orders are past the scheduled date`,
-        priority: 'critical' as const, link: '/service-orders?overdue=true' },
-      { count: slaAtRisk, id: 'sla-at-risk', type: 'SLA_RISK', title: 'SLA At Risk',
-        singular: '1 service order due within 4 hours', plural: `${slaAtRisk} service orders due within 4 hours`,
-        priority: 'high' as const, link: '/service-orders?slaRisk=true' },
-      { count: pendingAssignments, id: 'pending-assignments', type: 'PENDING_RESPONSE', title: 'Pending Provider Responses',
-        singular: '1 assignment awaiting provider response', plural: `${pendingAssignments} assignments awaiting provider response`,
-        priority: 'medium' as const, link: '/assignments?state=OFFERED' },
-      { count: failedAssignments, id: 'failed-assignments', type: 'FAILED_ASSIGNMENT', title: 'Failed Assignments',
-        singular: '1 assignment declined/expired in last 24h', plural: `${failedAssignments} assignments declined/expired in last 24h`,
-        priority: 'high' as const, link: '/assignments?failed=true' },
-      { count: escalatedTasks, id: 'escalated-tasks', type: 'ESCALATED', title: 'Escalated Tasks',
-        singular: '1 task has been escalated', plural: `${escalatedTasks} tasks have been escalated`,
-        priority: 'high' as const, link: '/tasks?escalated=true' },
+      {
+        count: unassignedHighPriority,
+        id: 'unassigned-urgent',
+        type: 'UNASSIGNED',
+        title: 'Unassigned Urgent Orders',
+        singular: '1 urgent service order needs assignment',
+        plural: `${unassignedHighPriority} urgent service orders need assignment`,
+        priority: 'critical' as const,
+        link: '/service-orders?state=CREATED&urgency=URGENT',
+      },
+      {
+        count: overdueServiceOrders,
+        id: 'overdue-orders',
+        type: 'OVERDUE',
+        title: 'Overdue Service Orders',
+        singular: '1 service order is past the scheduled date',
+        plural: `${overdueServiceOrders} service orders are past the scheduled date`,
+        priority: 'critical' as const,
+        link: '/service-orders?overdue=true',
+      },
+      {
+        count: slaAtRisk,
+        id: 'sla-at-risk',
+        type: 'SLA_RISK',
+        title: 'SLA At Risk',
+        singular: '1 service order due within 4 hours',
+        plural: `${slaAtRisk} service orders due within 4 hours`,
+        priority: 'high' as const,
+        link: '/service-orders?slaRisk=true',
+      },
+      {
+        count: pendingAssignments,
+        id: 'pending-assignments',
+        type: 'PENDING_RESPONSE',
+        title: 'Pending Provider Responses',
+        singular: '1 assignment awaiting provider response',
+        plural: `${pendingAssignments} assignments awaiting provider response`,
+        priority: 'medium' as const,
+        link: '/assignments?state=OFFERED',
+      },
+      {
+        count: failedAssignments,
+        id: 'failed-assignments',
+        type: 'FAILED_ASSIGNMENT',
+        title: 'Failed Assignments',
+        singular: '1 assignment declined/expired in last 24h',
+        plural: `${failedAssignments} assignments declined/expired in last 24h`,
+        priority: 'high' as const,
+        link: '/assignments?failed=true',
+      },
+      {
+        count: escalatedTasks,
+        id: 'escalated-tasks',
+        type: 'ESCALATED',
+        title: 'Escalated Tasks',
+        singular: '1 task has been escalated',
+        plural: `${escalatedTasks} tasks have been escalated`,
+        priority: 'high' as const,
+        link: '/tasks?escalated=true',
+      },
     ];
 
     const actions = actionConfigs
-      .filter(cfg => cfg.count > 0)
-      .map(cfg => this.buildAction(cfg));
+      .filter((cfg) => cfg.count > 0)
+      .map((cfg) => this.buildAction(cfg));
 
     const priorityOrder = { critical: 0, high: 1, medium: 2 };
     actions.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
@@ -355,38 +419,35 @@ export class DashboardService {
       where: {
         status: { in: [TaskStatus.OPEN, TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] },
       },
-      orderBy: [
-        { escalationLevel: 'desc' },
-        { priority: 'desc' },
-        { slaDeadline: 'asc' },
-      ],
+      orderBy: [{ escalationLevel: 'desc' }, { priority: 'desc' }, { slaDeadline: 'asc' }],
       take: limit,
     });
 
     // Get service order details for tasks
-    const serviceOrderIds = [...new Set(tasks.map(t => t.serviceOrderId))];
+    const serviceOrderIds = [...new Set(tasks.map((t) => t.serviceOrderId))];
     const serviceOrders = await this.prisma.serviceOrder.findMany({
       where: { id: { in: serviceOrderIds } },
       select: { id: true, externalServiceOrderId: true, customerInfo: true, urgency: true },
     });
-    const serviceOrderMap = new Map(serviceOrders.map(so => [so.id, so]));
+    const serviceOrderMap = new Map(serviceOrders.map((so) => [so.id, so]));
 
     // Get assignee details if assignedTo is set
-    const assigneeIds = tasks.filter(t => t.assignedTo).map(t => t.assignedTo as string);
-    const assignees = assigneeIds.length > 0
-      ? await this.prisma.user.findMany({
-          where: { id: { in: assigneeIds } },
-          select: { id: true, email: true, firstName: true, lastName: true },
-        })
-      : [];
-    const assigneeMap = new Map(assignees.map(a => [a.id, a]));
+    const assigneeIds = tasks.filter((t) => t.assignedTo).map((t) => t.assignedTo as string);
+    const assignees =
+      assigneeIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: assigneeIds } },
+            select: { id: true, email: true, firstName: true, lastName: true },
+          })
+        : [];
+    const assigneeMap = new Map(assignees.map((a) => [a.id, a]));
 
     return tasks.map((task) => {
       const now = new Date();
       const deadline = task.slaDeadline ? new Date(task.slaDeadline) : null;
       const isOverdue = deadline ? deadline < now : false;
       const hoursRemaining = deadline
-        ? Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60) * 10) / 10
+        ? Math.round(((deadline.getTime() - now.getTime()) / (1000 * 60 * 60)) * 10) / 10
         : null;
 
       const assignee = task.assignedTo ? assigneeMap.get(task.assignedTo) : null;
@@ -406,7 +467,8 @@ export class DashboardService {
         assignee: assignee
           ? {
               id: assignee.id,
-              name: `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email,
+              name:
+                `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim() || assignee.email,
             }
           : null,
         slaDeadline: task.slaDeadline,
@@ -417,5 +479,3 @@ export class DashboardService {
     });
   }
 }
-
-

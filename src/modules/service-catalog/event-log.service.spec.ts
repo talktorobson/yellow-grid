@@ -41,9 +41,7 @@ describe('ServiceCatalogEventLogService', () => {
       ],
     }).compile();
 
-    service = module.get<ServiceCatalogEventLogService>(
-      ServiceCatalogEventLogService,
-    );
+    service = module.get<ServiceCatalogEventLogService>(ServiceCatalogEventLogService);
     prisma = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
@@ -59,9 +57,7 @@ describe('ServiceCatalogEventLogService', () => {
 
   describe('findByEventId', () => {
     it('should find event by event ID', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        mockEventLog,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(mockEventLog);
 
       const result = await service.findByEventId('evt_123');
 
@@ -72,9 +68,7 @@ describe('ServiceCatalogEventLogService', () => {
     });
 
     it('should return null when event not found', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
 
       const result = await service.findByEventId('nonexistent');
 
@@ -101,9 +95,7 @@ describe('ServiceCatalogEventLogService', () => {
         ...createData,
         processingStatus: EventProcessingStatus.PENDING,
       };
-      mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue(
-        created,
-      );
+      mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue(created);
 
       const result = await service.create(createData);
 
@@ -130,11 +122,8 @@ describe('ServiceCatalogEventLogService', () => {
 
       await service.create(createData);
 
-      const callArgs = (prisma.serviceCatalogEventLog.create as jest.Mock).mock
-        .calls[0][0];
-      expect(callArgs.data.processingStatus).toBe(
-        EventProcessingStatus.PENDING,
-      );
+      const callArgs = (prisma.serviceCatalogEventLog.create as jest.Mock).mock.calls[0][0];
+      expect(callArgs.data.processingStatus).toBe(EventProcessingStatus.PENDING);
       expect(callArgs.data.retryCount).toBe(0);
     });
   });
@@ -150,9 +139,7 @@ describe('ServiceCatalogEventLogService', () => {
         processingStatus: EventProcessingStatus.COMPLETED,
         processedAt: new Date(),
       };
-      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(
-        completed,
-      );
+      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(completed);
 
       const result = await service.markAsCompleted('evt_123');
 
@@ -169,18 +156,14 @@ describe('ServiceCatalogEventLogService', () => {
 
   describe('markAsFailed', () => {
     it('should mark event as failed with error message', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        mockEventLog,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(mockEventLog);
       const failed = {
         ...mockEventLog,
         processingStatus: EventProcessingStatus.FAILED,
         errorMessage: 'Test error',
         retryCount: 1,
       };
-      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(
-        failed,
-      );
+      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(failed);
 
       const error = new Error('Test error');
       const result = await service.markAsFailed('evt_123', error);
@@ -202,17 +185,13 @@ describe('ServiceCatalogEventLogService', () => {
         ...mockEventLog,
         retryCount: 2, // Will become 3 after this failure
       };
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        eventWithRetries,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(eventWithRetries);
       const deadLetter = {
         ...eventWithRetries,
         processingStatus: EventProcessingStatus.DEAD_LETTER,
         retryCount: 3,
       };
-      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(
-        deadLetter,
-      );
+      mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue(deadLetter);
 
       const error = new Error('Final failure');
       const result = await service.markAsFailed('evt_123', error);
@@ -223,9 +202,7 @@ describe('ServiceCatalogEventLogService', () => {
     });
 
     it('should handle event not found gracefully', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
 
       const error = new Error('Test error');
       const result = await service.markAsFailed('nonexistent', error);
@@ -243,9 +220,7 @@ describe('ServiceCatalogEventLogService', () => {
         errorMessage: 'Previous error',
         retryCount: 1,
       };
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        failedEvent,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(failedEvent);
       const retry = {
         ...failedEvent,
         processingStatus: EventProcessingStatus.PENDING,
@@ -266,9 +241,7 @@ describe('ServiceCatalogEventLogService', () => {
     });
 
     it('should throw error if event not found', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
 
       await expect(service.markForRetry('nonexistent')).rejects.toThrow(
         'Event nonexistent not found',
@@ -280,9 +253,7 @@ describe('ServiceCatalogEventLogService', () => {
         ...mockEventLog,
         retryCount: 3,
       };
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        maxRetriesEvent,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(maxRetriesEvent);
 
       await expect(service.markForRetry('evt_123')).rejects.toThrow(
         'Event evt_123 has exceeded max retries',
@@ -307,9 +278,7 @@ describe('ServiceCatalogEventLogService', () => {
           processingStatus: EventProcessingStatus.DEAD_LETTER,
         },
       ];
-      mockPrismaService.serviceCatalogEventLog.findMany.mockResolvedValue(
-        failedEvents,
-      );
+      mockPrismaService.serviceCatalogEventLog.findMany.mockResolvedValue(failedEvents);
 
       const result = await service.getFailedEvents(50);
 
@@ -317,10 +286,7 @@ describe('ServiceCatalogEventLogService', () => {
       expect(prisma.serviceCatalogEventLog.findMany).toHaveBeenCalledWith({
         where: {
           processingStatus: {
-            in: [
-              EventProcessingStatus.FAILED,
-              EventProcessingStatus.DEAD_LETTER,
-            ],
+            in: [EventProcessingStatus.FAILED, EventProcessingStatus.DEAD_LETTER],
           },
         },
         orderBy: { receivedAt: 'desc' },
@@ -344,9 +310,7 @@ describe('ServiceCatalogEventLogService', () => {
   describe('getEventsByServiceCode', () => {
     it('should get events for a specific service', async () => {
       const serviceEvents = [mockEventLog];
-      mockPrismaService.serviceCatalogEventLog.findMany.mockResolvedValue(
-        serviceEvents,
-      );
+      mockPrismaService.serviceCatalogEventLog.findMany.mockResolvedValue(serviceEvents);
 
       const result = await service.getEventsByServiceCode('PYX_ES_HVAC_001');
 
@@ -469,11 +433,8 @@ describe('ServiceCatalogEventLogService', () => {
 
       await service.cleanupOldEvents(60);
 
-      const callArgs = (prisma.serviceCatalogEventLog.deleteMany as jest.Mock)
-        .mock.calls[0][0];
-      expect(callArgs.where.processingStatus).toBe(
-        EventProcessingStatus.COMPLETED,
-      );
+      const callArgs = (prisma.serviceCatalogEventLog.deleteMany as jest.Mock).mock.calls[0][0];
+      expect(callArgs.where.processingStatus).toBe(EventProcessingStatus.COMPLETED);
     });
   });
 });

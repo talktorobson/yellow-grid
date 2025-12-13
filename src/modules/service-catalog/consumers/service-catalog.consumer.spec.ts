@@ -5,18 +5,22 @@ import { ServiceCatalogEventLogService } from '../services/service-catalog-event
 import { ServiceCatalogEventType } from '../dto/kafka-event.dto';
 import { EventProcessingStatus } from '@prisma/client';
 
-jest.mock('kafkajs', () => ({
-  Kafka: jest.fn().mockReturnValue({
-    consumer: jest.fn().mockReturnValue({
-      connect: jest.fn(),
-      disconnect: jest.fn(),
-      subscribe: jest.fn(),
-      run: jest.fn(),
-      stop: jest.fn(),
+jest.mock(
+  'kafkajs',
+  () => ({
+    Kafka: jest.fn().mockReturnValue({
+      consumer: jest.fn().mockReturnValue({
+        connect: jest.fn(),
+        disconnect: jest.fn(),
+        subscribe: jest.fn(),
+        run: jest.fn(),
+        stop: jest.fn(),
+      }),
     }),
+    logLevel: { NOTHING: 0 },
   }),
-  logLevel: { NOTHING: 0 },
-}), { virtual: true });
+  { virtual: true },
+);
 
 describe('ServiceCatalogEventConsumer', () => {
   let consumer: ServiceCatalogEventConsumer;
@@ -117,10 +121,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       expect(eventLogService.findByEventId).toHaveBeenCalledWith('evt_20250117_123456_abc123');
       expect(eventLogService.create).toHaveBeenCalled();
-      expect(syncService.handleServiceCreated).toHaveBeenCalledWith(
-        payload.data,
-        mockEventLog.id
-      );
+      expect(syncService.handleServiceCreated).toHaveBeenCalledWith(payload.data, mockEventLog.id);
       expect(eventLogService.markAsProcessed).toHaveBeenCalledWith(mockEventLog.id);
     });
 
@@ -159,7 +160,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       expect(syncService.handleServiceUpdated).toHaveBeenCalledWith(
         payload.data,
-        updateEventLog.id
+        updateEventLog.id,
       );
       expect(eventLogService.markAsProcessed).toHaveBeenCalled();
     });
@@ -199,7 +200,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       expect(syncService.handleServiceDeprecated).toHaveBeenCalledWith(
         payload.data,
-        deprecateEventLog.id
+        deprecateEventLog.id,
       );
       expect(eventLogService.markAsProcessed).toHaveBeenCalled();
     });
@@ -292,7 +293,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       expect(eventLogService.markAsSkipped).toHaveBeenCalledWith(
         unknownEventLog.id,
-        'Unknown event type: service.unknown_type'
+        'Unknown event type: service.unknown_type',
       );
     });
 
@@ -323,7 +324,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       expect(eventLogService.markAsFailed).toHaveBeenCalledWith(
         'evt_error',
-        expect.objectContaining({ message: 'Database error' })
+        expect.objectContaining({ message: 'Database error' }),
       );
     });
 

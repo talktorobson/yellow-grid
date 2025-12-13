@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ServiceOrderStateMachineService } from './service-order-state-machine.service';
 import { BufferLogicService } from '../scheduling/buffer-logic.service';
@@ -31,10 +26,7 @@ export class ServiceOrdersService {
   /**
    * Create a new service order
    */
-  async create(
-    createDto: CreateServiceOrderDto,
-    userId?: string,
-  ): Promise<ServiceOrder> {
+  async create(createDto: CreateServiceOrderDto, userId?: string): Promise<ServiceOrder> {
     this.logger.log(`Creating service order for service ${createDto.serviceId}`);
 
     // Validate service exists
@@ -61,9 +53,7 @@ export class ServiceOrdersService {
         project.countryCode !== createDto.countryCode ||
         project.businessUnit !== createDto.businessUnit
       ) {
-        throw new BadRequestException(
-          'Project country/business unit must match service order',
-        );
+        throw new BadRequestException('Project country/business unit must match service order');
       }
     }
 
@@ -72,9 +62,7 @@ export class ServiceOrdersService {
     const requestedEnd = new Date(createDto.requestedEndDate);
 
     if (requestedStart >= requestedEnd) {
-      throw new BadRequestException(
-        'Requested end date must be after start date',
-      );
+      throw new BadRequestException('Requested end date must be after start date');
     }
 
     // Create service order
@@ -368,9 +356,7 @@ export class ServiceOrdersService {
 
     // Prevent updates to terminal states
     if (this.stateMachine.isTerminalState(serviceOrder.state)) {
-      throw new BadRequestException(
-        `Cannot update service order in ${serviceOrder.state} state`,
-      );
+      throw new BadRequestException(`Cannot update service order in ${serviceOrder.state} state`);
     }
 
     const updated = await this.prisma.serviceOrder.update({
@@ -428,16 +414,14 @@ export class ServiceOrdersService {
     // Validate scheduled end time is after start time
     const scheduledEnd = new Date(scheduleDto.scheduledEndTime);
     if (scheduledEnd <= scheduledStart) {
-      throw new BadRequestException(
-        'Scheduled end time must be after start time',
-      );
+      throw new BadRequestException('Scheduled end time must be after start time');
     }
 
     // Check dependencies
     const unsatisfiedDeps = await this.getUnsatisfiedDependencies(id);
     if (unsatisfiedDeps.length > 0) {
       throw new BadRequestException(
-        `Cannot schedule with unsatisfied dependencies: ${unsatisfiedDeps.map(d => d.id).join(', ')}`,
+        `Cannot schedule with unsatisfied dependencies: ${unsatisfiedDeps.map((d) => d.id).join(', ')}`,
       );
     }
 
@@ -569,9 +553,7 @@ export class ServiceOrdersService {
       },
     });
 
-    this.logger.log(
-      `Service order ${id} cancelled by ${userId || 'system'}. Reason: ${reason}`,
-    );
+    this.logger.log(`Service order ${id} cancelled by ${userId || 'system'}. Reason: ${reason}`);
 
     return updated;
   }
@@ -590,15 +572,19 @@ export class ServiceOrdersService {
       },
     });
 
-    return dependencies.filter(dep => {
+    return dependencies.filter((dep) => {
       if (dep.dependencyType === 'REQUIRES_COMPLETION') {
-        return dep.blockedOrder.state !== ServiceOrderState.COMPLETED &&
-               dep.blockedOrder.state !== ServiceOrderState.VALIDATED &&
-               dep.blockedOrder.state !== ServiceOrderState.CLOSED;
+        return (
+          dep.blockedOrder.state !== ServiceOrderState.COMPLETED &&
+          dep.blockedOrder.state !== ServiceOrderState.VALIDATED &&
+          dep.blockedOrder.state !== ServiceOrderState.CLOSED
+        );
       }
       if (dep.dependencyType === 'REQUIRES_VALIDATION') {
-        return dep.blockedOrder.state !== ServiceOrderState.VALIDATED &&
-               dep.blockedOrder.state !== ServiceOrderState.CLOSED;
+        return (
+          dep.blockedOrder.state !== ServiceOrderState.VALIDATED &&
+          dep.blockedOrder.state !== ServiceOrderState.CLOSED
+        );
       }
       return false;
     });

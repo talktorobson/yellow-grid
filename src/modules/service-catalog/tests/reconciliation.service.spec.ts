@@ -50,9 +50,7 @@ describe('ReconciliationService', () => {
 
     service = module.get<ReconciliationService>(ReconciliationService);
     prisma = module.get<PrismaService>(PrismaService);
-    serviceCatalogService = module.get<ServiceCatalogService>(
-      ServiceCatalogService,
-    );
+    serviceCatalogService = module.get<ServiceCatalogService>(ServiceCatalogService);
 
     jest.clearAllMocks();
   });
@@ -64,10 +62,7 @@ describe('ReconciliationService', () => {
   describe('runDailyReconciliation', () => {
     it('should skip reconciliation when sync is disabled', async () => {
       process.env.SERVICE_CATALOG_SYNC_ENABLED = 'false';
-      const newService = new ReconciliationService(
-        prisma,
-        serviceCatalogService,
-      );
+      const newService = new ReconciliationService(prisma, serviceCatalogService);
 
       const reconcileSpy = jest.spyOn(newService as any, 'reconcileCountry');
 
@@ -140,9 +135,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
         status: 'RUNNING',
       });
 
-      mockPrismaService.serviceCatalog.findMany.mockResolvedValue(
-        mockDBServices,
-      );
+      mockPrismaService.serviceCatalog.findMany.mockResolvedValue(mockDBServices);
     });
 
     it('should complete reconciliation successfully', async () => {
@@ -154,9 +147,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
 
       mockServiceCatalogService.computeChecksum.mockReturnValue('old-checksum');
 
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       await service.reconcileCountry('ES');
 
@@ -189,9 +180,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
       mockServiceCatalogService.computeChecksum.mockReturnValue('new-checksum');
 
       mockPrismaService.serviceCatalog.update.mockResolvedValue({});
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       await service.reconcileCountry('ES');
 
@@ -218,9 +207,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
     it('should handle missing CSV file gracefully', async () => {
       fs.existsSync.mockReturnValue(false);
 
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       await service.reconcileCountry('ES');
 
@@ -244,9 +231,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
       mockServiceCatalogService.computeChecksum.mockReturnValue('new-checksum');
 
       mockPrismaService.serviceCatalog.update.mockResolvedValue({});
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       await service.reconcileCountry('ES');
 
@@ -265,9 +250,7 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
         throw new Error('File read error');
       });
 
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       await service.reconcileCountry('ES');
 
@@ -293,17 +276,13 @@ PYX_ES_HVAC_001,INSTALLATION,HVAC,HVAC Install,Install HVAC,"[""Install"",""Test
       mockServiceCatalogService.computeChecksum.mockReturnValue('new-checksum');
 
       mockPrismaService.serviceCatalog.update.mockResolvedValue({});
-      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue(
-        {},
-      );
+      mockPrismaService.serviceCatalogReconciliation.update.mockResolvedValue({});
 
       const loggerSpy = jest.spyOn(service['logger'], 'error');
 
       await service.reconcileCountry('ES');
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('HIGH DRIFT ALERT'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('HIGH DRIFT ALERT'));
       parseSpy.mockRestore();
     });
   });
@@ -382,36 +361,28 @@ value4,value5,value6`;
     ];
 
     it('should return reconciliation history', async () => {
-      mockPrismaService.serviceCatalogReconciliation.findMany.mockResolvedValue(
-        mockHistory,
-      );
+      mockPrismaService.serviceCatalogReconciliation.findMany.mockResolvedValue(mockHistory);
 
       const result = await service.getReconciliationHistory();
 
       expect(result).toEqual(mockHistory);
-      expect(prisma.serviceCatalogReconciliation.findMany).toHaveBeenCalledWith(
-        {
-          where: {},
-          orderBy: { runDate: 'desc' },
-          take: 10,
-        },
-      );
+      expect(prisma.serviceCatalogReconciliation.findMany).toHaveBeenCalledWith({
+        where: {},
+        orderBy: { runDate: 'desc' },
+        take: 10,
+      });
     });
 
     it('should filter by country code', async () => {
-      mockPrismaService.serviceCatalogReconciliation.findMany.mockResolvedValue(
-        mockHistory,
-      );
+      mockPrismaService.serviceCatalogReconciliation.findMany.mockResolvedValue(mockHistory);
 
       await service.getReconciliationHistory('ES', 20);
 
-      expect(prisma.serviceCatalogReconciliation.findMany).toHaveBeenCalledWith(
-        {
-          where: { countryCode: 'ES' },
-          orderBy: { runDate: 'desc' },
-          take: 20,
-        },
-      );
+      expect(prisma.serviceCatalogReconciliation.findMany).toHaveBeenCalledWith({
+        where: { countryCode: 'ES' },
+        orderBy: { runDate: 'desc' },
+        take: 20,
+      });
     });
   });
 

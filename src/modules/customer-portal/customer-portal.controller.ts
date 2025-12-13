@@ -5,7 +5,7 @@ import { CustomerPortalService } from './customer-portal.service';
 
 /**
  * Customer Portal Controller
- * 
+ *
  * Provides public (unauthenticated) endpoints for customer self-service portal.
  * Customers access via deep-link with access token (service order ID or hash).
  */
@@ -16,7 +16,7 @@ export class CustomerPortalController {
 
   /**
    * Get service order for customer portal
-   * 
+   *
    * This is a PUBLIC endpoint - no JWT authentication required.
    * The accessToken serves as the authentication mechanism.
    */
@@ -33,11 +33,11 @@ export class CustomerPortalController {
   })
   async getServiceOrder(@Param('accessToken') accessToken: string) {
     const result = await this.customerPortalService.getServiceOrderByToken(accessToken);
-    
+
     if (!result) {
       throw new NotFoundException('Service order not found or access denied');
     }
-    
+
     return result;
   }
 
@@ -53,11 +53,11 @@ export class CustomerPortalController {
   })
   async getWCFData(@Param('accessToken') accessToken: string) {
     const result = await this.customerPortalService.getWCFData(accessToken);
-    
+
     if (!result) {
       throw new NotFoundException('WCF data not found');
     }
-    
+
     return result;
   }
 

@@ -165,10 +165,8 @@ describe('BookingService', () => {
     });
 
     it('getUtilizationMetrics calculates rates correctly', async () => {
-      mockPrisma.provider.findMany.mockResolvedValue([
-        { id: 'p1', name: 'Provider 1' },
-      ]);
-      
+      mockPrisma.provider.findMany.mockResolvedValue([{ id: 'p1', name: 'Provider 1' }]);
+
       // Mock orders: 2 orders of 4 hours (240 mins) each = 8 hours total
       mockPrisma.serviceOrder.findMany.mockResolvedValue([
         { estimatedDurationMinutes: 240 },
@@ -177,7 +175,7 @@ describe('BookingService', () => {
 
       const result = await service.getUtilizationMetrics({
         startDate: '2025-01-01', // Wednesday
-        endDate: '2025-01-01',   // 1 day
+        endDate: '2025-01-01', // 1 day
         providerIds: ['p1'],
       });
 

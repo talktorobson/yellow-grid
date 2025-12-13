@@ -1,10 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEnum, IsOptional, IsUUID, IsInt, IsNumber, Min, IsArray, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsUUID,
+  IsInt,
+  IsNumber,
+  Min,
+  IsArray,
+  IsDateString,
+} from 'class-validator';
 
 // Match the Prisma enum exactly
 export enum ServicePriorityType {
-  P1 = 'P1',           // Always Accept - core competency
-  P2 = 'P2',           // Bundle Only - requires P1 service in same order
+  P1 = 'P1', // Always Accept - core competency
+  P2 = 'P2', // Bundle Only - requires P1 service in same order
   OPT_OUT = 'OPT_OUT', // Never Accept - provider declines this service
 }
 

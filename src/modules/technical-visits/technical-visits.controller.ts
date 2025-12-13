@@ -9,19 +9,9 @@ import {
   HttpStatus,
   Patch,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { TechnicalVisitsService } from './technical-visits.service';
-import {
-  RecordTvOutcomeDto,
-  LinkInstallationDto,
-  TvOutcomeResponseDto,
-} from './dto';
+import { RecordTvOutcomeDto, LinkInstallationDto, TvOutcomeResponseDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -30,9 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller('technical-visits')
 @UseGuards(JwtAuthGuard)
 export class TechnicalVisitsController {
-  constructor(
-    private readonly technicalVisitsService: TechnicalVisitsService,
-  ) {}
+  constructor(private readonly technicalVisitsService: TechnicalVisitsService) {}
 
   @Post('outcomes')
   @HttpCode(HttpStatus.CREATED)
@@ -48,7 +36,8 @@ export class TechnicalVisitsController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid request (e.g., not a TV service order, missing modifications for YES_BUT)',
+    description:
+      'Invalid request (e.g., not a TV service order, missing modifications for YES_BUT)',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -80,9 +69,7 @@ export class TechnicalVisitsController {
     status: HttpStatus.NOT_FOUND,
     description: 'TV outcome not found',
   })
-  async getOutcome(
-    @Param('outcomeId') outcomeId: string,
-  ): Promise<TvOutcomeResponseDto> {
+  async getOutcome(@Param('outcomeId') outcomeId: string): Promise<TvOutcomeResponseDto> {
     return this.technicalVisitsService.getOutcome(outcomeId);
   }
 
@@ -115,7 +102,8 @@ export class TechnicalVisitsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Link installation to TV',
-    description: 'Link an installation service order to a TV. Creates a dependency if TV outcome blocks installation.',
+    description:
+      'Link an installation service order to a TV. Creates a dependency if TV outcome blocks installation.',
   })
   @ApiParam({
     name: 'tvServiceOrderId',

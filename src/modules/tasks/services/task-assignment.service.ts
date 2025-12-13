@@ -119,8 +119,7 @@ export class TaskAssignmentService {
     // 5. Tenant Match (10 points max) - already filtered by country
     const tenantMatch = 10;
 
-    const totalScore =
-      roleMatch + expertiseMatch + workloadScore + availabilityScore + tenantMatch;
+    const totalScore = roleMatch + expertiseMatch + workloadScore + availabilityScore + tenantMatch;
 
     return {
       operatorId,

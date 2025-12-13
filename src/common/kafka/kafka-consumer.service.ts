@@ -261,18 +261,13 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         message_headers: this.extractHeaders(message),
       };
 
-      await this.producerService.send(
-        dlqTopic,
-        dlqMessage,
-        `${topic}:${partition}:${offset}`,
-        {
-          'original-topic': topic,
-          'original-partition': partition.toString(),
-          'original-offset': offset,
-          'error-timestamp': Date.now().toString(),
-          ...(correlationId && { 'correlation-id': correlationId }),
-        },
-      );
+      await this.producerService.send(dlqTopic, dlqMessage, `${topic}:${partition}:${offset}`, {
+        'original-topic': topic,
+        'original-partition': partition.toString(),
+        'original-offset': offset,
+        'error-timestamp': Date.now().toString(),
+        ...(correlationId && { 'correlation-id': correlationId }),
+      });
 
       this.logger.warn(
         `📨 Sent message to DLQ: ${dlqTopic} | original: ${topic}[${partition}]@${offset}`,

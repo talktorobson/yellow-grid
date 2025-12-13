@@ -67,17 +67,14 @@ export class TemplateEngineService {
     });
 
     // Currency formatting helper
-    this.handlebars.registerHelper(
-      'formatCurrency',
-      (amount: number, currency: string = 'EUR') => {
-        if (typeof amount !== 'number') return '';
+    this.handlebars.registerHelper('formatCurrency', (amount: number, currency: string = 'EUR') => {
+      if (typeof amount !== 'number') return '';
 
-        return new Intl.NumberFormat('fr-FR', {
-          style: 'currency',
-          currency,
-        }).format(amount);
-      },
-    );
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency,
+      }).format(amount);
+    });
 
     // Conditional helper
     this.handlebars.registerHelper('eq', (a, b) => a === b);
@@ -86,12 +83,8 @@ export class TemplateEngineService {
     this.handlebars.registerHelper('lt', (a, b) => a < b);
 
     // Uppercase/lowercase helpers
-    this.handlebars.registerHelper('upper', (str: string) =>
-      str ? str.toUpperCase() : '',
-    );
-    this.handlebars.registerHelper('lower', (str: string) =>
-      str ? str.toLowerCase() : '',
-    );
+    this.handlebars.registerHelper('upper', (str: string) => (str ? str.toUpperCase() : ''));
+    this.handlebars.registerHelper('lower', (str: string) => (str ? str.toLowerCase() : ''));
 
     this.logger.log('Handlebars helpers registered');
   }
@@ -99,31 +92,20 @@ export class TemplateEngineService {
   /**
    * Render a notification template with variables
    */
-  async renderTemplate(
-    options: TemplateRenderOptions,
-  ): Promise<RenderedTemplate> {
-    const { templateCode, language, variables, countryCode, businessUnit } =
-      options;
+  async renderTemplate(options: TemplateRenderOptions): Promise<RenderedTemplate> {
+    const { templateCode, language, variables, countryCode, businessUnit } = options;
 
-    this.logger.log(
-      `Rendering template: ${templateCode} for language: ${language}`,
-    );
+    this.logger.log(`Rendering template: ${templateCode} for language: ${language}`);
 
     // Fetch template from database
     const template = await this.prisma.notificationTemplate.findFirst({
       where: {
         code: templateCode,
         isActive: true,
-        OR: [
-          { countryCode: null },
-          { countryCode },
-        ],
+        OR: [{ countryCode: null }, { countryCode }],
         AND: [
           {
-            OR: [
-              { businessUnit: null },
-              { businessUnit },
-            ],
+            OR: [{ businessUnit: null }, { businessUnit }],
           },
         ],
       },
@@ -141,18 +123,14 @@ export class TemplateEngineService {
     });
 
     if (!template) {
-      throw new NotFoundException(
-        `Template not found: ${templateCode} for language: ${language}`,
-      );
+      throw new NotFoundException(`Template not found: ${templateCode} for language: ${language}`);
     }
 
     // Get translation (fallback to 'en' if not found)
     let translation = template.translations[0];
 
     if (!translation) {
-      this.logger.warn(
-        `Translation not found for language: ${language}, falling back to 'en'`,
-      );
+      this.logger.warn(`Translation not found for language: ${language}, falling back to 'en'`);
 
       const fallbackTranslation = await this.prisma.notificationTranslation.findFirst({
         where: {
@@ -162,9 +140,7 @@ export class TemplateEngineService {
       });
 
       if (!fallbackTranslation) {
-        throw new NotFoundException(
-          `No translation found for template: ${templateCode}`,
-        );
+        throw new NotFoundException(`No translation found for template: ${templateCode}`);
       }
 
       translation = fallbackTranslation;
@@ -184,15 +160,11 @@ export class TemplateEngineService {
     }
 
     if (translation.shortMessage) {
-      const shortMessageTemplate = this.handlebars.compile(
-        translation.shortMessage,
-      );
+      const shortMessageTemplate = this.handlebars.compile(translation.shortMessage);
       rendered.shortMessage = shortMessageTemplate(variables);
     }
 
-    this.logger.log(
-      `Template rendered successfully: ${templateCode} (${language})`,
-    );
+    this.logger.log(`Template rendered successfully: ${templateCode} (${language})`);
 
     return rendered;
   }

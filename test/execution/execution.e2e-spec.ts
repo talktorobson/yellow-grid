@@ -4,7 +4,13 @@ import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { MediaUploadService } from '@/modules/execution/media-upload.service';
-import { UserType, ServicePriority, ServiceType, ServiceOrderState, ServiceCategory } from '@prisma/client';
+import {
+  UserType,
+  ServicePriority,
+  ServiceType,
+  ServiceOrderState,
+  ServiceCategory,
+} from '@prisma/client';
 
 describe('Execution Flow (E2E)', () => {
   let app: INestApplication;
@@ -16,14 +22,15 @@ describe('Execution Flow (E2E)', () => {
   let authToken: string;
 
   // Mock MediaUploadService
-const mockMediaUploadService = {
-  createUpload: jest.fn().mockResolvedValue({
-    uploadUrl: 'https://storage.googleapis.com/upload/mock-url',
-    mediaUrl: 'https://storage.googleapis.com/media/mock-file.jpg',
-    thumbnailUrl: 'https://storage.googleapis.com/media/mock-file-thumb.jpg',
-    key: 'mock-key',
-  }),
-};  beforeAll(async () => {
+  const mockMediaUploadService = {
+    createUpload: jest.fn().mockResolvedValue({
+      uploadUrl: 'https://storage.googleapis.com/upload/mock-url',
+      mediaUrl: 'https://storage.googleapis.com/media/mock-file.jpg',
+      thumbnailUrl: 'https://storage.googleapis.com/media/mock-file-thumb.jpg',
+      key: 'mock-key',
+    }),
+  };
+  beforeAll(async () => {
     process.env.KAFKA_ENABLED = 'false';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -99,7 +106,7 @@ const mockMediaUploadService = {
         countryCode: 'ES',
         businessUnit: 'LM_ES',
       });
-      
+
     if (!registerResponse.body.accessToken) {
       console.error('Registration failed:', JSON.stringify(registerResponse.body, null, 2));
     }

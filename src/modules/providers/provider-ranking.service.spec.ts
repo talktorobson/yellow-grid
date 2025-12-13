@@ -65,9 +65,7 @@ describe('ProviderRankingService', () => {
         id: 'wt1',
         providerId: 'p1',
         maxDailyJobs: 5,
-        specialtyAssignments: [
-          { specialtyId: 's1', totalJobsCompleted: 2, avgQualityScore: 4.5 },
-        ],
+        specialtyAssignments: [{ specialtyId: 's1', totalJobsCompleted: 2, avgQualityScore: 4.5 }],
         postalCodes: ['28001'],
       },
     ]);

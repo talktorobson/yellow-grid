@@ -157,7 +157,9 @@ describe('ProviderAuthService', () => {
       });
 
       await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
-      await expect(service.register(registerDto)).rejects.toThrow('Country code or business unit does not match provider');
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'Country code or business unit does not match provider',
+      );
     });
 
     it('should throw ConflictException if user already exists', async () => {
@@ -165,7 +167,9 @@ describe('ProviderAuthService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: 'existing-user' });
 
       await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
-      await expect(service.register(registerDto)).rejects.toThrow('User with this email already exists');
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'User with this email already exists',
+      );
     });
 
     it('should hash the password before storing', async () => {

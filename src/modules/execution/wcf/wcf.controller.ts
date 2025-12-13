@@ -59,10 +59,7 @@ export class WcfController {
   @ApiResponse({ status: 200, description: 'WCF finalized successfully' })
   @ApiResponse({ status: 404, description: 'WCF not found' })
   @ApiResponse({ status: 400, description: 'WCF not accepted or already finalized' })
-  async finalize(
-    @Param('id') id: string,
-    @Body() body: { approvedBy: string }
-  ) {
+  async finalize(@Param('id') id: string, @Body() body: { approvedBy: string }) {
     return this.wcfService.finalize(id, body.approvedBy);
   }
 }

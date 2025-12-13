@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Headers,
-  HttpCode,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { Public } from '@/common/decorators/public.decorator';
@@ -68,9 +60,7 @@ export class WebhooksController {
           },
         });
 
-        this.logger.log(
-          `Updated notification ${notification.id} status to ${status}`,
-        );
+        this.logger.log(`Updated notification ${notification.id} status to ${status}`);
       }
 
       return { success: true };
@@ -136,9 +126,7 @@ export class WebhooksController {
             data: updateData,
           });
 
-          this.logger.log(
-            `Updated notification ${notification.id} status to ${status}`,
-          );
+          this.logger.log(`Updated notification ${notification.id} status to ${status}`);
         }
       }
 

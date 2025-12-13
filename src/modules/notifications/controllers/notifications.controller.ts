@@ -13,13 +13,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { NotificationsService } from '../services/notifications.service';
 import { NotificationPreferencesService } from '../services/notification-preferences.service';
 import { SendNotificationDto } from '../dto/send-notification.dto';

@@ -13,7 +13,8 @@ export class BookingsController {
   @Post('pre-book')
   @ApiOperation({
     summary: 'Create a pre-booking hold (PRE_BOOKED)',
-    description: 'Atomically reserves slots in Redis and records a PRE_BOOKED booking with 48h TTL by default.',
+    description:
+      'Atomically reserves slots in Redis and records a PRE_BOOKED booking with 48h TTL by default.',
   })
   @ApiResponse({ status: 201, description: 'Pre-booking created' })
   async preBook(@Body() dto: PreBookDto) {

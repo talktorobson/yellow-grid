@@ -32,9 +32,9 @@ interface FindProvidersOutput {
 
 /**
  * Find Providers Worker (Stub)
- * 
+ *
  * Task Type: find-providers
- * 
+ *
  * Finds eligible providers based on:
  * - Service type
  * - Geographic coverage (postal code in intervention zone)
@@ -56,9 +56,7 @@ export class FindProvidersWorker extends BaseWorker<FindProvidersInput, FindProv
 
     // Simplified stub for infrastructure testing
     // TODO: Implement full provider finding logic with intervention zones
-    this.logger.log(
-      `Finding providers for ${serviceTypeCode} in ${postalCode}, ${countryCode}`
-    );
+    this.logger.log(`Finding providers for ${serviceTypeCode} in ${postalCode}, ${countryCode}`);
 
     // Return mock providers for testing
     const candidateProviders = [

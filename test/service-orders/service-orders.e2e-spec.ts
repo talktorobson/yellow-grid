@@ -116,7 +116,12 @@ describe('Service Orders API (E2E)', () => {
         businessUnit: 'LM_ES',
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/service-orders', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/service-orders',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -158,7 +163,12 @@ describe('Service Orders API (E2E)', () => {
         businessUnit: 'LM_ES',
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/service-orders', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/service-orders',
+        operatorToken,
+      )
         .send(createDto)
         .expect(404);
 
@@ -188,7 +198,12 @@ describe('Service Orders API (E2E)', () => {
         businessUnit: 'LM_ES',
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/service-orders', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/service-orders',
+        operatorToken,
+      )
         .send(createDto)
         .expect(400);
 
@@ -207,7 +222,12 @@ describe('Service Orders API (E2E)', () => {
         businessUnit: 'LM_ES',
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/service-orders', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/service-orders',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -313,8 +333,12 @@ describe('Service Orders API (E2E)', () => {
     it('should return 404 for non-existent service order', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
 
-      const response = await authenticatedRequest(app, 'get', `/api/v1/service-orders/${fakeId}`, operatorToken)
-        .expect(404);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/service-orders/${fakeId}`,
+        operatorToken,
+      ).expect(404);
 
       expect(response.body.message).toContain('not found');
     });
@@ -584,7 +608,12 @@ describe('Service Orders API (E2E)', () => {
     });
 
     it('should reject cancellation without reason', async () => {
-      await authenticatedRequest(app, 'post', `/api/v1/service-orders/${serviceOrder.id}/cancel`, operatorToken)
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/service-orders/${serviceOrder.id}/cancel`,
+        operatorToken,
+      )
         .send({})
         .expect(400);
     });
@@ -664,8 +693,12 @@ describe('Service Orders API (E2E)', () => {
         state: 'CREATED',
       });
 
-      await authenticatedRequest(app, 'delete', `/api/v1/service-orders/${serviceOrder.id}`, adminToken)
-        .expect(204);
+      await authenticatedRequest(
+        app,
+        'delete',
+        `/api/v1/service-orders/${serviceOrder.id}`,
+        adminToken,
+      ).expect(204);
 
       // Verify deletion
       const dbSO = await prisma.serviceOrder.findUnique({
@@ -680,8 +713,12 @@ describe('Service Orders API (E2E)', () => {
         state: 'CANCELLED',
       });
 
-      await authenticatedRequest(app, 'delete', `/api/v1/service-orders/${serviceOrder.id}`, adminToken)
-        .expect(204);
+      await authenticatedRequest(
+        app,
+        'delete',
+        `/api/v1/service-orders/${serviceOrder.id}`,
+        adminToken,
+      ).expect(204);
     });
 
     it('should reject deletion of service order in other states', async () => {
@@ -769,7 +806,12 @@ describe('Service Orders API (E2E)', () => {
           state,
         });
 
-        const cancelled = await authenticatedRequest(app, 'post', `/api/v1/service-orders/${so.id}/cancel`, operatorToken)
+        const cancelled = await authenticatedRequest(
+          app,
+          'post',
+          `/api/v1/service-orders/${so.id}/cancel`,
+          operatorToken,
+        )
           .send({ reason: 'Test cancellation' })
           .expect(200);
 

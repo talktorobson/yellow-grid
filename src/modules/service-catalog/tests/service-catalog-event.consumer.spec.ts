@@ -65,9 +65,7 @@ describe('ServiceCatalogEventConsumer', () => {
       ],
     }).compile();
 
-    consumer = module.get<ServiceCatalogEventConsumer>(
-      ServiceCatalogEventConsumer,
-    );
+    consumer = module.get<ServiceCatalogEventConsumer>(ServiceCatalogEventConsumer);
     prisma = module.get<PrismaService>(PrismaService);
     syncService = module.get<SyncService>(SyncService);
 
@@ -82,18 +80,13 @@ describe('ServiceCatalogEventConsumer', () => {
     it('should log warning when sync is disabled', async () => {
       process.env.SERVICE_CATALOG_SYNC_ENABLED = 'false';
 
-      const newConsumer = new ServiceCatalogEventConsumer(
-        prisma,
-        syncService,
-      );
+      const newConsumer = new ServiceCatalogEventConsumer(prisma, syncService);
 
       const loggerSpy = jest.spyOn(newConsumer['logger'], 'warn');
 
       await newConsumer.onModuleInit();
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('DISABLED'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('DISABLED'));
     });
 
     it('should log initialization when sync is enabled', async () => {
@@ -101,9 +94,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.onModuleInit();
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('initialized'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('initialized'));
     });
   });
 
@@ -117,9 +108,7 @@ describe('ServiceCatalogEventConsumer', () => {
     };
 
     it('should process new event successfully', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
         eventId: 'evt_001',
@@ -164,9 +153,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.handleMessage(mockMessage);
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('already processed'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('already processed'));
       expect(syncService.handleServiceCreated).not.toHaveBeenCalled();
     });
 
@@ -181,9 +168,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.handleMessage(mockMessage);
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('currently being processed'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('currently being processed'));
       expect(syncService.handleServiceCreated).not.toHaveBeenCalled();
     });
 
@@ -219,9 +204,7 @@ describe('ServiceCatalogEventConsumer', () => {
         value: Buffer.from(JSON.stringify(updatedPayload)),
       };
 
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-2',
       });
@@ -230,10 +213,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.handleMessage(updatedMessage);
 
-      expect(syncService.handleServiceUpdated).toHaveBeenCalledWith(
-        updatedPayload,
-        'event-log-2',
-      );
+      expect(syncService.handleServiceUpdated).toHaveBeenCalledWith(updatedPayload, 'event-log-2');
     });
 
     it('should dispatch service.deprecated events', async () => {
@@ -253,9 +233,7 @@ describe('ServiceCatalogEventConsumer', () => {
         value: Buffer.from(JSON.stringify(deprecatedPayload)),
       };
 
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-3',
       });
@@ -281,23 +259,17 @@ describe('ServiceCatalogEventConsumer', () => {
         value: Buffer.from(JSON.stringify(unknownPayload)),
       };
 
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
       });
       mockPrismaService.serviceCatalogEventLog.update.mockResolvedValue({});
 
-      await expect(consumer.handleMessage(unknownMessage)).rejects.toThrow(
-        'Unknown event type',
-      );
+      await expect(consumer.handleMessage(unknownMessage)).rejects.toThrow('Unknown event type');
     });
 
     it('should log processing time', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
       });
@@ -308,9 +280,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.handleMessage(mockMessage);
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('processed successfully in'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('processed successfully in'));
     });
 
     it('should handle message with null key by generating event ID', async () => {
@@ -319,9 +289,7 @@ describe('ServiceCatalogEventConsumer', () => {
         key: null,
       };
 
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
       });
@@ -340,9 +308,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
   describe('simulateEvent', () => {
     it('should simulate event processing', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
       });
@@ -358,9 +324,7 @@ describe('ServiceCatalogEventConsumer', () => {
     });
 
     it('should log simulation', async () => {
-      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(
-        null,
-      );
+      mockPrismaService.serviceCatalogEventLog.findUnique.mockResolvedValue(null);
       mockPrismaService.serviceCatalogEventLog.create.mockResolvedValue({
         id: 'event-log-1',
       });
@@ -371,9 +335,7 @@ describe('ServiceCatalogEventConsumer', () => {
 
       await consumer.simulateEvent(mockEventPayload);
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Simulating event'),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('Simulating event'));
     });
   });
 
@@ -390,10 +352,7 @@ describe('ServiceCatalogEventConsumer', () => {
     it('should return disabled status when sync is disabled', () => {
       process.env.SERVICE_CATALOG_SYNC_ENABLED = 'false';
 
-      const newConsumer = new ServiceCatalogEventConsumer(
-        prisma,
-        syncService,
-      );
+      const newConsumer = new ServiceCatalogEventConsumer(prisma, syncService);
 
       const status = newConsumer.getHealthStatus();
 

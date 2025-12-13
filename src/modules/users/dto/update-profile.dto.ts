@@ -58,6 +58,9 @@ export class AvatarResponseDto {
   @ApiProperty({ description: 'Avatar URL', example: 'https://storage.googleapis.com/...' })
   avatarUrl: string;
 
-  @ApiProperty({ description: 'Avatar thumbnail URL', example: 'https://storage.googleapis.com/...' })
+  @ApiProperty({
+    description: 'Avatar thumbnail URL',
+    example: 'https://storage.googleapis.com/...',
+  })
   avatarThumbnailUrl: string;
 }

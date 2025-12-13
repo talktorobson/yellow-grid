@@ -69,9 +69,7 @@ describe('NotificationsService', () => {
     twilioProvider = module.get<TwilioProvider>(TwilioProvider);
     sendGridProvider = module.get<SendGridProvider>(SendGridProvider);
     templateEngine = module.get<TemplateEngineService>(TemplateEngineService);
-    preferencesService = module.get<NotificationPreferencesService>(
-      NotificationPreferencesService,
-    );
+    preferencesService = module.get<NotificationPreferencesService>(NotificationPreferencesService);
     kafkaProducer = module.get<KafkaProducerService>(KafkaProducerService);
   });
 
@@ -94,15 +92,9 @@ describe('NotificationsService', () => {
         body: '<p>Your order has been assigned</p>',
       };
 
-      jest
-        .spyOn(preferencesService, 'shouldSendNotification')
-        .mockResolvedValue(true);
-      jest
-        .spyOn(templateEngine, 'renderTemplate')
-        .mockResolvedValue(mockRenderedTemplate);
-      jest
-        .spyOn(prismaService.notification, 'create')
-        .mockResolvedValue(mockNotification as any);
+      jest.spyOn(preferencesService, 'shouldSendNotification').mockResolvedValue(true);
+      jest.spyOn(templateEngine, 'renderTemplate').mockResolvedValue(mockRenderedTemplate);
+      jest.spyOn(prismaService.notification, 'create').mockResolvedValue(mockNotification as any);
       jest.spyOn(sendGridProvider, 'sendEmail').mockResolvedValue({
         success: true,
         messageId: 'sg-123',
@@ -153,15 +145,9 @@ describe('NotificationsService', () => {
         body: 'Order assigned: ORD-12345',
       };
 
-      jest
-        .spyOn(preferencesService, 'shouldSendNotification')
-        .mockResolvedValue(true);
-      jest
-        .spyOn(templateEngine, 'renderTemplate')
-        .mockResolvedValue(mockRenderedTemplate);
-      jest
-        .spyOn(prismaService.notification, 'create')
-        .mockResolvedValue(mockNotification as any);
+      jest.spyOn(preferencesService, 'shouldSendNotification').mockResolvedValue(true);
+      jest.spyOn(templateEngine, 'renderTemplate').mockResolvedValue(mockRenderedTemplate);
+      jest.spyOn(prismaService.notification, 'create').mockResolvedValue(mockNotification as any);
       jest.spyOn(twilioProvider, 'sendSms').mockResolvedValue({
         success: true,
         messageId: 'twilio-123',
@@ -192,9 +178,7 @@ describe('NotificationsService', () => {
 
     it('should skip notification if user preferences do not allow', async () => {
       // Arrange
-      jest
-        .spyOn(preferencesService, 'shouldSendNotification')
-        .mockResolvedValue(false);
+      jest.spyOn(preferencesService, 'shouldSendNotification').mockResolvedValue(false);
 
       // Act
       const result = await service.sendNotification({
@@ -227,15 +211,9 @@ describe('NotificationsService', () => {
         body: '<p>Your order has been assigned</p>',
       };
 
-      jest
-        .spyOn(preferencesService, 'shouldSendNotification')
-        .mockResolvedValue(true);
-      jest
-        .spyOn(templateEngine, 'renderTemplate')
-        .mockResolvedValue(mockRenderedTemplate);
-      jest
-        .spyOn(prismaService.notification, 'create')
-        .mockResolvedValue(mockNotification as any);
+      jest.spyOn(preferencesService, 'shouldSendNotification').mockResolvedValue(true);
+      jest.spyOn(templateEngine, 'renderTemplate').mockResolvedValue(mockRenderedTemplate);
+      jest.spyOn(prismaService.notification, 'create').mockResolvedValue(mockNotification as any);
       jest.spyOn(sendGridProvider, 'sendEmail').mockResolvedValue({
         success: false,
         error: 'Invalid email address',

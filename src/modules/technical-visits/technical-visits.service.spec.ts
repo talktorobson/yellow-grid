@@ -3,12 +3,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { TechnicalVisitsService } from './technical-visits.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { KafkaProducerService } from '../../common/kafka/kafka-producer.service';
-import {
-  TvOutcome,
-  ServiceType,
-  DependencyType,
-  ServiceOrderState,
-} from '@prisma/client';
+import { TvOutcome, ServiceType, DependencyType, ServiceOrderState } from '@prisma/client';
 import { RecordTvOutcomeDto } from './dto';
 
 describe('TechnicalVisitsService', () => {
@@ -120,9 +115,7 @@ describe('TechnicalVisitsService', () => {
         .mockResolvedValueOnce(tvServiceOrder) // TV service order
         .mockResolvedValueOnce(installationOrder); // Installation order
 
-      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(
-        expectedOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(expectedOutcome);
 
       const result = await service.recordOutcome(recordDto, userId);
 
@@ -195,9 +188,7 @@ describe('TechnicalVisitsService', () => {
         .mockResolvedValueOnce(tvServiceOrder)
         .mockResolvedValueOnce(installationOrder);
 
-      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(
-        expectedOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(expectedOutcome);
 
       mockPrismaService.serviceOrderDependency.findFirst.mockResolvedValue(null);
 
@@ -266,9 +257,7 @@ describe('TechnicalVisitsService', () => {
         .mockResolvedValueOnce(tvServiceOrder)
         .mockResolvedValueOnce(installationOrder);
 
-      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(
-        expectedOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.create.mockResolvedValue(expectedOutcome);
 
       mockPrismaService.serviceOrderDependency.findFirst.mockResolvedValue(null);
 
@@ -290,9 +279,7 @@ describe('TechnicalVisitsService', () => {
 
       mockPrismaService.serviceOrder.findUnique.mockResolvedValue(null);
 
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException if service order is not TV type', async () => {
@@ -309,13 +296,9 @@ describe('TechnicalVisitsService', () => {
         },
       };
 
-      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(
-        nonTvServiceOrder,
-      );
+      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(nonTvServiceOrder);
 
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(BadRequestException);
       await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
         /not a Technical Visit/,
       );
@@ -332,13 +315,9 @@ describe('TechnicalVisitsService', () => {
         state: ServiceOrderState.IN_PROGRESS,
       };
 
-      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(
-        incompleteTvOrder,
-      );
+      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(incompleteTvOrder);
 
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(BadRequestException);
       await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
         /must be in COMPLETED state/,
       );
@@ -351,13 +330,9 @@ describe('TechnicalVisitsService', () => {
         // Missing modifications
       };
 
-      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(
-        tvServiceOrder,
-      );
+      mockPrismaService.serviceOrder.findUnique.mockResolvedValue(tvServiceOrder);
 
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(BadRequestException);
       await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
         /Modifications are required/,
       );
@@ -382,12 +357,8 @@ describe('TechnicalVisitsService', () => {
         .mockResolvedValueOnce(tvServiceOrder)
         .mockResolvedValueOnce(nonInstallOrder);
 
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        BadRequestException,
-      );
-      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(
-        /not an INSTALLATION/,
-      );
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(BadRequestException);
+      await expect(service.recordOutcome(recordDto, userId)).rejects.toThrow(/not an INSTALLATION/);
     });
   });
 
@@ -420,9 +391,7 @@ describe('TechnicalVisitsService', () => {
         .mockResolvedValueOnce(tvOutcome)
         .mockResolvedValueOnce(updatedOutcome);
 
-      mockPrismaService.technicalVisitOutcome.update.mockResolvedValue(
-        updatedOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.update.mockResolvedValue(updatedOutcome);
 
       const result = await service.approveScopeChange(outcomeId, userId);
 
@@ -453,9 +422,7 @@ describe('TechnicalVisitsService', () => {
         outcome: TvOutcome.YES,
       };
 
-      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(
-        tvOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(tvOutcome);
 
       await expect(service.approveScopeChange(outcomeId, userId)).rejects.toThrow(
         BadRequestException,
@@ -473,9 +440,7 @@ describe('TechnicalVisitsService', () => {
         scopeChangeApproved: true,
       };
 
-      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(
-        tvOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(tvOutcome);
 
       await expect(service.approveScopeChange(outcomeId, userId)).rejects.toThrow(
         BadRequestException,
@@ -496,9 +461,7 @@ describe('TechnicalVisitsService', () => {
         installationBlocked: false,
       };
 
-      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(
-        tvOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(tvOutcome);
 
       const result = await service.getOutcome(outcomeId);
 
@@ -512,9 +475,7 @@ describe('TechnicalVisitsService', () => {
 
       mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(null);
 
-      await expect(service.getOutcome(outcomeId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getOutcome(outcomeId)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -528,9 +489,7 @@ describe('TechnicalVisitsService', () => {
         installationBlocked: false,
       };
 
-      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(
-        tvOutcome,
-      );
+      mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(tvOutcome);
 
       const result = await service.getOutcomeByTvId(tvServiceOrderId);
 
@@ -543,9 +502,7 @@ describe('TechnicalVisitsService', () => {
 
       mockPrismaService.technicalVisitOutcome.findUnique.mockResolvedValue(null);
 
-      await expect(service.getOutcomeByTvId(tvServiceOrderId)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getOutcomeByTvId(tvServiceOrderId)).rejects.toThrow(NotFoundException);
     });
   });
 });

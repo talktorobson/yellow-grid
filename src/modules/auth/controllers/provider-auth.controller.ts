@@ -11,7 +11,8 @@ export class ProviderAuthController {
   @Post('register')
   @ApiOperation({
     summary: 'Register a new provider user',
-    description: 'Creates a new external provider user account and links to an existing provider company',
+    description:
+      'Creates a new external provider user account and links to an existing provider company',
   })
   @ApiBody({ type: ProviderRegisterDto })
   @ApiResponse({
@@ -35,7 +36,8 @@ export class ProviderAuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Provider user login',
-    description: 'Authenticate provider user with email and password. MFA code required if enabled.',
+    description:
+      'Authenticate provider user with email and password. MFA code required if enabled.',
   })
   @ApiBody({ type: ProviderLoginDto })
   @ApiResponse({

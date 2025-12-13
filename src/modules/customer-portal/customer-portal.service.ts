@@ -22,9 +22,7 @@ export class CustomerPortalService {
    * - A short hash (future implementation)
    */
   async getServiceOrderByToken(accessToken: string) {
-    this.logger.log(
-      `Fetching service order for token: ${accessToken.substring(0, 8)}...`,
-    );
+    this.logger.log(`Fetching service order for token: ${accessToken.substring(0, 8)}...`);
 
     const serviceOrderInclude = {
       service: {
@@ -101,7 +99,8 @@ export class CustomerPortalService {
     const stateHistory = [
       {
         state: serviceOrder.state,
-        timestamp: serviceOrder.stateChangedAt?.toISOString() || serviceOrder.createdAt.toISOString(),
+        timestamp:
+          serviceOrder.stateChangedAt?.toISOString() || serviceOrder.createdAt.toISOString(),
         actor: 'System',
       },
     ];
@@ -115,8 +114,7 @@ export class CustomerPortalService {
           serviceOrder.salesOrderNumber ||
           serviceOrder.id.substring(0, 8),
         serviceName:
-          serviceOrder.service?.name ||
-          String(serviceOrder.serviceType).replace(/_/g, ' '),
+          serviceOrder.service?.name || String(serviceOrder.serviceType).replace(/_/g, ' '),
         serviceType: serviceOrder.serviceType,
         state: serviceOrder.state,
         stateHistory,
@@ -157,8 +155,7 @@ export class CustomerPortalService {
           ? {
               id: serviceOrder.workCompletionForms[0].id,
               status: serviceOrder.workCompletionForms[0].status,
-              signedAt:
-                serviceOrder.workCompletionForms[0].customerAcceptedAt?.toISOString(),
+              signedAt: serviceOrder.workCompletionForms[0].customerAcceptedAt?.toISOString(),
             }
           : undefined,
       },
@@ -201,16 +198,11 @@ export class CustomerPortalService {
     }
 
     const wcf = serviceOrder.workCompletionForms[0];
-    const scopeItems =
-      (serviceOrder.service?.scopeIncluded as string[]) || [];
+    const scopeItems = (serviceOrder.service?.scopeIncluded as string[]) || [];
 
     // Get signatures from WCF
-    const customerSignature = wcf?.signatures?.find(
-      (s) => s.signerType === 'CUSTOMER',
-    );
-    const technicianSignature = wcf?.signatures?.find(
-      (s) => s.signerType === 'TECHNICIAN',
-    );
+    const customerSignature = wcf?.signatures?.find((s) => s.signerType === 'CUSTOMER');
+    const technicianSignature = wcf?.signatures?.find((s) => s.signerType === 'TECHNICIAN');
 
     return {
       wcf: wcf
@@ -218,12 +210,8 @@ export class CustomerPortalService {
             id: wcf.id,
             status: wcf.status,
             signedAt: wcf.customerAcceptedAt?.toISOString(),
-            customerSignature: customerSignature?.signedAt
-              ? 'Signed'
-              : undefined,
-            technicianSignature: technicianSignature?.signedAt
-              ? 'Signed'
-              : undefined,
+            customerSignature: customerSignature?.signedAt ? 'Signed' : undefined,
+            technicianSignature: technicianSignature?.signedAt ? 'Signed' : undefined,
             workDescription: wcf.workSummary,
             customerComments: wcf.customerFeedback,
           }
@@ -237,8 +225,7 @@ export class CustomerPortalService {
       serviceOrder: {
         id: serviceOrder.id,
         serviceName:
-          serviceOrder.service?.name ||
-          String(serviceOrder.serviceType).replace(/_/g, ' '),
+          serviceOrder.service?.name || String(serviceOrder.serviceType).replace(/_/g, ' '),
       },
     };
   }

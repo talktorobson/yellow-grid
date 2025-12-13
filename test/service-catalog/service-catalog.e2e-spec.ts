@@ -180,9 +180,7 @@ describe('Service Catalog API (E2E)', () => {
 
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBeGreaterThanOrEqual(1);
-      expect(
-        response.body.some((s: any) => s.name.toLowerCase().includes('hvac')),
-      ).toBe(true);
+      expect(response.body.some((s: any) => s.name.toLowerCase().includes('hvac'))).toBe(true);
     });
 
     it('should limit search results', async () => {

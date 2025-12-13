@@ -12,12 +12,7 @@ import { BookingsController } from './controllers/bookings.controller';
 import { CalendarController } from './controllers/calendar.controller';
 
 @Module({
-  imports: [
-    PrismaModule,
-    HttpModule,
-    ConfigModule,
-    RedisModule,
-  ],
+  imports: [PrismaModule, HttpModule, ConfigModule, RedisModule],
   providers: [BufferLogicService, SlotCalculatorService, RedisBitmapService, BookingService],
   controllers: [AvailabilityController, BookingsController, CalendarController],
   exports: [BufferLogicService, SlotCalculatorService, BookingService],

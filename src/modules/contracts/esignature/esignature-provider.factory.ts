@@ -71,12 +71,7 @@ export class ESignatureProviderFactory {
 
       if (type === 'docusign') {
         const config = this.config.getDocuSignConfig();
-        return !!(
-          config.integrationKey &&
-          config.userId &&
-          config.accountId &&
-          config.privateKey
-        );
+        return !!(config.integrationKey && config.userId && config.accountId && config.privateKey);
       }
 
       if (type === 'adobe-sign') {

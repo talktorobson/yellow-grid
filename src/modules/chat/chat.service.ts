@@ -14,16 +14,11 @@ import {
   ListMessagesQueryDto,
   ListConversationsQueryDto,
 } from './dto/chat.dto';
-import {
-  ConversationStatus,
-  MessageStatus,
-  MessageType,
-  ParticipantType,
-} from '@prisma/client';
+import { ConversationStatus, MessageStatus, MessageType, ParticipantType } from '@prisma/client';
 
 /**
  * Service for managing chat conversations and messages.
- * 
+ *
  * Key features:
  * - 4-party conversations: Customer, Operator, WorkTeam, Provider Manager
  * - All conversations are scoped to a ServiceOrder
@@ -147,10 +142,7 @@ export class ChatService {
     const existingParticipant = await this.prisma.conversationParticipant.findFirst({
       where: {
         conversationId,
-        OR: [
-          { userId: dto.userId },
-          { customerEmail: dto.customerEmail },
-        ],
+        OR: [{ userId: dto.userId }, { customerEmail: dto.customerEmail }],
       },
     });
 
@@ -201,11 +193,7 @@ export class ChatService {
   /**
    * Send a message in a conversation
    */
-  async sendMessage(
-    conversationId: string,
-    userId: string,
-    dto: SendMessageDto,
-  ) {
+  async sendMessage(conversationId: string, userId: string, dto: SendMessageDto) {
     // Find participant
     const participant = await this.prisma.conversationParticipant.findFirst({
       where: {
@@ -284,11 +272,7 @@ export class ChatService {
   /**
    * Get messages in a conversation
    */
-  async getMessages(
-    conversationId: string,
-    userId: string,
-    query: ListMessagesQueryDto,
-  ) {
+  async getMessages(conversationId: string, userId: string, query: ListMessagesQueryDto) {
     // Verify participant
     const participant = await this.prisma.conversationParticipant.findFirst({
       where: {
@@ -342,11 +326,7 @@ export class ChatService {
   /**
    * Mark messages as read
    */
-  async markAsRead(
-    conversationId: string,
-    userId: string,
-    dto: MarkAsReadDto,
-  ) {
+  async markAsRead(conversationId: string, userId: string, dto: MarkAsReadDto) {
     const participant = await this.prisma.conversationParticipant.findFirst({
       where: {
         conversationId,
@@ -486,9 +466,7 @@ export class ChatService {
     }
 
     // Verify user is participant
-    const isParticipant = conversation.participants.some(
-      (p) => p.userId === userId,
-    );
+    const isParticipant = conversation.participants.some((p) => p.userId === userId);
 
     if (!isParticipant) {
       throw new ForbiddenException('You are not a participant in this conversation');
@@ -538,9 +516,7 @@ export class ChatService {
     }
 
     // Verify user is participant
-    const isParticipant = conversation.participants.some(
-      (p) => p.userId === userId,
-    );
+    const isParticipant = conversation.participants.some((p) => p.userId === userId);
 
     if (!isParticipant) {
       throw new ForbiddenException('You are not a participant in this conversation');
@@ -557,11 +533,7 @@ export class ChatService {
   /**
    * Update a message (edit)
    */
-  async updateMessage(
-    messageId: string,
-    userId: string,
-    dto: UpdateMessageDto,
-  ) {
+  async updateMessage(messageId: string, userId: string, dto: UpdateMessageDto) {
     const message = await this.prisma.serviceOrderMessage.findUnique({
       where: { id: messageId },
       include: { participant: true },
@@ -576,9 +548,7 @@ export class ChatService {
     }
 
     // Store original content if first edit
-    const originalContent = message.isEdited
-      ? message.originalContent
-      : message.content;
+    const originalContent = message.isEdited ? message.originalContent : message.content;
 
     return this.prisma.serviceOrderMessage.update({
       where: { id: messageId },

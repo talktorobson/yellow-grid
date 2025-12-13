@@ -324,7 +324,9 @@ export class DocuSignProvider implements IESignatureProvider {
       return {
         eventType: this.mapDocuSignEvent(event.event),
         envelopeId: event.data.envelopeId || event.envelopeId,
-        eventTimestamp: new Date(event.generatedDateTime || event.data.envelopeSummary?.statusChangedDateTime),
+        eventTimestamp: new Date(
+          event.generatedDateTime || event.data.envelopeSummary?.statusChangedDateTime,
+        ),
         data: event.data,
         signer: event.data.envelopeSummary?.recipients?.signers?.[0]
           ? {

@@ -29,9 +29,7 @@ export class DatabaseTestSetup {
       .start();
 
     // Start Redis container
-    this.redisContainer = await new RedisContainer('redis:7-alpine')
-      .withExposedPorts(6379)
-      .start();
+    this.redisContainer = await new RedisContainer('redis:7-alpine').withExposedPorts(6379).start();
 
     // Set environment variables for tests
     process.env.DATABASE_URL = this.postgresContainer.getConnectionUri();

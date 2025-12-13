@@ -11,13 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -91,11 +85,7 @@ export class TasksController {
     status: 200,
     description: 'Task updated successfully',
   })
-  async update(
-    @Param('id') id: string,
-    @Body() updateTaskDto: UpdateTaskDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
     return this.tasksService.update(id, updateTaskDto, req.user.userId);
   }
 
@@ -110,11 +100,7 @@ export class TasksController {
     status: 400,
     description: 'Cannot assign task in current status',
   })
-  async assign(
-    @Param('id') id: string,
-    @Body() assignTaskDto: AssignTaskDto,
-    @Request() req: any,
-  ) {
+  async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
     return this.tasksService.assign(id, assignTaskDto, req.user.userId);
   }
 
@@ -166,11 +152,7 @@ export class TasksController {
     status: 400,
     description: 'Cannot cancel task in current status',
   })
-  async cancel(
-    @Param('id') id: string,
-    @Body() cancelTaskDto: CancelTaskDto,
-    @Request() req: any,
-  ) {
+  async cancel(@Param('id') id: string, @Body() cancelTaskDto: CancelTaskDto, @Request() req: any) {
     return this.tasksService.cancel(id, cancelTaskDto, req.user.userId);
   }
 

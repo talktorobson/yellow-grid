@@ -34,7 +34,7 @@ async function bootstrap() {
   // CORS - Allow multiple origins for development
   const corsOrigins = configService.get<string>('CORS_ORIGIN', 'http://localhost:3001');
   app.enableCors({
-    origin: corsOrigins.split(',').map(o => o.trim()),
+    origin: corsOrigins.split(',').map((o) => o.trim()),
     credentials: true,
   });
 

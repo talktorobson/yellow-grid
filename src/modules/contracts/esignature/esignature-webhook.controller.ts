@@ -176,10 +176,7 @@ export class ESignatureWebhookController {
     this.logger.log(`Envelope delivered for contract ${contractId}`);
   }
 
-  private async handleEnvelopeCompleted(
-    contractId: string,
-    envelopeId: string,
-  ): Promise<void> {
+  private async handleEnvelopeCompleted(contractId: string, envelopeId: string): Promise<void> {
     /*
     try {
       // Download the signed document

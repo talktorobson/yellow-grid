@@ -34,13 +34,13 @@ interface GoCheckOutput {
 
 /**
  * Go Check Worker
- * 
+ *
  * Task Type: go-check
- * 
+ *
  * Pre-execution validation (24-48h before scheduled date):
  * - Verify payment status
  * - Verify product delivery status
- * 
+ *
  * Returns GO_OK if ready, or specific NOK status if blocked.
  */
 @Injectable()
@@ -76,7 +76,7 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
     // Check payment status
     // In a real implementation, this would call payment service or check invoice status
     const paymentConfirmed = await this.checkPaymentStatus(serviceOrderId);
-    
+
     // Check delivery status
     // In a real implementation, this would call logistics/delivery tracking
     const deliveryConfirmed = await this.checkDeliveryStatus(serviceOrderId);
@@ -123,7 +123,7 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
   private async checkPaymentStatus(serviceOrderId: string): Promise<boolean> {
     // Placeholder: Check if there's a paid invoice
     // In production, this would query payment gateway or ERP
-    
+
     // For demo: randomly return true 80% of the time
     return Math.random() > 0.2;
   }
@@ -135,7 +135,7 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
   private async checkDeliveryStatus(serviceOrderId: string): Promise<boolean> {
     // Placeholder: Check if products are delivered
     // In production, this would query logistics API
-    
+
     // For demo: randomly return true 85% of the time
     return Math.random() > 0.15;
   }

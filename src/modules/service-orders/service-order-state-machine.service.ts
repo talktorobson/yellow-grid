@@ -46,8 +46,8 @@ export class ServiceOrderStateMachineService {
     if (!this.canTransition(from, to)) {
       throw new BadRequestException(
         `Invalid state transition from ${from} to ${to}.` +
-        (reason ? ` Reason: ${reason}` : '') +
-        ` Allowed transitions: ${this.getAllowedTransitions(from).join(', ') || 'none (terminal state)'}`,
+          (reason ? ` Reason: ${reason}` : '') +
+          ` Allowed transitions: ${this.getAllowedTransitions(from).join(', ') || 'none (terminal state)'}`,
       );
     }
   }
@@ -102,23 +102,17 @@ export class ServiceOrderStateMachineService {
     // CREATED → SCHEDULED: Must have valid scheduling window
     if (from === ServiceOrderState.CREATED && to === ServiceOrderState.SCHEDULED) {
       if (context.isWithinSchedulingWindow === false) {
-        throw new BadRequestException(
-          'Cannot schedule outside the scheduling window',
-        );
+        throw new BadRequestException('Cannot schedule outside the scheduling window');
       }
       if (context.dependenciesSatisfied === false) {
-        throw new BadRequestException(
-          'Cannot schedule with unsatisfied dependencies',
-        );
+        throw new BadRequestException('Cannot schedule with unsatisfied dependencies');
       }
     }
 
     // SCHEDULED → ASSIGNED: Must have scheduled slot
     if (from === ServiceOrderState.SCHEDULED && to === ServiceOrderState.ASSIGNED) {
       if (!context.hasScheduledSlot) {
-        throw new BadRequestException(
-          'Cannot assign provider before scheduling',
-        );
+        throw new BadRequestException('Cannot assign provider before scheduling');
       }
     }
 
@@ -129,9 +123,7 @@ export class ServiceOrderStateMachineService {
       ServiceOrderState.IN_PROGRESS,
     ];
     if (noRescheduleStates.includes(from) && to === ServiceOrderState.SCHEDULED) {
-      throw new BadRequestException(
-        `Cannot reschedule order in ${from} state`,
-      );
+      throw new BadRequestException(`Cannot reschedule order in ${from} state`);
     }
 
     // Cannot reassign after ACCEPTED
@@ -140,9 +132,7 @@ export class ServiceOrderStateMachineService {
       ServiceOrderState.IN_PROGRESS,
     ];
     if (noReassignStates.includes(from) && to === ServiceOrderState.ASSIGNED) {
-      throw new BadRequestException(
-        `Cannot reassign provider in ${from} state`,
-      );
+      throw new BadRequestException(`Cannot reassign provider in ${from} state`);
     }
   }
 

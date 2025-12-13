@@ -25,9 +25,9 @@ interface ReserveSlotOutput {
 
 /**
  * Reserve Slot Worker
- * 
+ *
  * Task Type: reserve-slot
- * 
+ *
  * Creates a calendar booking reservation for the service order.
  * The reservation can be temporary (pending confirmation) or permanent.
  */
@@ -47,7 +47,7 @@ export class ReserveSlotWorker extends BaseWorker<ReserveSlotInput, ReserveSlotO
     // Simplified stub for infrastructure testing
     // TODO: Implement full calendar booking logic
     this.logger.log(
-      `Reserving slot for order ${serviceOrderId}: ${scheduledDate} ${scheduledSlot} (team: ${workTeamId})`
+      `Reserving slot for order ${serviceOrderId}: ${scheduledDate} ${scheduledSlot} (team: ${workTeamId})`,
     );
 
     const reservedAt = new Date();

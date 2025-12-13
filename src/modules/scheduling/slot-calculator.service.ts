@@ -17,7 +17,10 @@ export class SlotCalculatorService {
     const minutes = localDate.getHours() * 60 + localDate.getMinutes();
     return Math.max(
       0,
-      Math.min(SlotCalculatorService.SLOTS_PER_DAY - 1, Math.floor(minutes / SlotCalculatorService.SLOT_MINUTES)),
+      Math.min(
+        SlotCalculatorService.SLOTS_PER_DAY - 1,
+        Math.floor(minutes / SlotCalculatorService.SLOT_MINUTES),
+      ),
     );
   }
 

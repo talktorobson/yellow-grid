@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsBoolean, IsNumber, IsEnum, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsEnum,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -38,7 +47,7 @@ export class I18nText {
 export class CreateServiceDto {
   @ApiProperty({
     description: 'External service code from source system',
-    example: 'PYX_ES_HVAC_00123'
+    example: 'PYX_ES_HVAC_00123',
   })
   @IsString()
   @IsNotEmpty()
@@ -47,7 +56,7 @@ export class CreateServiceDto {
   @ApiProperty({
     description: 'External system source',
     example: 'PYXIS',
-    enum: ['PYXIS', 'TEMPO', 'SAP', 'FSM_CUSTOM']
+    enum: ['PYXIS', 'TEMPO', 'SAP', 'FSM_CUSTOM'],
   })
   @IsString()
   @IsNotEmpty()
@@ -55,7 +64,7 @@ export class CreateServiceDto {
 
   @ApiProperty({
     description: 'Country code (ISO 3166-1 alpha-2)',
-    example: 'ES'
+    example: 'ES',
   })
   @IsString()
   @IsNotEmpty()
@@ -63,7 +72,7 @@ export class CreateServiceDto {
 
   @ApiProperty({
     description: 'Business unit identifier',
-    example: 'LM_ES'
+    example: 'LM_ES',
   })
   @IsString()
   @IsNotEmpty()
@@ -72,7 +81,7 @@ export class CreateServiceDto {
   @ApiProperty({
     description: 'Service type',
     example: 'INSTALLATION',
-    enum: ['INSTALLATION', 'CONFIRMATION_TV', 'QUOTATION_TV', 'MAINTENANCE', 'REWORK', 'COMPLEX']
+    enum: ['INSTALLATION', 'CONFIRMATION_TV', 'QUOTATION_TV', 'MAINTENANCE', 'REWORK', 'COMPLEX'],
   })
   @IsEnum(['INSTALLATION', 'CONFIRMATION_TV', 'QUOTATION_TV', 'MAINTENANCE', 'REWORK', 'COMPLEX'])
   @IsNotEmpty()
@@ -81,15 +90,37 @@ export class CreateServiceDto {
   @ApiProperty({
     description: 'Service category',
     example: 'HVAC',
-    enum: ['HVAC', 'PLUMBING', 'ELECTRICAL', 'KITCHEN', 'BATHROOM', 'FLOORING', 'WINDOWS_DOORS', 'GARDEN', 'FURNITURE', 'OTHER']
+    enum: [
+      'HVAC',
+      'PLUMBING',
+      'ELECTRICAL',
+      'KITCHEN',
+      'BATHROOM',
+      'FLOORING',
+      'WINDOWS_DOORS',
+      'GARDEN',
+      'FURNITURE',
+      'OTHER',
+    ],
   })
-  @IsEnum(['HVAC', 'PLUMBING', 'ELECTRICAL', 'KITCHEN', 'BATHROOM', 'FLOORING', 'WINDOWS_DOORS', 'GARDEN', 'FURNITURE', 'OTHER'])
+  @IsEnum([
+    'HVAC',
+    'PLUMBING',
+    'ELECTRICAL',
+    'KITCHEN',
+    'BATHROOM',
+    'FLOORING',
+    'WINDOWS_DOORS',
+    'GARDEN',
+    'FURNITURE',
+    'OTHER',
+  ])
   @IsNotEmpty()
   serviceCategory: string;
 
   @ApiProperty({
     description: 'Service name (multilingual)',
-    type: I18nText
+    type: I18nText,
   })
   @ValidateNested()
   @Type(() => I18nText)
@@ -98,7 +129,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'Service description (multilingual)',
-    type: I18nText
+    type: I18nText,
   })
   @ValidateNested()
   @Type(() => I18nText)
@@ -107,7 +138,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'What is included in the service scope',
-    example: ['Remove old unit', 'Install new unit', 'System testing']
+    example: ['Remove old unit', 'Install new unit', 'System testing'],
   })
   @IsArray()
   @IsString({ each: true })
@@ -116,7 +147,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'What is explicitly excluded from service scope',
-    example: ['Wall modifications', 'Electrical panel upgrades']
+    example: ['Wall modifications', 'Electrical panel upgrades'],
   })
   @IsArray()
   @IsString({ each: true })
@@ -125,7 +156,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'Worksite requirements',
-    example: ['Electrical outlet within 2 meters', 'Clear access to installation location']
+    example: ['Electrical outlet within 2 meters', 'Clear access to installation location'],
   })
   @IsArray()
   @IsString({ each: true })
@@ -134,7 +165,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'Product prerequisites',
-    example: ['AC unit delivered to site', 'Installation kit included']
+    example: ['AC unit delivered to site', 'Installation kit included'],
   })
   @IsArray()
   @IsString({ each: true })
@@ -143,7 +174,7 @@ export class CreateServiceDto {
 
   @ApiPropertyOptional({
     description: 'Contract template ID',
-    example: 'tpl-uuid-123'
+    example: 'tpl-uuid-123',
   })
   @IsString()
   @IsOptional()
@@ -151,7 +182,7 @@ export class CreateServiceDto {
 
   @ApiProperty({
     description: 'Estimated duration in minutes',
-    example: 180
+    example: 180,
   })
   @IsNumber()
   @IsNotEmpty()
@@ -160,7 +191,7 @@ export class CreateServiceDto {
   @ApiPropertyOptional({
     description: 'Requires pre-service contract',
     example: true,
-    default: false
+    default: false,
   })
   @IsBoolean()
   @IsOptional()
@@ -169,7 +200,7 @@ export class CreateServiceDto {
   @ApiPropertyOptional({
     description: 'Requires post-service Work Closing Form',
     example: true,
-    default: true
+    default: true,
   })
   @IsBoolean()
   @IsOptional()
@@ -179,7 +210,7 @@ export class CreateServiceDto {
     description: 'Service status',
     example: 'ACTIVE',
     enum: ['CREATED', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'],
-    default: 'ACTIVE'
+    default: 'ACTIVE',
   })
   @IsEnum(['CREATED', 'ACTIVE', 'DEPRECATED', 'ARCHIVED'])
   @IsOptional()

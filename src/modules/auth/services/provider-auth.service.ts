@@ -1,10 +1,22 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { ProviderRegisterDto, ProviderLoginDto, AuthResponseDto, MfaRequiredDto, UserDto } from '../dto';
+import {
+  ProviderRegisterDto,
+  ProviderLoginDto,
+  AuthResponseDto,
+  MfaRequiredDto,
+  UserDto,
+} from '../dto';
 
 @Injectable()
 export class ProviderAuthService {
@@ -89,7 +101,9 @@ export class ProviderAuthService {
       },
     });
 
-    this.logger.log(`Provider user registered: ${user.email} (${user.id}) for provider ${provider.name}`);
+    this.logger.log(
+      `Provider user registered: ${user.email} (${user.id}) for provider ${provider.name}`,
+    );
 
     // TODO: Send email verification
     // await this.sendVerificationEmail(user.email);
@@ -192,10 +206,7 @@ export class ProviderAuthService {
       userType: user.userType,
     };
 
-    const refreshTokenExpiration = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRATION',
-      '7d',
-    );
+    const refreshTokenExpiration = this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d');
 
     const refreshToken = this.jwtService.sign(refreshTokenPayload, {
       expiresIn: refreshTokenExpiration,

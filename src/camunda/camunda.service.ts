@@ -33,9 +33,9 @@ export class CamundaService {
 
   async initialize(): Promise<void> {
     const sdkConfig = this.config.getSdkConfig();
-    
+
     this.logger.log(`Connecting to Zeebe at ${sdkConfig.ZEEBE_ADDRESS}...`);
-    
+
     this.client = new Camunda8(sdkConfig);
     this.zeebe = this.client.getZeebeGrpcApiClient();
 
@@ -60,21 +60,23 @@ export class CamundaService {
    */
   private async deployProcesses(): Promise<void> {
     const processDir = path.join(process.cwd(), 'camunda', 'processes');
-    
+
     if (!fs.existsSync(processDir)) {
       this.logger.warn(`Process directory not found: ${processDir}`);
       return;
     }
 
-    const files = fs.readdirSync(processDir).filter(f => f.endsWith('.bpmn'));
-    
+    const files = fs.readdirSync(processDir).filter((f) => f.endsWith('.bpmn'));
+
     for (const file of files) {
       const filePath = path.join(processDir, file);
       try {
         const result = await this.zeebe.deployResource({ processFilename: filePath });
         const deployment = result.deployments[0];
         if (deployment.process) {
-          this.logger.log(`Deployed process: ${deployment.process.bpmnProcessId} (v${deployment.process.version})`);
+          this.logger.log(
+            `Deployed process: ${deployment.process.bpmnProcessId} (v${deployment.process.version})`,
+          );
         }
       } catch (error) {
         this.logger.error(`Failed to deploy ${file}: ${error.message}`);

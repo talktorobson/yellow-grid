@@ -60,15 +60,9 @@ describe('ServiceCatalogEventProcessor', () => {
       ],
     }).compile();
 
-    processor = module.get<ServiceCatalogEventProcessor>(
-      ServiceCatalogEventProcessor,
-    );
-    eventLogService = module.get<ServiceCatalogEventLogService>(
-      ServiceCatalogEventLogService,
-    );
-    syncService = module.get<ServiceCatalogSyncService>(
-      ServiceCatalogSyncService,
-    );
+    processor = module.get<ServiceCatalogEventProcessor>(ServiceCatalogEventProcessor);
+    eventLogService = module.get<ServiceCatalogEventLogService>(ServiceCatalogEventLogService);
+    syncService = module.get<ServiceCatalogSyncService>(ServiceCatalogSyncService);
 
     jest.clearAllMocks();
   });
@@ -143,12 +137,8 @@ describe('ServiceCatalogEventProcessor', () => {
       const result = await processor.processEvent(mockEvent);
 
       expect(result.success).toBe(true);
-      expect(mockSyncService.handleServiceCreated).toHaveBeenCalledWith(
-        mockEvent.data,
-      );
-      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith(
-        'evt_12345',
-      );
+      expect(mockSyncService.handleServiceCreated).toHaveBeenCalledWith(mockEvent.data);
+      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith('evt_12345');
     });
 
     it('should handle service.updated events', async () => {
@@ -161,12 +151,8 @@ describe('ServiceCatalogEventProcessor', () => {
       const result = await processor.processEvent(updateEvent);
 
       expect(result.success).toBe(true);
-      expect(mockSyncService.handleServiceUpdated).toHaveBeenCalledWith(
-        updateEvent.data,
-      );
-      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith(
-        'evt_12345',
-      );
+      expect(mockSyncService.handleServiceUpdated).toHaveBeenCalledWith(updateEvent.data);
+      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith('evt_12345');
     });
 
     it('should handle service.deprecated events', async () => {
@@ -179,12 +165,8 @@ describe('ServiceCatalogEventProcessor', () => {
       const result = await processor.processEvent(deprecateEvent);
 
       expect(result.success).toBe(true);
-      expect(mockSyncService.handleServiceDeprecated).toHaveBeenCalledWith(
-        deprecateEvent.data,
-      );
-      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith(
-        'evt_12345',
-      );
+      expect(mockSyncService.handleServiceDeprecated).toHaveBeenCalledWith(deprecateEvent.data);
+      expect(mockEventLogService.markAsCompleted).toHaveBeenCalledWith('evt_12345');
     });
 
     it('should reject unknown event types', async () => {
@@ -224,18 +206,13 @@ describe('ServiceCatalogEventProcessor', () => {
 
       expect(result.success).toBe(false);
       expect(result.reason).toBe('Database connection lost');
-      expect(mockEventLogService.markAsFailed).toHaveBeenCalledWith(
-        'evt_12345',
-        error,
-      );
+      expect(mockEventLogService.markAsFailed).toHaveBeenCalledWith('evt_12345', error);
       expect(mockEventLogService.markAsCompleted).not.toHaveBeenCalled();
     });
 
     it('should handle log creation failures gracefully', async () => {
       mockEventLogService.findByEventId.mockResolvedValue(null);
-      mockEventLogService.create.mockRejectedValue(
-        new Error('Log table locked'),
-      );
+      mockEventLogService.create.mockRejectedValue(new Error('Log table locked'));
 
       const result = await processor.processEvent(mockEvent);
 
@@ -304,7 +281,7 @@ describe('ServiceCatalogEventProcessor', () => {
       expect(result.successful).toBe(3); // Skipped events count as successful
       expect(result.failed).toBe(0);
       // Check that one event was skipped
-      const skippedResults = result.results.filter(r => r.action === 'skipped');
+      const skippedResults = result.results.filter((r) => r.action === 'skipped');
       expect(skippedResults.length).toBe(1);
     });
 
@@ -380,9 +357,7 @@ describe('ServiceCatalogEventProcessor', () => {
       // Mock findByEventId to return null (retry attempt)
       mockEventLogService.findByEventId.mockResolvedValue(null);
       mockEventLogService.create.mockResolvedValue({ id: 'log-uuid' });
-      mockSyncService.handleServiceCreated.mockRejectedValue(
-        new Error('Still failing'),
-      );
+      mockSyncService.handleServiceCreated.mockRejectedValue(new Error('Still failing'));
       mockEventLogService.markAsFailed.mockResolvedValue({});
 
       const retriedCount = await processor.retryFailedEvents(10);

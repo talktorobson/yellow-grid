@@ -142,12 +142,8 @@ describe('MediaUploadService', () => {
         sizeBytes: 26 * 1024 * 1024, // 26MB (exceeds 25MB limit)
       };
 
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        /Photo size exceeds maximum/
-      );
+      await expect(service.createUpload(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.createUpload(dto)).rejects.toThrow(/Photo size exceeds maximum/);
     });
 
     it('should throw BadRequestException for oversized video', async () => {
@@ -158,12 +154,8 @@ describe('MediaUploadService', () => {
         sizeBytes: 1.1 * 1024 * 1024 * 1024, // 1.1GB (exceeds 1GB limit)
       };
 
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        /Video size exceeds maximum/
-      );
+      await expect(service.createUpload(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.createUpload(dto)).rejects.toThrow(/Video size exceeds maximum/);
     });
 
     it('should throw BadRequestException for unsupported file type', async () => {
@@ -174,12 +166,8 @@ describe('MediaUploadService', () => {
         sizeBytes: 1024,
       };
 
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(service.createUpload(dto)).rejects.toThrow(
-        /Unsupported file type/
-      );
+      await expect(service.createUpload(dto)).rejects.toThrow(BadRequestException);
+      await expect(service.createUpload(dto)).rejects.toThrow(/Unsupported file type/);
     });
   });
 
@@ -284,7 +272,7 @@ describe('MediaUploadService', () => {
         expect.objectContaining({
           version: 'v4',
           action: 'read',
-        })
+        }),
       );
     });
 
@@ -298,7 +286,7 @@ describe('MediaUploadService', () => {
       expect(mockGetSignedUrl).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'read',
-        })
+        }),
       );
     });
   });

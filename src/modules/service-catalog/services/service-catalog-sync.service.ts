@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import {
-  ServiceStatus,
-  ServiceType,
-  ServiceCategory,
-} from '@prisma/client';
+import { ServiceStatus, ServiceType, ServiceCategory } from '@prisma/client';
 import * as crypto from 'crypto';
 import { ServiceCatalogEventData } from '../dto/kafka-event.dto';
 
@@ -24,24 +20,20 @@ export class ServiceCatalogSyncService {
   async handleServiceCreated(data: ServiceCatalogEventData, eventLogId: string): Promise<void> {
     this.logger.log(`Creating service: ${data.externalServiceCode}`);
 
-
-
     // Check if already exists (race condition protection)
     const existing = await this.prisma.serviceCatalog.findUnique({
       where: { externalServiceCode: data.externalServiceCode },
     });
 
     if (existing) {
-      this.logger.warn(
-        `Service ${data.externalServiceCode} already exists, treating as update`
-      );
+      this.logger.warn(`Service ${data.externalServiceCode} already exists, treating as update`);
       return this.handleServiceUpdated(data, eventLogId);
     }
 
     // Get contract template
     const contractTemplateId = await this.resolveContractTemplate(
       data.contractType,
-      data.countryCode
+      data.countryCode,
     );
 
     // Create service
@@ -55,12 +47,17 @@ export class ServiceCatalogSyncService {
         serviceCategory: this.mapServiceCategory(data.category),
 
         // Use English name/description as default (i18n will be added in v2)
-        name: typeof data.name === 'string' 
-          ? data.name 
-          : (data.name.en || data.name.es || Object.values(data.name)[0] || 'Unnamed Service'),
-        description: typeof data.description === 'string'
-          ? data.description
-          : (data.description?.en || data.description?.es || Object.values(data.description || {})[0] || null),
+        name:
+          typeof data.name === 'string'
+            ? data.name
+            : data.name.en || data.name.es || Object.values(data.name)[0] || 'Unnamed Service',
+        description:
+          typeof data.description === 'string'
+            ? data.description
+            : data.description?.en ||
+              data.description?.es ||
+              Object.values(data.description || {})[0] ||
+              null,
 
         scopeIncluded: data.scopeIncluded || [],
         scopeExcluded: data.scopeExcluded || [],
@@ -100,9 +97,7 @@ export class ServiceCatalogSyncService {
     });
 
     if (!existing) {
-      this.logger.warn(
-        `Service ${data.externalServiceCode} not found, creating new`
-      );
+      this.logger.warn(`Service ${data.externalServiceCode} not found, creating new`);
       return this.handleServiceCreated(data, eventLogId);
     }
 
@@ -110,9 +105,7 @@ export class ServiceCatalogSyncService {
     const hasBreakingChanges = this.detectBreakingChanges(existing, data);
 
     if (hasBreakingChanges) {
-      this.logger.warn(
-        `⚠️  Breaking changes detected for ${data.externalServiceCode}`
-      );
+      this.logger.warn(`⚠️  Breaking changes detected for ${data.externalServiceCode}`);
       // TODO: Create pending change record for manual review
       // For now, we'll log and proceed with the update
     }
@@ -121,12 +114,17 @@ export class ServiceCatalogSyncService {
     const updated = await this.prisma.serviceCatalog.update({
       where: { id: existing.id },
       data: {
-        name: typeof data.name === 'string'
-          ? data.name
-          : (data.name.en || data.name.es || Object.values(data.name)[0] || existing.name),
-        description: typeof data.description === 'string'
-          ? data.description
-          : (data.description?.en || data.description?.es || Object.values(data.description || {})[0] || existing.description),
+        name:
+          typeof data.name === 'string'
+            ? data.name
+            : data.name.en || data.name.es || Object.values(data.name)[0] || existing.name,
+        description:
+          typeof data.description === 'string'
+            ? data.description
+            : data.description?.en ||
+              data.description?.es ||
+              Object.values(data.description || {})[0] ||
+              existing.description,
 
         scopeIncluded: (data.scopeIncluded || existing.scopeIncluded) as any,
         scopeExcluded: (data.scopeExcluded || existing.scopeExcluded) as any,
@@ -156,9 +154,7 @@ export class ServiceCatalogSyncService {
     });
 
     if (!service) {
-      this.logger.error(
-        `Cannot deprecate: service ${data.externalServiceCode} not found`
-      );
+      this.logger.error(`Cannot deprecate: service ${data.externalServiceCode} not found`);
       throw new Error('Service not found');
     }
 
@@ -199,7 +195,9 @@ export class ServiceCatalogSyncService {
   private generateFsmCode(data: ServiceCatalogEventData): string {
     const category = this.mapServiceCategory(data.category).substring(0, 4).toUpperCase();
     const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0');
     return `${data.countryCode}_${category}_${timestamp}${random}`;
   }
 
@@ -243,7 +241,7 @@ export class ServiceCatalogSyncService {
    */
   private async resolveContractTemplate(
     contractType: string | undefined,
-    countryCode: string
+    countryCode: string,
   ): Promise<string | null> {
     if (!contractType) return null;
 
@@ -278,10 +276,7 @@ export class ServiceCatalogSyncService {
       prerequisites: data.productPrerequisites || [],
     };
 
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(relevantFields))
-      .digest('hex');
+    return crypto.createHash('sha256').update(JSON.stringify(relevantFields)).digest('hex');
   }
 
   /**

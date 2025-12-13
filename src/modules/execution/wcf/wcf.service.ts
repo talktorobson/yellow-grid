@@ -145,13 +145,15 @@ export class WcfService {
 
     if (!existing) {
       throw new NotFoundException(
-        `No WCF found for service order ${dto.serviceOrderId}. Please generate one first.`
+        `No WCF found for service order ${dto.serviceOrderId}. Please generate one first.`,
       );
     }
 
     // Check if WCF is already finalized
     if (existing.status === WcfStatus.FINALIZED) {
-      throw new BadRequestException(`WCF ${existing.wcfNumber} is already finalized and cannot be modified`);
+      throw new BadRequestException(
+        `WCF ${existing.wcfNumber} is already finalized and cannot be modified`,
+      );
     }
 
     // Update WCF with customer acceptance
@@ -184,7 +186,7 @@ export class WcfService {
     }
 
     this.logger.log(
-      `WCF ${updated.wcfNumber} submitted with ${dto.accepted ? 'acceptance' : 'refusal'}`
+      `WCF ${updated.wcfNumber} submitted with ${dto.accepted ? 'acceptance' : 'refusal'}`,
     );
 
     return this.mapToWcfRecord(updated);
@@ -261,15 +263,18 @@ export class WcfService {
   /**
    * Add labor entry to WCF
    */
-  async addLabor(wcfId: string, labor: {
-    technicianId: string;
-    technicianName: string;
-    role: string;
-    startTime: Date;
-    endTime: Date;
-    breakMinutes?: number;
-    hourlyRate?: number;
-  }): Promise<void> {
+  async addLabor(
+    wcfId: string,
+    labor: {
+      technicianId: string;
+      technicianName: string;
+      role: string;
+      startTime: Date;
+      endTime: Date;
+      breakMinutes?: number;
+      hourlyRate?: number;
+    },
+  ): Promise<void> {
     const wcf = await this.prisma.workCompletionForm.findUnique({
       where: { id: wcfId },
     });
@@ -314,19 +319,22 @@ export class WcfService {
   /**
    * Add photo to WCF
    */
-  async addPhoto(wcfId: string, photo: {
-    photoType: string;
-    photoUrl: string;
-    photoGcsPath: string;
-    thumbnailUrl?: string;
-    caption?: string;
-    sequence: number;
-    originalFilename?: string;
-    contentType: string;
-    fileSize: number;
-    capturedAt: Date;
-    capturedBy?: string;
-  }): Promise<void> {
+  async addPhoto(
+    wcfId: string,
+    photo: {
+      photoType: string;
+      photoUrl: string;
+      photoGcsPath: string;
+      thumbnailUrl?: string;
+      caption?: string;
+      sequence: number;
+      originalFilename?: string;
+      contentType: string;
+      fileSize: number;
+      capturedAt: Date;
+      capturedBy?: string;
+    },
+  ): Promise<void> {
     const wcf = await this.prisma.workCompletionForm.findUnique({
       where: { id: wcfId },
     });

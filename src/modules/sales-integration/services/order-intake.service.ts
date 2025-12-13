@@ -18,8 +18,7 @@ import { RedisService } from '../../../common/redis/redis.service';
 
 @Injectable()
 export class OrderIntakeService
-  implements
-    IntegrationAdapter<OrderIntakeRequestDto, OrderIntakeResponseDto>
+  implements IntegrationAdapter<OrderIntakeRequestDto, OrderIntakeResponseDto>
 {
   readonly adapterId = 'sales-order-intake';
   readonly version = '2.1.0';
@@ -38,9 +37,7 @@ export class OrderIntakeService
     request: OrderIntakeRequestDto,
     context: IntegrationContext,
   ): Promise<OrderIntakeResponseDto> {
-    this.logger.log(
-      `Processing order intake for external order: ${request.externalOrderId}`,
-    );
+    this.logger.log(`Processing order intake for external order: ${request.externalOrderId}`);
 
     // Generate idempotency key
     const idempotencyKey = this.generateIdempotencyKey(request, context);
@@ -48,9 +45,7 @@ export class OrderIntakeService
     // Check if already processed (idempotency)
     const existingResultJson = await this.redisService.get(idempotencyKey);
     if (existingResultJson) {
-      this.logger.log(
-        `Idempotent request detected for order: ${request.externalOrderId}`,
-      );
+      this.logger.log(`Idempotent request detected for order: ${request.externalOrderId}`);
       return JSON.parse(existingResultJson) as OrderIntakeResponseDto;
     }
 
@@ -84,15 +79,9 @@ export class OrderIntakeService
     };
 
     // Store in Redis for idempotency (TTL: 24 hours)
-    await this.redisService.set(
-      idempotencyKey,
-      JSON.stringify(response),
-      24 * 60 * 60,
-    );
+    await this.redisService.set(idempotencyKey, JSON.stringify(response), 24 * 60 * 60);
 
-    this.logger.log(
-      `Order intake processed successfully. FSM Order ID: ${orderId}`,
-    );
+    this.logger.log(`Order intake processed successfully. FSM Order ID: ${orderId}`);
 
     return response;
   }
@@ -234,20 +223,13 @@ export class OrderIntakeService
       orderData: request,
     };
 
-    await this.kafkaService.send(
-      'sales.order.intake',
-      event,
-      orderId,
-      {
-        'correlation-id': context.correlationId,
-        'tenant-id': context.tenantId,
-        'event-type': 'OrderIntakeReceived',
-      },
-    );
+    await this.kafkaService.send('sales.order.intake', event, orderId, {
+      'correlation-id': context.correlationId,
+      'tenant-id': context.tenantId,
+      'event-type': 'OrderIntakeReceived',
+    });
 
-    this.logger.log(
-      `Published order intake event to Kafka. Order ID: ${orderId}`,
-    );
+    this.logger.log(`Published order intake event to Kafka. Order ID: ${orderId}`);
   }
 
   /**

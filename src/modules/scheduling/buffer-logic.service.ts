@@ -99,10 +99,7 @@ export class BufferLogicService {
    * Get earliest bookable date considering global buffer
    * Returns the first date that satisfies the global buffer constraint
    */
-  async getEarliestBookableDate(
-    countryCode: string,
-    businessUnit: string,
-  ): Promise<Date> {
+  async getEarliestBookableDate(countryCode: string, businessUnit: string): Promise<Date> {
     const config = await this.getCalendarConfig(countryCode, businessUnit);
     const today = new Date();
     const holidays = await this.getHolidays(countryCode, today.getFullYear());
@@ -113,12 +110,7 @@ export class BufferLogicService {
     }
 
     // Add N non-working days from today
-    return this.addNonWorkingDays(
-      today,
-      config.globalBufferNonWorkingDays,
-      config,
-      holidays,
-    );
+    return this.addNonWorkingDays(today, config.globalBufferNonWorkingDays, config, holidays);
   }
 
   /**
@@ -206,7 +198,7 @@ export class BufferLogicService {
     config: any,
     holidays: Date[],
   ): Promise<Date> {
-    let currentDate = new Date(fromDate);
+    const currentDate = new Date(fromDate);
     let daysAdded = 0;
 
     while (daysAdded < nonWorkingDays) {
@@ -232,7 +224,7 @@ export class BufferLogicService {
     config: any,
     holidays: Date[],
   ): Promise<Date> {
-    let currentDate = new Date(fromDate);
+    const currentDate = new Date(fromDate);
     let daysSubtracted = 0;
 
     while (daysSubtracted < nonWorkingDays) {
@@ -253,7 +245,7 @@ export class BufferLogicService {
    * If the given date is a working day, returns it
    */
   private findNextWorkingDay(fromDate: Date, config: any, holidays: Date[]): Date {
-    let currentDate = new Date(fromDate);
+    const currentDate = new Date(fromDate);
 
     while (!this.isWorkingDay(currentDate, config, holidays)) {
       currentDate.setDate(currentDate.getDate() + 1);
@@ -295,7 +287,7 @@ export class BufferLogicService {
    */
   private isHoliday(date: Date, holidays: Date[]): boolean {
     const dateString = this.formatDate(date);
-    return holidays.some(holiday => this.formatDate(holiday) === dateString);
+    return holidays.some((holiday) => this.formatDate(holiday) === dateString);
   }
 
   // =========================================================================
@@ -306,10 +298,7 @@ export class BufferLogicService {
    * Get calendar config for business unit
    * Throws if config not found
    */
-  private async getCalendarConfig(
-    countryCode: string,
-    businessUnit: string,
-  ): Promise<any> {
+  private async getCalendarConfig(countryCode: string, businessUnit: string): Promise<any> {
     const config = await this.prisma.calendarConfig.findUnique({
       where: {
         countryCode_businessUnit: {
@@ -344,7 +333,7 @@ export class BufferLogicService {
       select: { date: true },
     });
 
-    return holidays.map(h => new Date(h.date));
+    return holidays.map((h) => new Date(h.date));
   }
 
   /**
@@ -366,7 +355,7 @@ export class BufferLogicService {
       const holidays = response.data;
       const dateString = this.formatDate(date);
 
-      return holidays.some(holiday => holiday.date === dateString);
+      return holidays.some((holiday) => holiday.date === dateString);
     } catch (error) {
       this.logger.error(`Failed to fetch holidays from Nager.Date API: ${error.message}`);
       return false;

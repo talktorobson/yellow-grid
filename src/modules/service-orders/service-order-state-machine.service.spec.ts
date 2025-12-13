@@ -20,58 +20,96 @@ describe('ServiceOrderStateMachineService', () => {
 
   describe('canTransition', () => {
     it('should allow CREATED → SCHEDULED transition', () => {
-      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED)).toBe(
+        true,
+      );
     });
 
     it('should allow CREATED → CANCELLED transition', () => {
-      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.CANCELLED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
     });
 
     it('should allow SCHEDULED → ASSIGNED transition', () => {
-      expect(service.canTransition(ServiceOrderState.SCHEDULED, ServiceOrderState.ASSIGNED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.SCHEDULED, ServiceOrderState.ASSIGNED)).toBe(
+        true,
+      );
     });
 
     it('should allow ASSIGNED → ACCEPTED transition', () => {
-      expect(service.canTransition(ServiceOrderState.ASSIGNED, ServiceOrderState.ACCEPTED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.ASSIGNED, ServiceOrderState.ACCEPTED)).toBe(
+        true,
+      );
     });
 
     it('should allow ACCEPTED → IN_PROGRESS transition', () => {
-      expect(service.canTransition(ServiceOrderState.ACCEPTED, ServiceOrderState.IN_PROGRESS)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.ACCEPTED, ServiceOrderState.IN_PROGRESS)).toBe(
+        true,
+      );
     });
 
     it('should allow IN_PROGRESS → COMPLETED transition', () => {
-      expect(service.canTransition(ServiceOrderState.IN_PROGRESS, ServiceOrderState.COMPLETED)).toBe(true);
+      expect(
+        service.canTransition(ServiceOrderState.IN_PROGRESS, ServiceOrderState.COMPLETED),
+      ).toBe(true);
     });
 
     it('should allow COMPLETED → VALIDATED transition', () => {
-      expect(service.canTransition(ServiceOrderState.COMPLETED, ServiceOrderState.VALIDATED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.COMPLETED, ServiceOrderState.VALIDATED)).toBe(
+        true,
+      );
     });
 
     it('should allow VALIDATED → CLOSED transition', () => {
-      expect(service.canTransition(ServiceOrderState.VALIDATED, ServiceOrderState.CLOSED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.VALIDATED, ServiceOrderState.CLOSED)).toBe(
+        true,
+      );
     });
 
     it('should NOT allow CREATED → ASSIGNED transition (skipping SCHEDULED)', () => {
-      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.ASSIGNED)).toBe(false);
+      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.ASSIGNED)).toBe(
+        false,
+      );
     });
 
     it('should NOT allow CANCELLED → any transition (terminal state)', () => {
-      expect(service.canTransition(ServiceOrderState.CANCELLED, ServiceOrderState.CREATED)).toBe(false);
-      expect(service.canTransition(ServiceOrderState.CANCELLED, ServiceOrderState.SCHEDULED)).toBe(false);
+      expect(service.canTransition(ServiceOrderState.CANCELLED, ServiceOrderState.CREATED)).toBe(
+        false,
+      );
+      expect(service.canTransition(ServiceOrderState.CANCELLED, ServiceOrderState.SCHEDULED)).toBe(
+        false,
+      );
     });
 
     it('should NOT allow CLOSED → any transition (terminal state)', () => {
-      expect(service.canTransition(ServiceOrderState.CLOSED, ServiceOrderState.CREATED)).toBe(false);
-      expect(service.canTransition(ServiceOrderState.CLOSED, ServiceOrderState.VALIDATED)).toBe(false);
+      expect(service.canTransition(ServiceOrderState.CLOSED, ServiceOrderState.CREATED)).toBe(
+        false,
+      );
+      expect(service.canTransition(ServiceOrderState.CLOSED, ServiceOrderState.VALIDATED)).toBe(
+        false,
+      );
     });
 
     it('should allow cancellation from most states', () => {
-      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.CANCELLED)).toBe(true);
-      expect(service.canTransition(ServiceOrderState.SCHEDULED, ServiceOrderState.CANCELLED)).toBe(true);
-      expect(service.canTransition(ServiceOrderState.ASSIGNED, ServiceOrderState.CANCELLED)).toBe(true);
-      expect(service.canTransition(ServiceOrderState.ACCEPTED, ServiceOrderState.CANCELLED)).toBe(true);
-      expect(service.canTransition(ServiceOrderState.IN_PROGRESS, ServiceOrderState.CANCELLED)).toBe(true);
-      expect(service.canTransition(ServiceOrderState.COMPLETED, ServiceOrderState.CANCELLED)).toBe(true);
+      expect(service.canTransition(ServiceOrderState.CREATED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
+      expect(service.canTransition(ServiceOrderState.SCHEDULED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
+      expect(service.canTransition(ServiceOrderState.ASSIGNED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
+      expect(service.canTransition(ServiceOrderState.ACCEPTED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
+      expect(
+        service.canTransition(ServiceOrderState.IN_PROGRESS, ServiceOrderState.CANCELLED),
+      ).toBe(true);
+      expect(service.canTransition(ServiceOrderState.COMPLETED, ServiceOrderState.CANCELLED)).toBe(
+        true,
+      );
     });
   });
 
@@ -177,61 +215,43 @@ describe('ServiceOrderStateMachineService', () => {
   describe('validateBusinessRules', () => {
     it('should throw if scheduling outside window', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.CREATED,
-          ServiceOrderState.SCHEDULED,
-          { isWithinSchedulingWindow: false },
-        );
+        service.validateBusinessRules(ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED, {
+          isWithinSchedulingWindow: false,
+        });
       }).toThrow(BadRequestException);
     });
 
     it('should throw if dependencies not satisfied', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.CREATED,
-          ServiceOrderState.SCHEDULED,
-          { dependenciesSatisfied: false },
-        );
+        service.validateBusinessRules(ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED, {
+          dependenciesSatisfied: false,
+        });
       }).toThrow(BadRequestException);
     });
 
     it('should throw if assigning without scheduled slot', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.SCHEDULED,
-          ServiceOrderState.ASSIGNED,
-          { hasScheduledSlot: false },
-        );
+        service.validateBusinessRules(ServiceOrderState.SCHEDULED, ServiceOrderState.ASSIGNED, {
+          hasScheduledSlot: false,
+        });
       }).toThrow(BadRequestException);
     });
 
     it('should throw if trying to reschedule after ASSIGNED', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.ASSIGNED,
-          ServiceOrderState.SCHEDULED,
-          {},
-        );
+        service.validateBusinessRules(ServiceOrderState.ASSIGNED, ServiceOrderState.SCHEDULED, {});
       }).toThrow(BadRequestException);
     });
 
     it('should throw if trying to reschedule after ACCEPTED', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.ACCEPTED,
-          ServiceOrderState.SCHEDULED,
-          {},
-        );
+        service.validateBusinessRules(ServiceOrderState.ACCEPTED, ServiceOrderState.SCHEDULED, {});
       }).toThrow(BadRequestException);
     });
 
     it('should throw if trying to reassign after ACCEPTED', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.ACCEPTED,
-          ServiceOrderState.ASSIGNED,
-          {},
-        );
+        service.validateBusinessRules(ServiceOrderState.ACCEPTED, ServiceOrderState.ASSIGNED, {});
       }).toThrow(BadRequestException);
     });
 
@@ -247,22 +267,16 @@ describe('ServiceOrderStateMachineService', () => {
 
     it('should not throw for valid business rules', () => {
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.CREATED,
-          ServiceOrderState.SCHEDULED,
-          {
-            isWithinSchedulingWindow: true,
-            dependenciesSatisfied: true,
-          },
-        );
+        service.validateBusinessRules(ServiceOrderState.CREATED, ServiceOrderState.SCHEDULED, {
+          isWithinSchedulingWindow: true,
+          dependenciesSatisfied: true,
+        });
       }).not.toThrow();
 
       expect(() => {
-        service.validateBusinessRules(
-          ServiceOrderState.SCHEDULED,
-          ServiceOrderState.ASSIGNED,
-          { hasScheduledSlot: true },
-        );
+        service.validateBusinessRules(ServiceOrderState.SCHEDULED, ServiceOrderState.ASSIGNED, {
+          hasScheduledSlot: true,
+        });
       }).not.toThrow();
     });
   });

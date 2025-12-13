@@ -33,9 +33,7 @@ export class GeographicService {
     });
 
     if (!result) {
-      throw new NotFoundException(
-        `Postal code ${postalCode} not found in geographic database`,
-      );
+      throw new NotFoundException(`Postal code ${postalCode} not found in geographic database`);
     }
 
     return result;
@@ -74,9 +72,7 @@ export class GeographicService {
     });
 
     if (!country) {
-      throw new NotFoundException(
-        `Country with code ${countryCode} not found`,
-      );
+      throw new NotFoundException(`Country with code ${countryCode} not found`);
     }
 
     return country;
@@ -157,10 +153,7 @@ export class GeographicService {
    * @param countryCode - Expected country code
    * @returns true if postal code belongs to country, throws otherwise
    */
-  async validatePostalCodeForCountry(
-    postalCode: string,
-    countryCode: string,
-  ): Promise<boolean> {
+  async validatePostalCodeForCountry(postalCode: string, countryCode: string): Promise<boolean> {
     const postal = await this.findPostalCodeByCode(postalCode);
 
     if (postal.city.province.countryCode !== countryCode) {
@@ -179,11 +172,7 @@ export class GeographicService {
    * @param limit - Maximum results to return (default: 20)
    * @returns List of matching postal codes with city/province/country
    */
-  async searchPostalCodes(
-    searchTerm: string,
-    countryCode?: string,
-    limit: number = 20,
-  ) {
+  async searchPostalCodes(searchTerm: string, countryCode?: string, limit: number = 20) {
     const where: any = {
       code: {
         startsWith: searchTerm,

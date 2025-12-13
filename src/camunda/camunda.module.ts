@@ -19,12 +19,7 @@ import { ServiceOrdersModule } from '../modules/service-orders/service-orders.mo
 import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
-  imports: [
-    ConfigModule,
-    ProvidersModule,
-    ServiceOrdersModule,
-    PrismaModule,
-  ],
+  imports: [ConfigModule, ProvidersModule, ServiceOrdersModule, PrismaModule],
   providers: [
     CamundaConfig,
     CamundaService,
@@ -51,16 +46,17 @@ export class CamundaModule implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     const enabledValue = this.configService.get<string>('CAMUNDA_ENABLED', 'false');
     const enabled = enabledValue === 'true' || enabledValue === '1';
-    
+
     if (!enabled) {
       this.logger.warn('Camunda integration is disabled. Set CAMUNDA_ENABLED=true to enable.');
       return;
     }
 
-    const zeebeAddress = this.configService.get<string>('ZEEBE_GATEWAY_ADDRESS') || 
-                         this.configService.get<string>('ZEEBE_ADDRESS', 'localhost:26500');
+    const zeebeAddress =
+      this.configService.get<string>('ZEEBE_GATEWAY_ADDRESS') ||
+      this.configService.get<string>('ZEEBE_ADDRESS', 'localhost:26500');
     this.logger.log(`Initializing Camunda 8 integration (Zeebe: ${zeebeAddress})...`);
-    
+
     try {
       await this.camundaService.initialize();
       this.logger.log('✅ Camunda 8 integration initialized successfully');

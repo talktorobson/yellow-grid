@@ -1,5 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsInt, IsArray, Min, ArrayMinSize, MinLength, MaxLength, IsOptional, IsEnum, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsArray,
+  Min,
+  ArrayMinSize,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsEnum,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum WorkTeamStatus {

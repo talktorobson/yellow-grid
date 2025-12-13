@@ -7,7 +7,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class DeprecateServiceDto {
   @ApiPropertyOptional({
     description: 'Reason for deprecation',
-    example: 'Service no longer offered, replaced by new model'
+    example: 'Service no longer offered, replaced by new model',
   })
   @IsString()
   @IsOptional()
@@ -15,7 +15,7 @@ export class DeprecateServiceDto {
 
   @ApiPropertyOptional({
     description: 'ID of replacement service (if any)',
-    example: 'svc-uuid-456'
+    example: 'svc-uuid-456',
   })
   @IsString()
   @IsOptional()

@@ -93,14 +93,9 @@ export class SalesIntegrationController {
       );
 
       // Map to internal format
-      const internalOrder = this.orderMappingService.mapToInternalFormat(
-        request,
-        response.orderId,
-      );
+      const internalOrder = this.orderMappingService.mapToInternalFormat(request, response.orderId);
 
-      this.logger.log(
-        `Order mapped to internal format: ${internalOrder.orderNumber}`,
-      );
+      this.logger.log(`Order mapped to internal format: ${internalOrder.orderNumber}`);
     }
 
     return response;
@@ -115,8 +110,7 @@ export class SalesIntegrationController {
   @Throttle({ default: { limit: 200, ttl: 60000 } }) // 200 requests per minute
   @ApiOperation({
     summary: 'Query available appointment slots',
-    description:
-      'Check available slots for scheduling service orders from sales systems',
+    description: 'Check available slots for scheduling service orders from sales systems',
   })
   @ApiResponse({
     status: 200,
@@ -149,17 +143,14 @@ export class SalesIntegrationController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Pre-estimation created event',
-    description:
-      'Receive pre-estimation from sales system for linking to Technical Visits',
+    description: 'Receive pre-estimation from sales system for linking to Technical Visits',
   })
   @ApiResponse({ status: 202, description: 'Pre-estimation received' })
   @ApiResponse({ status: 400, description: 'Invalid request data' })
   async preEstimationCreated(
     @Body() event: PreEstimationCreatedEventDto,
   ): Promise<{ status: string; preEstimationId: string }> {
-    this.logger.log(
-      `Received pre-estimation created event: ${event.preEstimationId}`,
-    );
+    this.logger.log(`Received pre-estimation created event: ${event.preEstimationId}`);
 
     await this.preEstimationService.handlePreEstimationCreated(event);
 
@@ -179,8 +170,7 @@ export class SalesIntegrationController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Send installation outcome to sales system',
-    description:
-      'Internal endpoint to trigger webhook delivery of installation outcomes',
+    description: 'Internal endpoint to trigger webhook delivery of installation outcomes',
   })
   @ApiResponse({ status: 202, description: 'Webhook delivery initiated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -189,9 +179,7 @@ export class SalesIntegrationController {
     @Query('salesSystem') salesSystem: SalesSystem,
     @Headers('x-tenant-id') tenantId?: string,
   ): Promise<{ status: string }> {
-    this.logger.log(
-      `Sending installation outcome for order: ${outcome.externalOrderId}`,
-    );
+    this.logger.log(`Sending installation outcome for order: ${outcome.externalOrderId}`);
 
     await this.installationOutcomeWebhookService.sendOutcome(
       outcome,
@@ -217,12 +205,10 @@ export class SalesIntegrationController {
     services: Record<string, any>;
   }> {
     const orderIntakeHealth = await this.orderIntakeService.healthCheck();
-    const slotAvailabilityHealth =
-      await this.slotAvailabilityService.healthCheck();
+    const slotAvailabilityHealth = await this.slotAvailabilityService.healthCheck();
 
     const overallStatus =
-      orderIntakeHealth.status === 'healthy' &&
-      slotAvailabilityHealth.status === 'healthy'
+      orderIntakeHealth.status === 'healthy' && slotAvailabilityHealth.status === 'healthy'
         ? 'healthy'
         : 'degraded';
 
@@ -242,8 +228,7 @@ export class SalesIntegrationController {
   @Get('service-orders/by-external-reference')
   @ApiOperation({
     summary: 'Lookup service order by external reference',
-    description:
-      'Find FSM service order using external sales system reference',
+    description: 'Find FSM service order using external sales system reference',
   })
   @ApiResponse({ status: 200, description: 'Service order found' })
   @ApiResponse({ status: 404, description: 'Service order not found' })
@@ -252,9 +237,7 @@ export class SalesIntegrationController {
     @Query('type') type: 'SALES_ORDER' | 'PROJECT' | 'LEAD',
     @Query('id') id: string,
   ): Promise<any> {
-    this.logger.log(
-      `Looking up service order by external reference: ${system}/${type}/${id}`,
-    );
+    this.logger.log(`Looking up service order by external reference: ${system}/${type}/${id}`);
 
     // TODO: Implement database lookup
     return {

@@ -94,7 +94,6 @@ describe('ServiceCatalogSyncService', () => {
           businessUnit: 'LM_ES',
         }),
       });
-
     });
 
     it('should treat as update if service already exists (race condition)', async () => {
@@ -276,7 +275,7 @@ describe('ServiceCatalogSyncService', () => {
       };
 
       await expect(
-        service.handleServiceDeprecated(deprecateData as any, 'evt-log-123')
+        service.handleServiceDeprecated(deprecateData as any, 'evt-log-123'),
       ).rejects.toThrow('Service not found');
     });
 

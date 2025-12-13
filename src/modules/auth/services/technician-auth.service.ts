@@ -1,11 +1,24 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { nanoid } from 'nanoid';
 import { PrismaService } from '@/common/prisma/prisma.service';
-import { TechnicianRegisterDto, TechnicianLoginDto, BiometricSetupDto, BiometricLoginDto, AuthResponseDto, UserDto } from '../dto';
+import {
+  TechnicianRegisterDto,
+  TechnicianLoginDto,
+  BiometricSetupDto,
+  BiometricLoginDto,
+  AuthResponseDto,
+  UserDto,
+} from '../dto';
 
 @Injectable()
 export class TechnicianAuthService {
@@ -157,7 +170,10 @@ export class TechnicianAuthService {
   /**
    * Setup biometric authentication for a device
    */
-  async setupBiometric(userId: string, dto: BiometricSetupDto): Promise<{
+  async setupBiometric(
+    userId: string,
+    dto: BiometricSetupDto,
+  ): Promise<{
     deviceId: string;
     message: string;
   }> {
@@ -204,9 +220,7 @@ export class TechnicianAuthService {
       },
     });
 
-    this.logger.log(
-      `Biometric setup for user ${user.email}: ${dto.deviceName} (${dto.deviceId})`,
-    );
+    this.logger.log(`Biometric setup for user ${user.email}: ${dto.deviceName} (${dto.deviceId})`);
 
     return {
       deviceId: device.deviceId,
@@ -245,11 +259,7 @@ export class TechnicianAuthService {
     }
 
     // Verify signature
-    const isValid = this.verifySignature(
-      dto.challenge,
-      dto.signature,
-      device.publicKey,
-    );
+    const isValid = this.verifySignature(dto.challenge, dto.signature, device.publicKey);
 
     if (!isValid) {
       throw new UnauthorizedException('Invalid biometric signature');
@@ -261,9 +271,7 @@ export class TechnicianAuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    this.logger.log(
-      `Biometric login: ${device.user.email} via ${device.deviceName}`,
-    );
+    this.logger.log(`Biometric login: ${device.user.email} via ${device.deviceName}`);
 
     return this.generateTokens(device.user, 'biometric', dto.deviceId);
   }
@@ -271,7 +279,10 @@ export class TechnicianAuthService {
   /**
    * Generate offline token (7-day validity for offline work)
    */
-  async generateOfflineToken(userId: string, deviceId: string): Promise<{
+  async generateOfflineToken(
+    userId: string,
+    deviceId: string,
+  ): Promise<{
     offlineToken: string;
     expiresAt: Date;
   }> {
@@ -323,9 +334,7 @@ export class TechnicianAuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    this.logger.log(
-      `Offline token generated for ${user.email} on device ${device.deviceName}`,
-    );
+    this.logger.log(`Offline token generated for ${user.email} on device ${device.deviceName}`);
 
     return {
       offlineToken,
@@ -383,21 +392,13 @@ export class TechnicianAuthService {
   /**
    * Verify biometric signature
    */
-  private verifySignature(
-    challenge: string,
-    signature: string,
-    publicKeyPem: string,
-  ): boolean {
+  private verifySignature(challenge: string, signature: string, publicKeyPem: string): boolean {
     try {
       const verifier = crypto.createVerify('SHA256');
       verifier.update(challenge);
       verifier.end();
 
-      const isValid = verifier.verify(
-        publicKeyPem,
-        signature,
-        'base64',
-      );
+      const isValid = verifier.verify(publicKeyPem, signature, 'base64');
 
       return isValid;
     } catch (error) {
@@ -440,10 +441,7 @@ export class TechnicianAuthService {
       userType: user.userType,
     };
 
-    const refreshTokenExpiration = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRATION',
-      '7d',
-    );
+    const refreshTokenExpiration = this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d');
 
     const refreshToken = this.jwtService.sign(refreshTokenPayload, {
       expiresIn: refreshTokenExpiration,

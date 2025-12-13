@@ -1,11 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { ServiceCatalogService } from '../service-catalog.service';
-import {
-  ServiceEventPayload,
-  ServiceEventData,
-  ServiceEventMapper,
-} from './dto/service-event.dto';
+import { ServiceEventPayload, ServiceEventData, ServiceEventMapper } from './dto/service-event.dto';
 import { EventProcessingStatus } from '@prisma/client';
 
 /**
@@ -28,10 +24,7 @@ export class SyncService {
    * @param eventPayload - Full event payload
    * @param eventLogId - Event log ID for tracking
    */
-  async handleServiceCreated(
-    eventPayload: ServiceEventPayload,
-    eventLogId: string,
-  ): Promise<void> {
+  async handleServiceCreated(eventPayload: ServiceEventPayload, eventLogId: string): Promise<void> {
     const data = eventPayload.data;
 
     this.logger.log(
@@ -45,18 +38,14 @@ export class SyncService {
       });
 
       if (existing) {
-        this.logger.warn(
-          `Service ${data.externalServiceCode} already exists, treating as update`,
-        );
+        this.logger.warn(`Service ${data.externalServiceCode} already exists, treating as update`);
         await this.handleServiceUpdated(eventPayload, eventLogId);
         return;
       }
 
       // Map external types to internal enums
       const serviceType = ServiceEventMapper.mapServiceType(data.type);
-      const serviceCategory = ServiceEventMapper.mapServiceCategory(
-        data.category,
-      );
+      const serviceCategory = ServiceEventMapper.mapServiceCategory(data.category);
 
       // Resolve contract template if provided
       let contractTemplateId: string | undefined;
@@ -74,10 +63,7 @@ export class SyncService {
       }
 
       // Generate FSM service code (auto-increment pattern)
-      const fsmServiceCode = await this.generateFSMServiceCode(
-        data.countryCode,
-        serviceCategory,
-      );
+      const fsmServiceCode = await this.generateFSMServiceCode(data.countryCode, serviceCategory);
 
       // Create service using ServiceCatalogService (includes checksum computation)
       await this.serviceCatalogService.create({
@@ -113,11 +99,7 @@ export class SyncService {
         error.stack,
       );
 
-      await this.updateEventLogStatus(
-        eventLogId,
-        'FAILED',
-        error.message || 'Unknown error',
-      );
+      await this.updateEventLogStatus(eventLogId, 'FAILED', error.message || 'Unknown error');
       throw error;
     }
   }
@@ -127,10 +109,7 @@ export class SyncService {
    * @param eventPayload - Full event payload
    * @param eventLogId - Event log ID for tracking
    */
-  async handleServiceUpdated(
-    eventPayload: ServiceEventPayload,
-    eventLogId: string,
-  ): Promise<void> {
+  async handleServiceUpdated(eventPayload: ServiceEventPayload, eventLogId: string): Promise<void> {
     const data = eventPayload.data;
 
     this.logger.log(
@@ -144,13 +123,12 @@ export class SyncService {
       );
 
       // Detect breaking changes (scope reduction, new requirements)
-      const hasBreakingChanges =
-        this.serviceCatalogService.detectBreakingChanges(existing, {
-          scopeIncluded: data.scopeIncluded,
-          scopeExcluded: data.scopeExcluded,
-          worksiteRequirements: data.worksiteRequirements,
-          productPrerequisites: data.productPrerequisites,
-        });
+      const hasBreakingChanges = this.serviceCatalogService.detectBreakingChanges(existing, {
+        scopeIncluded: data.scopeIncluded,
+        scopeExcluded: data.scopeExcluded,
+        worksiteRequirements: data.worksiteRequirements,
+        productPrerequisites: data.productPrerequisites,
+      });
 
       if (hasBreakingChanges) {
         this.logger.warn(
@@ -164,9 +142,7 @@ export class SyncService {
 
       // Compute new checksum
       const serviceType = ServiceEventMapper.mapServiceType(data.type);
-      const serviceCategory = ServiceEventMapper.mapServiceCategory(
-        data.category,
-      );
+      const serviceCategory = ServiceEventMapper.mapServiceCategory(data.category);
 
       const newChecksum = this.serviceCatalogService.computeChecksum({
         externalServiceCode: data.externalServiceCode,
@@ -183,9 +159,7 @@ export class SyncService {
 
       // Check if checksum has changed
       if (existing.syncChecksum === newChecksum) {
-        this.logger.debug(
-          `No changes detected for ${data.externalServiceCode}, skipping update`,
-        );
+        this.logger.debug(`No changes detected for ${data.externalServiceCode}, skipping update`);
         await this.updateEventLogStatus(eventLogId, 'COMPLETED', null);
         return;
       }
@@ -216,9 +190,7 @@ export class SyncService {
         },
       });
 
-      this.logger.log(
-        `Successfully updated service ${data.externalServiceCode}`,
-      );
+      this.logger.log(`Successfully updated service ${data.externalServiceCode}`);
 
       await this.updateEventLogStatus(eventLogId, 'COMPLETED', null);
     } catch (error) {
@@ -227,11 +199,7 @@ export class SyncService {
         error.stack,
       );
 
-      await this.updateEventLogStatus(
-        eventLogId,
-        'FAILED',
-        error.message || 'Unknown error',
-      );
+      await this.updateEventLogStatus(eventLogId, 'FAILED', error.message || 'Unknown error');
       throw error;
     }
   }
@@ -264,9 +232,7 @@ export class SyncService {
         `SYNC_${eventPayload.source}`,
       );
 
-      this.logger.log(
-        `Successfully deprecated service ${data.externalServiceCode}`,
-      );
+      this.logger.log(`Successfully deprecated service ${data.externalServiceCode}`);
 
       await this.updateEventLogStatus(eventLogId, 'COMPLETED', null);
     } catch (error) {
@@ -275,11 +241,7 @@ export class SyncService {
         error.stack,
       );
 
-      await this.updateEventLogStatus(
-        eventLogId,
-        'FAILED',
-        error.message || 'Unknown error',
-      );
+      await this.updateEventLogStatus(eventLogId, 'FAILED', error.message || 'Unknown error');
       throw error;
     }
   }
@@ -289,10 +251,7 @@ export class SyncService {
    * Format: SVC_{COUNTRY}_{CATEGORY}_{SEQUENCE}
    * Example: SVC_ES_HVAC_001
    */
-  private async generateFSMServiceCode(
-    countryCode: string,
-    category: string,
-  ): Promise<string> {
+  private async generateFSMServiceCode(countryCode: string, category: string): Promise<string> {
     const prefix = `SVC_${countryCode}_${category}`;
 
     // Find the highest sequence number for this prefix
@@ -344,11 +303,7 @@ export class SyncService {
   /**
    * Get sync statistics
    */
-  async getSyncStatistics(
-    source: string,
-    startDate?: Date,
-    endDate?: Date,
-  ) {
+  async getSyncStatistics(source: string, startDate?: Date, endDate?: Date) {
     const where: any = { externalSource: source };
 
     if (startDate || endDate) {
@@ -435,9 +390,7 @@ export class SyncService {
 
         retriedCount++;
       } catch (error) {
-        this.logger.error(
-          `Retry failed for event ${eventLog.eventId}: ${error.message}`,
-        );
+        this.logger.error(`Retry failed for event ${eventLog.eventId}: ${error.message}`);
 
         // If max retries reached, move to dead letter
         if (eventLog.retryCount + 1 >= maxRetries) {

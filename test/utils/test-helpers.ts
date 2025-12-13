@@ -74,9 +74,7 @@ export function authenticatedRequest(
   path: string,
   token: string,
 ) {
-  return request(app.getHttpServer())
-    [method](path)
-    .set('Authorization', `Bearer ${token}`);
+  return request(app.getHttpServer())[method](path).set('Authorization', `Bearer ${token}`);
 }
 
 /**

@@ -37,9 +37,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const { statusCode } = response;
           const duration = Date.now() - now;
 
-          this.logger.log(
-            `[${correlationId}] ${method} ${url} ${statusCode} - ${duration}ms`,
-          );
+          this.logger.log(`[${correlationId}] ${method} ${url} ${statusCode} - ${duration}ms`);
         },
         error: (error) => {
           const duration = Date.now() - now;

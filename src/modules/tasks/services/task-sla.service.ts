@@ -64,8 +64,7 @@ export class TaskSlaService {
     }
 
     // Calculate paused duration
-    const pausedMinutes =
-      (new Date().getTime() - task.slaPausedAt.getTime()) / (1000 * 60);
+    const pausedMinutes = (new Date().getTime() - task.slaPausedAt.getTime()) / (1000 * 60);
 
     // Extend SLA deadline by paused duration
     const newDeadline = new Date(task.slaDeadline);

@@ -113,7 +113,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/direct', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/direct',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -140,7 +145,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id, testProvider2.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/direct', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/direct',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -161,7 +171,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/direct', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/direct',
+        operatorToken,
+      )
         .send(createDto)
         .expect(404);
 
@@ -174,7 +189,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: ['00000000-0000-0000-0000-000000000000'],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/direct', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/direct',
+        operatorToken,
+      )
         .send(createDto)
         .expect(404);
 
@@ -193,7 +213,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/offer', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/offer',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -217,7 +242,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id, testProvider2.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/offer', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/offer',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -243,7 +273,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id, testProvider2.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/broadcast', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/broadcast',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -264,7 +299,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id], // Only one provider
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/broadcast', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/broadcast',
+        operatorToken,
+      )
         .send(createDto)
         .expect(400);
 
@@ -277,7 +317,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id, testProvider2.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/broadcast', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/broadcast',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -285,8 +330,12 @@ describe('Assignments API (E2E)', () => {
       const assignment2Id = response.body.assignmentIds[1];
 
       // First provider accepts
-      await authenticatedRequest(app, 'post', `/api/v1/assignments/${assignment1Id}/accept`, providerToken)
-        .expect(200);
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/assignments/${assignment1Id}/accept`,
+        providerToken,
+      ).expect(200);
 
       // Second assignment should be auto-declined
       const assignment2 = await prisma.assignment.findUnique({
@@ -308,7 +357,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/auto-accept', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/auto-accept',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -339,7 +393,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider1.id], // Spain provider
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/auto-accept', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/auto-accept',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -445,7 +504,12 @@ describe('Assignments API (E2E)', () => {
         status: 'PENDING',
       });
 
-      await authenticatedRequest(app, 'post', `/api/v1/assignments/${assignment.id}/decline`, providerToken)
+      await authenticatedRequest(
+        app,
+        'post',
+        `/api/v1/assignments/${assignment.id}/decline`,
+        providerToken,
+      )
         .send({})
         .expect(400);
     });
@@ -579,8 +643,12 @@ describe('Assignments API (E2E)', () => {
     it('should return 404 for non-existent assignment', async () => {
       const fakeId = '00000000-0000-0000-0000-000000000000';
 
-      const response = await authenticatedRequest(app, 'get', `/api/v1/assignments/${fakeId}/funnel`, operatorToken)
-        .expect(404);
+      const response = await authenticatedRequest(
+        app,
+        'get',
+        `/api/v1/assignments/${fakeId}/funnel`,
+        operatorToken,
+      ).expect(404);
 
       expect(response.body.message).toContain('not found');
     });
@@ -597,7 +665,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [testProvider3.id], // France provider
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/direct', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/direct',
+        operatorToken,
+      )
         .send(createDto)
         .expect(400);
 
@@ -606,9 +679,13 @@ describe('Assignments API (E2E)', () => {
 
     it('should only return assignments within same tenant context', async () => {
       // Create assignments in different countries
-      const spainAssignment = await factory.createAssignment(testServiceOrder.id, testProvider1.id, {
-        ...SPAIN_CONTEXT,
-      });
+      const spainAssignment = await factory.createAssignment(
+        testServiceOrder.id,
+        testProvider1.id,
+        {
+          ...SPAIN_CONTEXT,
+        },
+      );
 
       const franceSO = await factory.createServiceOrder(
         (await factory.createProject({ ...FRANCE_CONTEXT })).id,
@@ -623,9 +700,7 @@ describe('Assignments API (E2E)', () => {
         where: { countryCode: 'ES' },
       });
 
-      expect(spainAssignments).toContainEqual(
-        expect.objectContaining({ id: spainAssignment.id }),
-      );
+      expect(spainAssignments).toContainEqual(expect.objectContaining({ id: spainAssignment.id }));
 
       expect(spainAssignments).not.toContainEqual(
         expect.objectContaining({ id: franceAssignment.id }),
@@ -662,7 +737,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [perfectMatch.id, partialMatch.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/offer', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/offer',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 
@@ -698,8 +778,8 @@ describe('Assignments API (E2E)', () => {
         ...SPAIN_CONTEXT,
         state: 'SCHEDULED',
         serviceAddress: {
-          latitude: 40.4200,
-          longitude: -3.7000, // Near Madrid center
+          latitude: 40.42,
+          longitude: -3.7, // Near Madrid center
         },
       });
 
@@ -708,7 +788,12 @@ describe('Assignments API (E2E)', () => {
         providerIds: [closeProvider.id, farProvider.id],
       };
 
-      const response = await authenticatedRequest(app, 'post', '/api/v1/assignments/offer', operatorToken)
+      const response = await authenticatedRequest(
+        app,
+        'post',
+        '/api/v1/assignments/offer',
+        operatorToken,
+      )
         .send(createDto)
         .expect(201);
 

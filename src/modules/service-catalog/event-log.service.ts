@@ -161,40 +161,39 @@ export class ServiceCatalogEventLogService {
   async getStatistics(since?: Date) {
     const startDate = since || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const [total, completed, failed, deadLetter, byType, bySource] =
-      await Promise.all([
-        this.prisma.serviceCatalogEventLog.count({
-          where: { receivedAt: { gte: startDate } },
-        }),
-        this.prisma.serviceCatalogEventLog.count({
-          where: {
-            receivedAt: { gte: startDate },
-            processingStatus: EventProcessingStatus.COMPLETED,
-          },
-        }),
-        this.prisma.serviceCatalogEventLog.count({
-          where: {
-            receivedAt: { gte: startDate },
-            processingStatus: EventProcessingStatus.FAILED,
-          },
-        }),
-        this.prisma.serviceCatalogEventLog.count({
-          where: {
-            receivedAt: { gte: startDate },
-            processingStatus: EventProcessingStatus.DEAD_LETTER,
-          },
-        }),
-        this.prisma.serviceCatalogEventLog.groupBy({
-          by: ['eventType'],
-          where: { receivedAt: { gte: startDate } },
-          _count: true,
-        }),
-        this.prisma.serviceCatalogEventLog.groupBy({
-          by: ['externalSource'],
-          where: { receivedAt: { gte: startDate } },
-          _count: true,
-        }),
-      ]);
+    const [total, completed, failed, deadLetter, byType, bySource] = await Promise.all([
+      this.prisma.serviceCatalogEventLog.count({
+        where: { receivedAt: { gte: startDate } },
+      }),
+      this.prisma.serviceCatalogEventLog.count({
+        where: {
+          receivedAt: { gte: startDate },
+          processingStatus: EventProcessingStatus.COMPLETED,
+        },
+      }),
+      this.prisma.serviceCatalogEventLog.count({
+        where: {
+          receivedAt: { gte: startDate },
+          processingStatus: EventProcessingStatus.FAILED,
+        },
+      }),
+      this.prisma.serviceCatalogEventLog.count({
+        where: {
+          receivedAt: { gte: startDate },
+          processingStatus: EventProcessingStatus.DEAD_LETTER,
+        },
+      }),
+      this.prisma.serviceCatalogEventLog.groupBy({
+        by: ['eventType'],
+        where: { receivedAt: { gte: startDate } },
+        _count: true,
+      }),
+      this.prisma.serviceCatalogEventLog.groupBy({
+        by: ['externalSource'],
+        where: { receivedAt: { gte: startDate } },
+        _count: true,
+      }),
+    ]);
 
     return {
       period: {
@@ -208,8 +207,7 @@ export class ServiceCatalogEventLogService {
         deadLetter,
         pending: total - completed - failed - deadLetter,
       },
-      successRate:
-        total > 0 ? ((completed / total) * 100).toFixed(2) : '0.00',
+      successRate: total > 0 ? ((completed / total) * 100).toFixed(2) : '0.00',
       byType: byType.map((item) => ({
         type: item.eventType,
         count: item._count,
@@ -227,9 +225,7 @@ export class ServiceCatalogEventLogService {
    * @returns Number of deleted events
    */
   async cleanupOldEvents(olderThanDays: number = 30) {
-    const cutoffDate = new Date(
-      Date.now() - olderThanDays * 24 * 60 * 60 * 1000,
-    );
+    const cutoffDate = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
 
     const result = await this.prisma.serviceCatalogEventLog.deleteMany({
       where: {

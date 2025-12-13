@@ -94,7 +94,8 @@ export class MockESignatureProvider implements IESignatureProvider {
     // Simulate signing URLs (for embedded signing)
     const signerUrls: Record<string, string> = {};
     envelope.signers.forEach((signer) => {
-      signerUrls[signer.email] = `https://mock.esignature.com/sign/${envelope.envelopeId}/${signer.email}`;
+      signerUrls[signer.email] =
+        `https://mock.esignature.com/sign/${envelope.envelopeId}/${signer.email}`;
     });
 
     return {

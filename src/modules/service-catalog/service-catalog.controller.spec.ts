@@ -121,7 +121,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
           scopeExcluded: dto.scopeExcluded,
           estimatedDurationMinutes: 180,
           createdBy: 'API_USER',
-        })
+        }),
       );
 
       // Verify FSM code was generated
@@ -156,7 +156,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
           requiresPreServiceContract: false,
           requiresPostServiceWCF: true,
           contractTemplateId: undefined,
-        })
+        }),
       );
     });
 
@@ -209,7 +209,10 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
 
         await controller.createService(dto);
 
-        const createCall = serviceCatalogService.create.mock.calls[serviceCatalogService.create.mock.calls.length - 1][0];
+        const createCall =
+          serviceCatalogService.create.mock.calls[
+            serviceCatalogService.create.mock.calls.length - 1
+          ][0];
         expect(createCall.name).toBe(testCase.expected);
       }
     });
@@ -227,7 +230,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       };
 
       serviceCatalogService.create.mockRejectedValue(
-        new ConflictException('Service with external code already exists')
+        new ConflictException('Service with external code already exists'),
       );
 
       await expect(controller.createService(dto)).rejects.toThrow(ConflictException);
@@ -253,10 +256,10 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       await controller.createService({ ...dto, externalServiceCode: 'TEST_CODE_3' });
 
       const calls = serviceCatalogService.create.mock.calls;
-      const fsmCodes = calls.map(call => call[0].fsmServiceCode);
+      const fsmCodes = calls.map((call) => call[0].fsmServiceCode);
 
       // All should start with FR_PLUM
-      fsmCodes.forEach(code => {
+      fsmCodes.forEach((code) => {
         expect(code).toMatch(/^FR_PLUM_\d{6}\d{3}$/);
       });
 
@@ -290,7 +293,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
           name: 'Updated AC Installation',
           estimatedDurationMinutes: 200,
         },
-        'API_USER'
+        'API_USER',
       );
     });
 
@@ -316,7 +319,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
           estimatedDurationMinutes: 240,
           requiresPreServiceContract: false,
         }),
-        'API_USER'
+        'API_USER',
       );
     });
 
@@ -343,11 +346,11 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       };
 
       serviceCatalogService.update.mockRejectedValue(
-        new NotFoundException('Service with ID svc-nonexistent not found')
+        new NotFoundException('Service with ID svc-nonexistent not found'),
       );
 
       await expect(controller.updateService('svc-nonexistent', dto)).rejects.toThrow(
-        NotFoundException
+        NotFoundException,
       );
     });
 
@@ -427,7 +430,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       expect(serviceCatalogService.deprecate).toHaveBeenCalledWith(
         'svc-123',
         dto.reason,
-        'API_USER'
+        'API_USER',
       );
     });
 
@@ -448,7 +451,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       expect(serviceCatalogService.deprecate).toHaveBeenCalledWith(
         'svc-123',
         'Deprecated via API',
-        'API_USER'
+        'API_USER',
       );
     });
 
@@ -458,11 +461,11 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       };
 
       serviceCatalogService.deprecate.mockRejectedValue(
-        new NotFoundException('Service with ID svc-nonexistent not found')
+        new NotFoundException('Service with ID svc-nonexistent not found'),
       );
 
       await expect(controller.deprecateService('svc-nonexistent', dto)).rejects.toThrow(
-        NotFoundException
+        NotFoundException,
       );
     });
 
@@ -472,11 +475,11 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       };
 
       serviceCatalogService.deprecate.mockRejectedValue(
-        new BadRequestException('Service svc-123 is already deprecated')
+        new BadRequestException('Service svc-123 is already deprecated'),
       );
 
       await expect(controller.deprecateService('svc-123', dto)).rejects.toThrow(
-        BadRequestException
+        BadRequestException,
       );
     });
 
@@ -497,11 +500,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
 
         await controller.deprecateService('svc-123', { reason });
 
-        expect(serviceCatalogService.deprecate).toHaveBeenCalledWith(
-          'svc-123',
-          reason,
-          'API_USER'
-        );
+        expect(serviceCatalogService.deprecate).toHaveBeenCalledWith('svc-123', reason, 'API_USER');
       }
     });
 
@@ -518,7 +517,7 @@ describe('ServiceCatalogController - CRUD Endpoints', () => {
       expect(serviceCatalogService.deprecate).toHaveBeenCalledWith(
         'svc-123',
         'Deprecated via API',
-        'API_USER'
+        'API_USER',
       );
     });
   });

@@ -119,7 +119,7 @@ export class ServiceCatalogEventConsumer implements OnModuleInit, OnModuleDestro
     }
 
     this.logger.log(
-      `📩 Received event: ${payload.eventType} | Service: ${payload.data?.externalServiceCode} | Event ID: ${eventId}`
+      `📩 Received event: ${payload.eventType} | Service: ${payload.data?.externalServiceCode} | Event ID: ${eventId}`,
     );
 
     try {
@@ -157,7 +157,6 @@ export class ServiceCatalogEventConsumer implements OnModuleInit, OnModuleDestro
       // Step 4: Mark as processed
       await this.eventLogService.markAsProcessed(eventLog.id);
       this.logger.log(`✅ Event ${eventId} processed successfully`);
-
     } catch (error) {
       this.logger.error(`❌ Error processing event ${eventId}:`, error);
 
@@ -191,7 +190,10 @@ export class ServiceCatalogEventConsumer implements OnModuleInit, OnModuleDestro
 
       default:
         this.logger.warn(`❓ Unknown event type: ${payload.eventType}`);
-        await this.eventLogService.markAsSkipped(eventLogId, `Unknown event type: ${payload.eventType}`);
+        await this.eventLogService.markAsSkipped(
+          eventLogId,
+          `Unknown event type: ${payload.eventType}`,
+        );
     }
   }
 
@@ -204,7 +206,7 @@ export class ServiceCatalogEventConsumer implements OnModuleInit, OnModuleDestro
    */
   private parseBrokers(): string[] {
     const brokers = process.env.KAFKA_BROKERS || 'localhost:9092';
-    return brokers.split(',').map(b => b.trim());
+    return brokers.split(',').map((b) => b.trim());
   }
 
   /**
