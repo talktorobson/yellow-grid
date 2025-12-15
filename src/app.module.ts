@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 // Common modules
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -59,6 +60,9 @@ import { AppController } from './app.controller';
 
     // Scheduled tasks
     ScheduleModule.forRoot(),
+
+    // Event-driven architecture (for decoupled module communication)
+    EventEmitterModule.forRoot(),
 
     // Context Local Storage (for Multi-tenancy)
     ClsModule.forRoot({

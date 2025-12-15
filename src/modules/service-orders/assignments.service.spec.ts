@@ -1,5 +1,6 @@
 import { AssignmentsService } from './assignments.service';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AssignmentMode, AssignmentState, ServiceOrderState } from '@prisma/client';
 
 describe('AssignmentsService', () => {
@@ -18,11 +19,18 @@ describe('AssignmentsService', () => {
     },
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   let service: AssignmentsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new AssignmentsService(mockPrisma as unknown as PrismaService);
+    service = new AssignmentsService(
+      mockPrisma as unknown as PrismaService,
+      mockEventEmitter as unknown as EventEmitter2,
+    );
     mockPrisma.serviceOrder.findUnique.mockResolvedValue({
       id: 'so1',
       countryCode: 'ES',

@@ -3,30 +3,34 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CamundaService } from './camunda.service';
 import { CamundaConfig } from './camunda.config';
 import { OperateService } from './operate/operate.service';
+import { CamundaEventListener } from './camunda.event-listener';
 
 // Workers
+import { ValidateOrderWorker } from './workers/validation/validate-order.worker';
 import { FindProvidersWorker } from './workers/assignment/find-providers.worker';
 import { RankProvidersWorker } from './workers/assignment/rank-providers.worker';
+import { AutoAssignProviderWorker } from './workers/assignment/auto-assign-provider.worker';
 import { SendOfferWorker } from './workers/assignment/send-offer.worker';
 import { CheckAvailabilityWorker } from './workers/booking/check-availability.worker';
 import { ReserveSlotWorker } from './workers/booking/reserve-slot.worker';
 import { GoCheckWorker } from './workers/execution/go-check.worker';
 import { SendNotificationWorker } from './workers/notification/send-notification.worker';
 
-// Existing services for worker dependencies
-import { ProvidersModule } from '../modules/providers/providers.module';
-import { ServiceOrdersModule } from '../modules/service-orders/service-orders.module';
+// Common modules (no circular dependency)
 import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
-  imports: [ConfigModule, ProvidersModule, ServiceOrdersModule, PrismaModule],
+  imports: [ConfigModule, PrismaModule],
   providers: [
     CamundaConfig,
     CamundaService,
     OperateService,
+    CamundaEventListener,
     // Workers
+    ValidateOrderWorker,
     FindProvidersWorker,
     RankProvidersWorker,
+    AutoAssignProviderWorker,
     SendOfferWorker,
     CheckAvailabilityWorker,
     ReserveSlotWorker,

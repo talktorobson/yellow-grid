@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ServiceOrdersService } from './service-orders.service';
 import { ServiceOrderStateMachineService } from './service-order-state-machine.service';
 import { BufferLogicService } from '../scheduling/buffer-logic.service';
@@ -46,6 +47,10 @@ describe('ServiceOrdersService', () => {
     validateBookingWindow: jest.fn(),
   };
 
+  const mockEventEmitter = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,6 +66,10 @@ describe('ServiceOrdersService', () => {
         {
           provide: BufferLogicService,
           useValue: mockBufferLogic,
+        },
+        {
+          provide: EventEmitter2,
+          useValue: mockEventEmitter,
         },
       ],
     }).compile();

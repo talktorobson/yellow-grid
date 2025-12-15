@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ServiceOrderStateMachineService } from './service-order-state-machine.service';
 import { BufferLogicService } from '../scheduling/buffer-logic.service';
@@ -7,6 +8,7 @@ import { UpdateServiceOrderDto } from './dto/update-service-order.dto';
 import { ScheduleServiceOrderDto } from './dto/schedule-service-order.dto';
 import { AssignServiceOrderDto } from './dto/assign-service-order.dto';
 import { ServiceOrder, ServiceOrderState, Prisma } from '@prisma/client';
+import { ServiceOrderCreatedEvent } from './events';
 
 /**
  * Service for managing service orders.
@@ -21,6 +23,7 @@ export class ServiceOrdersService {
     private readonly prisma: PrismaService,
     private readonly stateMachine: ServiceOrderStateMachineService,
     private readonly bufferLogic: BufferLogicService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -78,6 +81,24 @@ export class ServiceOrdersService {
     });
 
     this.logger.log(`Service order ${serviceOrder.id} created successfully`);
+
+    // Emit event for workflow orchestration
+    const serviceAddress = createDto.serviceAddress as { postalCode?: string };
+    this.eventEmitter.emit(
+      ServiceOrderCreatedEvent.eventName,
+      new ServiceOrderCreatedEvent(
+        serviceOrder.id,
+        createDto.customerInfo.name, // customerId placeholder - would be actual customer ID
+        serviceOrder.countryCode + '-STORE', // storeId placeholder
+        createDto.serviceId,
+        createDto.countryCode,
+        createDto.businessUnit,
+        serviceAddress.postalCode || '',
+        createDto.urgency as 'URGENT' | 'STANDARD' | 'LOW',
+        createDto.requestedStartDate,
+        createDto.requestedEndDate,
+      ),
+    );
 
     return serviceOrder;
   }

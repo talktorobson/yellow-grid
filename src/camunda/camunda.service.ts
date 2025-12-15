@@ -5,8 +5,10 @@ import * as fs from 'fs';
 import { CamundaConfig } from './camunda.config';
 
 // Workers
+import { ValidateOrderWorker } from './workers/validation/validate-order.worker';
 import { FindProvidersWorker } from './workers/assignment/find-providers.worker';
 import { RankProvidersWorker } from './workers/assignment/rank-providers.worker';
+import { AutoAssignProviderWorker } from './workers/assignment/auto-assign-provider.worker';
 import { SendOfferWorker } from './workers/assignment/send-offer.worker';
 import { CheckAvailabilityWorker } from './workers/booking/check-availability.worker';
 import { ReserveSlotWorker } from './workers/booking/reserve-slot.worker';
@@ -22,8 +24,10 @@ export class CamundaService {
   constructor(
     private readonly config: CamundaConfig,
     // Workers injected for registration
+    private readonly validateOrderWorker: ValidateOrderWorker,
     private readonly findProvidersWorker: FindProvidersWorker,
     private readonly rankProvidersWorker: RankProvidersWorker,
+    private readonly autoAssignProviderWorker: AutoAssignProviderWorker,
     private readonly sendOfferWorker: SendOfferWorker,
     private readonly checkAvailabilityWorker: CheckAvailabilityWorker,
     private readonly reserveSlotWorker: ReserveSlotWorker,
@@ -89,8 +93,10 @@ export class CamundaService {
    */
   private registerWorkers(): void {
     const workers = [
+      this.validateOrderWorker,
       this.findProvidersWorker,
       this.rankProvidersWorker,
+      this.autoAssignProviderWorker,
       this.sendOfferWorker,
       this.checkAvailabilityWorker,
       this.reserveSlotWorker,
@@ -120,7 +126,7 @@ export class CamundaService {
     }
 
     const result = await this.zeebe.createProcessInstance({
-      bpmnProcessId: 'service-order-lifecycle',
+      bpmnProcessId: 'ServiceOrderLifecycle',
       variables: {
         serviceOrderId,
         ...variables,
@@ -143,7 +149,7 @@ export class CamundaService {
     }
 
     const result = await this.zeebe.createProcessInstance({
-      bpmnProcessId: 'provider-assignment',
+      bpmnProcessId: 'ProviderAssignment',
       variables: {
         serviceOrderId,
         ...variables,

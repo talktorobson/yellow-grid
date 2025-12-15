@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '@/common/prisma/prisma.service';
 import { AssignmentMode, AssignmentState, ServiceOrderState } from '@prisma/client';
+import { OfferAcceptedEvent, OfferRejectedEvent } from './events';
 
 export interface CreateAssignmentInput {
   serviceOrderId: string;
@@ -23,7 +25,10 @@ export interface CreateAssignmentInput {
 export class AssignmentsService {
   private readonly logger = new Logger(AssignmentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * Creates assignments for a service order.
@@ -39,8 +44,7 @@ export class AssignmentsService {
       providerIds,
       workTeamId,
       mode,
-      requestedDate,
-      requestedSlot,
+      // requestedDate and requestedSlot reserved for future scheduling logic
       executedBy = 'system',
       funnelExecutionId,
       providerScores,
@@ -148,6 +152,17 @@ export class AssignmentsService {
       },
     });
 
+    // Emit event for workflow orchestration
+    this.eventEmitter.emit(
+      OfferAcceptedEvent.eventName,
+      new OfferAcceptedEvent(
+        assignment.serviceOrderId,
+        assignmentId, // offerId = assignmentId
+        assignment.providerId,
+        assignment.workTeamId || '',
+      ),
+    );
+
     return updated;
   }
 
@@ -174,6 +189,17 @@ export class AssignmentsService {
         stateChangedAt: new Date(),
       },
     });
+
+    // Emit event for workflow orchestration
+    this.eventEmitter.emit(
+      OfferRejectedEvent.eventName,
+      new OfferRejectedEvent(
+        assignment.serviceOrderId,
+        assignmentId, // offerId = assignmentId
+        assignment.providerId,
+        reason,
+      ),
+    );
 
     return updated;
   }
