@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { BaseWorker, ZeebeJob } from '../base.worker';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
@@ -7,14 +8,14 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  */
 interface AutoAssignInput {
   serviceOrderId: string;
+  countryCode: string;
   urgency: 'URGENT' | 'STANDARD' | 'LOW';
   rankedProviders: Array<{
     providerId: string;
-    workTeamId?: string;
-    score: number;
-    providerType: 'P1' | 'P2';
-    servicePriority: 'P1' | 'P2' | 'OPT_OUT';
-    hasCapacity: boolean;
+    providerName: string;
+    workTeamId?: string | null;
+    rank: number;
+    finalScore: number;
   }>;
 }
 
@@ -23,6 +24,7 @@ interface AutoAssignInput {
  */
 interface AutoAssignOutput {
   autoAssigned: boolean;
+  assignmentId?: string;
   assignedProviderId?: string;
   assignedWorkTeamId?: string;
   assignmentReason?: string;
@@ -38,9 +40,9 @@ interface AutoAssignOutput {
  * Task Type: auto-assign-provider
  *
  * Attempts to automatically assign a provider based on:
- * - P1 priority providers (always accept)
+ * - Country rules (ES, IT use AUTO_ACCEPT mode)
+ * - P1 priority service config (always accept)
  * - High-ranked providers with capacity
- * - Provider preferences and bundling rules
  */
 @Injectable()
 export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAssignOutput> {
@@ -53,7 +55,7 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
   }
 
   async handle(job: ZeebeJob<AutoAssignInput>): Promise<AutoAssignOutput> {
-    const { serviceOrderId, rankedProviders, urgency } = job.variables;
+    const { serviceOrderId, countryCode, rankedProviders, urgency } = job.variables;
 
     this.logger.log(`Auto-assign attempt for order: ${serviceOrderId}`);
 
@@ -66,40 +68,144 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
       };
     }
 
-    // Find first P1 service priority provider with capacity
-    // P1 service priority means "always accept" - auto-assign eligible
-    const p1Provider = rankedProviders.find((p) => p.servicePriority === 'P1' && p.hasCapacity);
+    // ES and IT countries use AUTO_ACCEPT mode - auto-assign to top provider
+    const autoAcceptCountries = ['ES', 'IT'];
+    const isAutoAcceptMode = autoAcceptCountries.includes(countryCode);
 
-    if (p1Provider) {
-      // TODO: Implement real assignment logic:
-      // - Reserve capacity slot
-      // - Create assignment record
-      // - Update service order status
+    // Get service order for context
+    const serviceOrder = await this.prisma.serviceOrder.findUnique({
+      where: { id: serviceOrderId },
+      select: { id: true, serviceId: true, businessUnit: true },
+    });
 
-      this.logger.log(
-        `Auto-assigned order ${serviceOrderId} to P1 provider ${p1Provider.providerId}`,
-      );
+    if (!serviceOrder) {
+      this.logger.error(`Service order not found: ${serviceOrderId}`);
       return {
-        autoAssigned: true,
-        assignedProviderId: p1Provider.providerId,
-        assignedWorkTeamId: p1Provider.workTeamId,
-        assignmentReason: 'P1 priority provider with capacity - auto-assigned',
-        assignedAt: new Date().toISOString(),
+        autoAssigned: false,
+        autoAssignFailReason: 'Service order not found',
       };
     }
 
-    // Check for URGENT orders - may have different auto-assign rules
-    if (urgency === 'URGENT') {
-      const topProvider = rankedProviders[0];
-      if (topProvider.hasCapacity && topProvider.score >= 90) {
+    // Check each provider for P1 service priority or auto-accept eligibility
+    for (const provider of rankedProviders) {
+      // Check if provider has P1 service priority for this service type
+      // ServicePriorityConfig relates to ProviderSpecialty, which maps to ServiceCatalog via SpecialtyServiceMapping
+      const servicePriorityConfig = serviceOrder.serviceId
+        ? await this.prisma.servicePriorityConfig.findFirst({
+            where: {
+              providerId: provider.providerId,
+              specialty: {
+                serviceMappings: {
+                  some: {
+                    serviceId: serviceOrder.serviceId,
+                  },
+                },
+              },
+              priority: 'P1',
+              validFrom: { lte: new Date() },
+              OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+            },
+          })
+        : null;
+
+      const isP1Priority = servicePriorityConfig !== null;
+      const canAutoAssign = isP1Priority || isAutoAcceptMode;
+
+      if (canAutoAssign) {
+        // Create assignment record with ACCEPTED state
+        const assignment = await this.prisma.$transaction(async (tx) => {
+          // Create assignment
+          const newAssignment = await tx.assignment.create({
+            data: {
+              serviceOrderId,
+              providerId: provider.providerId,
+              workTeamId: provider.workTeamId,
+              assignmentMode: isAutoAcceptMode ? 'AUTO_ACCEPT' : 'DIRECT',
+              assignmentMethod: 'AUTO',
+              providerRank: provider.rank,
+              providerScore: provider.finalScore,
+              scoreBreakdown: Prisma.DbNull,
+              state: 'ACCEPTED',
+              stateChangedAt: new Date(),
+              acceptedAt: new Date(),
+              createdBy: 'camunda-auto-assign',
+            },
+          });
+
+          // Update service order with assigned provider
+          await tx.serviceOrder.update({
+            where: { id: serviceOrderId },
+            data: {
+              assignedProviderId: provider.providerId,
+              state: 'ASSIGNED',
+            },
+          });
+
+          return newAssignment;
+        });
+
+        const reason = isP1Priority
+          ? 'P1 priority service config - auto-assigned'
+          : `${countryCode} country uses AUTO_ACCEPT mode`;
+
         this.logger.log(
-          `Auto-assigned URGENT order ${serviceOrderId} to high-score provider ${topProvider.providerId}`,
+          `Auto-assigned order ${serviceOrderId} to provider ${provider.providerName} (${reason})`,
         );
+
         return {
           autoAssigned: true,
+          assignmentId: assignment.id,
+          assignedProviderId: provider.providerId,
+          assignedWorkTeamId: provider.workTeamId || undefined,
+          assignmentReason: reason,
+          assignedAt: new Date().toISOString(),
+        };
+      }
+    }
+
+    // Check for URGENT orders with high-score providers (special handling)
+    if (urgency === 'URGENT') {
+      const topProvider = rankedProviders[0];
+      if (topProvider.finalScore >= 90) {
+        // Create assignment with ACCEPTED state for urgent high-score match
+        const assignment = await this.prisma.$transaction(async (tx) => {
+          const newAssignment = await tx.assignment.create({
+            data: {
+              serviceOrderId,
+              providerId: topProvider.providerId,
+              workTeamId: topProvider.workTeamId,
+              assignmentMode: 'DIRECT',
+              assignmentMethod: 'AUTO',
+              providerRank: topProvider.rank,
+              providerScore: topProvider.finalScore,
+              state: 'ACCEPTED',
+              stateChangedAt: new Date(),
+              acceptedAt: new Date(),
+              createdBy: 'camunda-urgent-auto-assign',
+            },
+          });
+
+          await tx.serviceOrder.update({
+            where: { id: serviceOrderId },
+            data: {
+              assignedProviderId: topProvider.providerId,
+              state: 'ASSIGNED',
+            },
+          });
+
+          return newAssignment;
+        });
+
+        this.logger.log(
+          `Auto-assigned URGENT order ${serviceOrderId} to high-score provider ${topProvider.providerName}`,
+        );
+
+        return {
+          autoAssigned: true,
+          assignmentId: assignment.id,
           assignedProviderId: topProvider.providerId,
-          assignedWorkTeamId: topProvider.workTeamId,
-          assignmentReason: 'Urgent order with high-score available provider',
+          assignedWorkTeamId: topProvider.workTeamId || undefined,
+          assignmentReason: 'Urgent order with high-score provider - auto-assigned',
           assignedAt: new Date().toISOString(),
         };
       }

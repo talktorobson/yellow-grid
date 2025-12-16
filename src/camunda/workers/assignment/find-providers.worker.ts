@@ -10,6 +10,7 @@ interface FindProvidersInput {
   serviceTypeCode: string;
   postalCode: string;
   countryCode: string;
+  businessUnit?: string;
   scheduledDate?: string;
   urgency: 'URGENT' | 'STANDARD' | 'LOW';
 }
@@ -22,8 +23,9 @@ interface FindProvidersOutput {
     providerId: string;
     providerName: string;
     providerType: 'P1' | 'P2';
-    score: number;
-    distanceKm: number;
+    workTeamId: string | null;
+    zoneType: string;
+    maxCommuteMinutes: number | null;
     hasCapacity: boolean;
   }>;
   providersFound: number;
@@ -31,15 +33,15 @@ interface FindProvidersOutput {
 }
 
 /**
- * Find Providers Worker (Stub)
+ * Find Providers Worker
  *
  * Task Type: find-providers
  *
  * Finds eligible providers based on:
- * - Service type
+ * - Service type specialty match
  * - Geographic coverage (postal code in intervention zone)
- * - Country code
- * - Availability on scheduled date
+ * - Country code and business unit match
+ * - Provider status (ACTIVE only)
  */
 @Injectable()
 export class FindProvidersWorker extends BaseWorker<FindProvidersInput, FindProvidersOutput> {
@@ -52,35 +54,137 @@ export class FindProvidersWorker extends BaseWorker<FindProvidersInput, FindProv
   }
 
   async handle(job: ZeebeJob<FindProvidersInput>): Promise<FindProvidersOutput> {
-    const { serviceTypeCode, postalCode, countryCode, urgency } = job.variables;
+    const { serviceTypeCode, postalCode, countryCode, businessUnit } =
+      job.variables;
 
-    // Simplified stub for infrastructure testing
-    // TODO: Implement full provider finding logic with intervention zones
-    this.logger.log(`Finding providers for ${serviceTypeCode} in ${postalCode}, ${countryCode}`);
+    this.logger.log(
+      `Finding providers for ${serviceTypeCode} in ${postalCode}, ${countryCode}/${businessUnit || 'any'}`,
+    );
 
-    // Return mock providers for testing
-    const candidateProviders = [
-      {
-        providerId: 'mock-provider-1',
-        providerName: 'Test Provider 1',
-        providerType: 'P1' as const,
-        score: 90,
-        distanceKm: 5,
-        hasCapacity: true,
+    // Normalize postal code
+    const normalizedPostal = postalCode.replaceAll(/\s+/g, '').toUpperCase();
+
+    // Get the service to find required specialties
+    const service = await this.prisma.serviceCatalog.findFirst({
+      where: { fsmServiceCode: serviceTypeCode, status: 'ACTIVE' },
+      include: {
+        skillRequirements: {
+          where: { isRequired: true },
+          select: { specialtyId: true },
+        },
       },
-      {
-        providerId: 'mock-provider-2',
-        providerName: 'Test Provider 2',
-        providerType: 'P2' as const,
-        score: 75,
-        distanceKm: 10,
-        hasCapacity: true,
+    });
+
+    const requiredSpecialtyIds = service?.skillRequirements.map((sr: { specialtyId: string }) => sr.specialtyId) || [];
+
+    // Build provider filter
+    const providerFilter: any = {
+      countryCode,
+      status: 'ACTIVE',
+    };
+    if (businessUnit) {
+      providerFilter.businessUnit = businessUnit;
+    }
+
+    // Find intervention zones that cover this postal code
+    // Prisma doesn't support JSON array search natively, so we fetch and filter
+    const interventionZones = await this.prisma.interventionZone.findMany({
+      where: {
+        provider: providerFilter,
       },
-    ];
+      include: {
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            providerType: true,
+            status: true,
+            workTeams: {
+              where: { status: 'ACTIVE' },
+              select: {
+                id: true,
+                maxDailyJobs: true,
+                specialtyAssignments: {
+                  where: { isActive: true },
+                  select: { specialtyId: true },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ assignmentPriority: 'asc' }, { zoneType: 'asc' }],
+    });
 
-    this.logger.log(`Found ${candidateProviders.length} mock providers`);
+    // Filter zones that cover the postal code
+    const matchingZones = interventionZones.filter((zone) => {
+      const postalCodes = zone.postalCodes as string[] | null;
+      return postalCodes?.includes(normalizedPostal);
+    });
 
-    // Determine assignment mode based on country
+    if (matchingZones.length === 0) {
+      this.logger.warn(`No providers cover postal code: ${normalizedPostal}`);
+      throw new BpmnError(
+        'NO_PROVIDERS_FOUND',
+        `No active providers cover postal code ${normalizedPostal} in ${countryCode}`,
+      );
+    }
+
+    // Build candidate list with deduplication
+    const candidateMap = new Map<
+      string,
+      FindProvidersOutput['candidateProviders'][0]
+    >();
+
+    for (const zone of matchingZones) {
+      const provider = zone.provider;
+      
+      // Check if provider has work teams with required specialties
+      let eligibleWorkTeam: { id: string; maxDailyJobs: number } | null = null;
+      
+      for (const team of provider.workTeams) {
+        const teamSpecialtyIds = new Set(team.specialtyAssignments.map((sa) => sa.specialtyId));
+        // Note: every() returns true for empty array, which is correct - no requirements = any team qualifies
+        const hasAllRequired = requiredSpecialtyIds.every((id: string) => teamSpecialtyIds.has(id));
+        
+        if (hasAllRequired) {
+          eligibleWorkTeam = team;
+          break; // Take first eligible team
+        }
+      }
+
+      // Skip if provider already added with better zone type
+      if (candidateMap.has(provider.id)) {
+        continue;
+      }
+
+      candidateMap.set(provider.id, {
+        providerId: provider.id,
+        providerName: provider.name,
+        providerType: (provider.providerType as 'P1' | 'P2') || 'P2',
+        workTeamId: eligibleWorkTeam?.id || null,
+        zoneType: zone.zoneType,
+        maxCommuteMinutes: zone.maxCommuteMinutes,
+        hasCapacity: eligibleWorkTeam !== null && eligibleWorkTeam.maxDailyJobs > 0,
+      });
+    }
+
+    const candidateProviders = Array.from(candidateMap.values());
+
+    // Sort: P1 first, then by zone type (PRIMARY > SECONDARY > OVERFLOW)
+    const zoneOrder: Record<string, number> = { PRIMARY: 0, SECONDARY: 1, OVERFLOW: 2 };
+    candidateProviders.sort((a, b) => {
+      // P1 providers first
+      if (a.providerType === 'P1' && b.providerType !== 'P1') return -1;
+      if (a.providerType !== 'P1' && b.providerType === 'P1') return 1;
+
+      // Then by zone type
+      return (zoneOrder[a.zoneType] ?? 99) - (zoneOrder[b.zoneType] ?? 99);
+    });
+
+    this.logger.log(`Found ${candidateProviders.length} eligible providers for ${normalizedPostal}`);
+
+    // Determine assignment mode based on country (ES, IT use AUTO_ACCEPT)
     const assignmentMode = ['ES', 'IT'].includes(countryCode) ? 'AUTO_ACCEPT' : 'OFFER';
 
     return {

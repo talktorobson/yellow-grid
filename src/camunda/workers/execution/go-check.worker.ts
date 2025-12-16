@@ -38,8 +38,8 @@ interface GoCheckOutput {
  * Task Type: go-check
  *
  * Pre-execution validation (24-48h before scheduled date):
- * - Verify payment status
- * - Verify product delivery status
+ * - Verify payment status from ServiceOrder.paymentStatus
+ * - Verify product delivery status from ServiceOrder.productDeliveryStatus
  *
  * Returns GO_OK if ready, or specific NOK status if blocked.
  */
@@ -54,14 +54,23 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
   }
 
   async handle(job: ZeebeJob<GoCheckInput>): Promise<GoCheckOutput> {
-    const { serviceOrderId, projectId } = job.variables;
+    const { serviceOrderId } = job.variables;
 
-    // Get service order with related data
+    this.logger.log(`GO check for service order: ${serviceOrderId}`);
+
+    // Get service order with payment and delivery status
     const serviceOrder = await this.prisma.serviceOrder.findUnique({
       where: { id: serviceOrderId },
-      include: {
-        project: projectId ? true : false,
+      select: {
+        id: true,
+        paymentStatus: true,
+        paymentMethod: true,
+        productDeliveryStatus: true,
+        allProductsDelivered: true,
+        deliveryBlocksExecution: true,
+        totalAmountCustomer: true,
       },
+      // Note: lineItems need to be queried separately due to Prisma select limitations
     });
 
     if (!serviceOrder) {
@@ -73,13 +82,25 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
       };
     }
 
-    // Check payment status
-    // In a real implementation, this would call payment service or check invoice status
-    const paymentConfirmed = await this.checkPaymentStatus(serviceOrderId);
+    // Get line items separately for delivery status
+    const lineItems = await this.prisma.serviceOrderLineItem.findMany({
+      where: { serviceOrderId },
+      select: {
+        deliveryStatus: true,
+        deliveryReference: true,
+      },
+    });
 
-    // Check delivery status
-    // In a real implementation, this would call logistics/delivery tracking
-    const deliveryConfirmed = await this.checkDeliveryStatus(serviceOrderId);
+    // Check payment status from database
+    const paymentConfirmed = this.checkPaymentStatus(serviceOrder.paymentStatus);
+
+    // Check delivery status from database
+    const { deliveryConfirmed, deliveryDetails } = this.checkDeliveryStatus(
+      serviceOrder.productDeliveryStatus,
+      serviceOrder.allProductsDelivered,
+      serviceOrder.deliveryBlocksExecution,
+      lineItems,
+    );
 
     // Determine GO status
     let goStatus: GoCheckOutput['goStatus'];
@@ -88,18 +109,24 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
     if (paymentConfirmed && deliveryConfirmed) {
       goStatus = 'GO_OK';
       this.logger.log(`GO_OK for service order ${serviceOrderId}`);
-    } else if (!paymentConfirmed && !deliveryConfirmed) {
-      goStatus = 'GO_NOK_BOTH';
-      blockedReason = 'Payment and delivery both pending';
-      this.logger.warn(`GO_NOK_BOTH for service order ${serviceOrderId}`);
-    } else if (!paymentConfirmed) {
+
+      // Update service order state to SCHEDULED (ready for execution)
+      await this.prisma.serviceOrder.update({
+        where: { id: serviceOrderId },
+        data: { state: 'SCHEDULED' },
+      });
+    } else if (paymentConfirmed) {
+      goStatus = 'GO_NOK_DELIVERY';
+      blockedReason = `Delivery status: ${serviceOrder.productDeliveryStatus || 'PENDING'}`;
+      this.logger.warn(`GO_NOK_DELIVERY for service order ${serviceOrderId}`);
+    } else if (deliveryConfirmed) {
       goStatus = 'GO_NOK_PAYMENT';
-      blockedReason = 'Payment pending';
+      blockedReason = `Payment status: ${serviceOrder.paymentStatus || 'PENDING'}`;
       this.logger.warn(`GO_NOK_PAYMENT for service order ${serviceOrderId}`);
     } else {
-      goStatus = 'GO_NOK_DELIVERY';
-      blockedReason = 'Delivery pending';
-      this.logger.warn(`GO_NOK_DELIVERY for service order ${serviceOrderId}`);
+      goStatus = 'GO_NOK_BOTH';
+      blockedReason = `Payment: ${serviceOrder.paymentStatus || 'PENDING'}, Delivery: ${serviceOrder.productDeliveryStatus || 'PENDING'}`;
+      this.logger.warn(`GO_NOK_BOTH for service order ${serviceOrderId}: ${blockedReason}`);
     }
 
     return {
@@ -107,36 +134,74 @@ export class GoCheckWorker extends BaseWorker<GoCheckInput, GoCheckOutput> {
       paymentConfirmed,
       deliveryConfirmed,
       paymentDetails: {
-        status: paymentConfirmed ? 'PAID' : 'PENDING',
+        status: serviceOrder.paymentStatus || 'PENDING',
+        amount: serviceOrder.totalAmountCustomer ? Number(serviceOrder.totalAmountCustomer) : undefined,
+        method: serviceOrder.paymentMethod || undefined,
       },
-      deliveryDetails: {
-        status: deliveryConfirmed ? 'DELIVERED' : 'IN_TRANSIT',
-      },
+      deliveryDetails,
       blockedReason,
     };
   }
 
   /**
-   * Check payment status for service order
-   * TODO: Integrate with actual payment service
+   * Check payment status from ServiceOrder
    */
-  private async checkPaymentStatus(serviceOrderId: string): Promise<boolean> {
-    // Placeholder: Check if there's a paid invoice
-    // In production, this would query payment gateway or ERP
-
-    // For demo: randomly return true 80% of the time
-    return Math.random() > 0.2;
+  private checkPaymentStatus(status: string | null): boolean {
+    const paidStatuses = new Set(['PAID', 'COMPLETED', 'CONFIRMED', 'SETTLED']);
+    return status ? paidStatuses.has(status.toUpperCase()) : false;
   }
 
   /**
-   * Check delivery status for service order
-   * TODO: Integrate with logistics/delivery tracking
+   * Check delivery status from ServiceOrder and line items
    */
-  private async checkDeliveryStatus(serviceOrderId: string): Promise<boolean> {
-    // Placeholder: Check if products are delivered
-    // In production, this would query logistics API
+  private checkDeliveryStatus(
+    orderDeliveryStatus: string | null,
+    allProductsDelivered: boolean,
+    deliveryBlocksExecution: boolean,
+    lineItems: Array<{ deliveryStatus: unknown; deliveryReference: string | null }>,
+  ): { deliveryConfirmed: boolean; deliveryDetails: GoCheckOutput['deliveryDetails'] } {
+    // If delivery doesn't block execution, auto-confirm
+    if (!deliveryBlocksExecution) {
+      return {
+        deliveryConfirmed: true,
+        deliveryDetails: { status: 'NOT_REQUIRED' },
+      };
+    }
 
-    // For demo: randomly return true 85% of the time
-    return Math.random() > 0.15;
+    // Check if all products are delivered
+    if (allProductsDelivered) {
+      return {
+        deliveryConfirmed: true,
+        deliveryDetails: { status: 'DELIVERED' },
+      };
+    }
+
+    const deliveredStatuses = new Set(['DELIVERED', 'RECEIVED', 'COMPLETED']);
+
+    // Check order-level delivery status
+    const orderDelivered = orderDeliveryStatus
+      ? deliveredStatuses.has(orderDeliveryStatus.toUpperCase())
+      : false;
+
+    // Check if all line items are delivered
+    const itemsWithDelivery = lineItems.filter((li) => li.deliveryStatus);
+    const allItemsDelivered = itemsWithDelivery.every((li) =>
+      deliveredStatuses.has((String(li.deliveryStatus) || '').toUpperCase()),
+    );
+
+    // Service-only orders (no products) are automatically delivery-confirmed
+    const isServiceOnly = lineItems.length === 0 || itemsWithDelivery.length === 0;
+    const deliveryConfirmed = isServiceOnly || (orderDelivered && allItemsDelivered);
+
+    // Get first delivery reference from line items
+    const trackingNumber = lineItems.find((li) => li.deliveryReference)?.deliveryReference;
+
+    return {
+      deliveryConfirmed,
+      deliveryDetails: {
+        status: orderDeliveryStatus || (isServiceOnly ? 'NOT_REQUIRED' : 'PENDING'),
+        trackingNumber: trackingNumber || undefined,
+      },
+    };
   }
 }
