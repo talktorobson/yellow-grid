@@ -852,4 +852,4 @@ POST   /api/v1/executions/:id/unblock                       # Unblock execution
 
 ---
 
-**For more details**: See main product documentation in `/product-docs/`
+**For more details**: See main product documentation in `/documentation/`

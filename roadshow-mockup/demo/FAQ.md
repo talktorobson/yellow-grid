@@ -46,7 +46,7 @@ This is a **fully functional demonstration application** showcasing the key feat
 - Full monitoring and logging
 - Complete test coverage
 
-See `/product-docs/IMPLEMENTATION_GUIDE.md` for the production roadmap.
+See `/documentation/IMPLEMENTATION_GUIDE.md` for the production roadmap.
 
 ### What makes Yellow Grid different from other FSM systems?
 
@@ -450,7 +450,7 @@ See `/demo/QUICK_REFERENCE.md` for business value statements.
 
 This mockup is designed for **local demonstration only**. For production deployment:
 
-1. **See main documentation**: `/product-docs/IMPLEMENTATION_GUIDE.md`
+1. **See main documentation**: `/documentation/IMPLEMENTATION_GUIDE.md`
 2. **Containerize**: Create Dockerfiles for backend and frontend
 3. **Infrastructure**: Setup Kubernetes cluster or cloud platform
 4. **Environment**: Configure production environment variables
@@ -521,7 +521,7 @@ The **architecture is designed to scale**, but this mockup needs enhancements:
 
 - This is a **demonstration/reference implementation**
 - Code is provided as-is for learning and demos
-- For production use, follow full engineering specs in `/product-docs/`
+- For production use, follow full engineering specs in `/documentation/`
 - Consider hiring the development team for production implementation
 - Ensure proper testing, security, and compliance for your use case
 
@@ -533,7 +533,7 @@ The **architecture is designed to scale**, but this mockup needs enhancements:
 - Review code comments and inline documentation
 
 **For production implementation**:
-- See `/product-docs/` for complete engineering specifications
+- See `/documentation/` for complete engineering specifications
 - Contact the Yellow Grid development team
 - Consider professional services for implementation
 
@@ -542,7 +542,7 @@ The **architecture is designed to scale**, but this mockup needs enhancements:
 **Typical Next Steps**:
 
 1. **Stakeholder Decision**: Approve project for development
-2. **Team Formation**: Assemble 10-14 engineers (see `/product-docs/IMPLEMENTATION_GUIDE.md`)
+2. **Team Formation**: Assemble 10-14 engineers (see `/documentation/IMPLEMENTATION_GUIDE.md`)
 3. **Planning**: 28-week implementation roadmap available
 4. **Phase 1**: Core FSM features (12 weeks)
 5. **Phase 2**: Advanced features + ML (8 weeks)
@@ -559,7 +559,7 @@ The **architecture is designed to scale**, but this mockup needs enhancements:
 - **Main Demo Guide**: `/demo/README.md`
 - **Quick Reference**: `/demo/QUICK_REFERENCE.md`
 - **Architecture**: `/demo/ARCHITECTURE.md`
-- **Product Specs**: `/product-docs/` (69 files, 45,000 lines)
+- **Product Specs**: `/documentation/` (69 files, 45,000 lines)
 
 ### API Documentation
 - **Swagger UI**: http://localhost:3001/api (when backend running)

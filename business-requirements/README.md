@@ -25,7 +25,7 @@ This folder contains the **original business requirements** that informed the cr
 
 ## Relationship to Technical Specs
 
-These business requirements were **translated into** the complete engineering specifications located in `/product-docs/`.
+These business requirements were **translated into** the complete engineering specifications located in `/documentation/`.
 
 **Flow**:
 ```
@@ -33,7 +33,7 @@ Business Requirements (this folder)
     ↓
 [Analysis & Architectural Design]
     ↓
-Technical Specifications (/product-docs/)
+Technical Specifications (/documentation/)
     ↓
 Implementation (code)
 ```
@@ -48,7 +48,7 @@ Implementation (code)
 
 ### For Technical Team
 - **DO NOT** use these documents directly for implementation
-- **DO** reference `/product-docs/` for all technical decisions
+- **DO** reference `/documentation/` for all technical decisions
 - **DO** consult these if you need to understand the business context behind a technical requirement
 
 ---
@@ -58,7 +58,7 @@ Implementation (code)
 **Policy**: These files are **historical records** and should not be modified.
 
 If business requirements change:
-1. Update the **technical specifications** in `/product-docs/`
+1. Update the **technical specifications** in `/documentation/`
 2. Consider archiving old versions of these files
 3. Add new versions with clear version numbers or dates
 
@@ -68,11 +68,11 @@ If business requirements change:
 
 | Question | Answer |
 |----------|--------|
-| **Which file should I read for requirements?** | `/product-docs/` (technical specs) |
-| **What if business requirements change?** | Update `/product-docs/` and archive these |
+| **Which file should I read for requirements?** | `/documentation/` (technical specs) |
+| **What if business requirements change?** | Update `/documentation/` and archive these |
 | **Can I edit these files?** | No - treat as historical reference |
-| **Where is the technical design?** | `/product-docs/architecture/` |
-| **Where are the API contracts?** | `/product-docs/api/` |
+| **Where is the technical design?** | `/documentation/architecture/` |
+| **Where are the API contracts?** | `/documentation/api/` |
 
 ---
 

@@ -703,13 +703,13 @@ Recommended screenshots to capture for presentations:
    - Advanced analytics dashboards
 
 ### For Production Deployment
-See main project documentation: `/product-docs/IMPLEMENTATION_GUIDE.md`
+See main project documentation: `/documentation/IMPLEMENTATION_GUIDE.md`
 
 ---
 
 ## 📞 Support & Resources
 
-- **Main Documentation**: `/product-docs/`
+- **Main Documentation**: `/documentation/`
 - **API Documentation**: http://localhost:3001/api (when backend running)
 - **Prisma Studio** (Database UI): `npx prisma studio` in apps/backend
 - **Backend Port**: 3001

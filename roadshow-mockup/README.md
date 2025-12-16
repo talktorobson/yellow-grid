@@ -27,7 +27,7 @@ This is a **DEMO** implementation with significant simplifications:
 | **Integrations** | Real external systems | Mocked services |
 | **Infrastructure** | Kubernetes, multi-AZ | Docker Compose |
 
-**For production specifications, see `/product-docs/` directory.**
+**For production specifications, see `/documentation/` directory.**
 
 ---
 
@@ -379,7 +379,7 @@ All demo scenarios use realistic:
 - ❌ E-signature integration
 - ❌ Payment processing
 
-**For complete feature list, see `/product-docs/`**
+**For complete feature list, see `/documentation/`**
 
 ---
 
@@ -424,7 +424,7 @@ npm run seed
 Contact: Sales Engineering Team
 
 ### For Technical Questions
-See: `/product-docs/` for production specifications
+See: `/documentation/` for production specifications
 
 ### For Product Information
 See: `/ENGINEERING_KIT_SUMMARY.md`
@@ -439,6 +439,6 @@ See: `/ENGINEERING_KIT_SUMMARY.md`
 
 ---
 
-**Remember**: This is a DEMO. For production implementation, follow `/product-docs/` specifications.
+**Remember**: This is a DEMO. For production implementation, follow `/documentation/` specifications.
 
 **Yellow Grid Mockup** - Showcasing the Future of Field Service 🌟

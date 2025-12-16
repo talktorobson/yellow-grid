@@ -2,8 +2,8 @@
  * Geofence Validation Utility
  *
  * Implements geofence validation for field service check-in operations.
- * Based on product-docs/domain/06-execution-field-operations.md
- * and product-docs/api/06-execution-mobile-api.md
+ * Based on documentation/domain/06-execution-field-operations.md
+ * and documentation/api/06-execution-mobile-api.md
  */
 
 export interface GeoLocation {

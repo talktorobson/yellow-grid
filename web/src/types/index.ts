@@ -1,6 +1,6 @@
 /**
  * Core type definitions for the Operator Web App
- * Based on product-docs specifications
+ * Based on documentation specifications
  */
 
 // Common types

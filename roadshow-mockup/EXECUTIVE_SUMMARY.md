@@ -382,7 +382,7 @@ cd roadshow-mockup/apps/backend
 Read the detailed documents:
 1. `IMPLEMENTATION_PLAN.md` - Feature-by-feature breakdown
 2. `IMPLEMENTATION_ROADMAP.md` - Day-by-day timeline
-3. Product specs in `/product-docs/domain/05-assignment-dispatch-logic.md`
+3. Product specs in `/documentation/domain/05-assignment-dispatch-logic.md`
 
 ---
 

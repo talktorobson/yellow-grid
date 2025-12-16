@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_GoExecutionCheck" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <bpmn:process id="GoExecutionCheck" name="Go Execution Pre-Flight Check" isExecutable="true">
+    
+    <!-- START EVENT - Timer-based at D-1 18:00 -->
+    <bpmn:startEvent id="StartEvent_PreFlightCheck" name="Pre-Flight Check Triggered">
+      <bpmn:outgoing>Flow_ToCheckPayment</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- CHECK PAYMENT STATUS -->
+    <bpmn:serviceTask id="Task_CheckPaymentStatus" name="Check Payment Status">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="check-payment-status" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= externalOrderId" target="externalOrderId" />
+          <zeebe:input source="= sourceSystem" target="sourceSystem" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="retryBackoff" value="PT30S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCheckPayment</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCheckDelivery</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CHECK DELIVERY STATUS -->
+    <bpmn:serviceTask id="Task_CheckDeliveryStatus" name="Check Delivery Status">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="check-delivery-status" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= externalOrderId" target="externalOrderId" />
+          <zeebe:input source="= products" target="products" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCheckDelivery</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGoDecision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- EVALUATE GO STATUS -->
+    <bpmn:exclusiveGateway id="Gateway_GoExecutionDecision" name="GO Execution OK?">
+      <bpmn:incoming>Flow_ToGoDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_GoOK</bpmn:outgoing>
+      <bpmn:outgoing>Flow_GoNOK</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- GO OK - Allow Check-In -->
+    <bpmn:serviceTask id="Task_AllowCheckIn" name="Allow Check-In">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="set-go-execution-status" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= \"GO_OK\"" target="goExecutionStatus" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_GoOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOKEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- GO NOK - Block Check-In and Create Alerts -->
+    <bpmn:serviceTask id="Task_BlockCheckIn" name="Block Check-In">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="block-checkin" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= paymentStatus" target="paymentStatus" />
+          <zeebe:input source="= deliveryStatus" target="deliveryStatus" />
+          <zeebe:input source="= blockingReasons" target="blockingReasons" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_GoNOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCreateAlert</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CREATE ALERT -->
+    <bpmn:serviceTask id="Task_CreateAlert" name="Create Go Execution Alert">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-alert" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= \"GO_EXECUTION_BLOCKED\"" target="alertType" />
+          <zeebe:input source="= \"CRITICAL\"" target="severity" />
+          <zeebe:input source="= blockingReasons" target="blockingReasons" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCreateAlert</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCreateTask</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CREATE OPERATOR TASK -->
+    <bpmn:serviceTask id="Task_CreateOperatorTask" name="Create Operator Task">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= \"PRE_FLIGHT_FAILURE\"" target="taskType" />
+          <zeebe:input source="= \"URGENT\"" target="priority" />
+          <zeebe:input source="= blockingReasons" target="blockingReasons" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCreateTask</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotifyOperator</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- NOTIFY OPERATOR AND PROVIDER -->
+    <bpmn:serviceTask id="Task_NotifyParties" name="Notify Operator &amp; Provider">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-go-execution-notifications" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= providerId" target="providerId" />
+          <zeebe:input source="= taskId" target="taskId" />
+          <zeebe:input source="= alertId" target="alertId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNotifyOperator</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAwaitOverride</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT MANUAL OVERRIDE OR D-DAY RECHECK -->
+    <bpmn:eventBasedGateway id="Gateway_AwaitResolution" name="Await Resolution">
+      <bpmn:incoming>Flow_ToAwaitOverride</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOverrideMessage</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToDDayTimer</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- MANUAL OVERRIDE MESSAGE -->
+    <bpmn:intermediateCatchEvent id="Event_ManualOverride" name="Manual Override Approved">
+      <bpmn:incoming>Flow_ToOverrideMessage</bpmn:incoming>
+      <bpmn:outgoing>Flow_OverrideReceived</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Override" messageRef="Message_ManualOverride" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- D-DAY RECHECK TIMER (until scheduled date minus 2 hours) -->
+    <bpmn:intermediateCatchEvent id="Event_DDayRecheck" name="D-Day Recheck (2h before)">
+      <bpmn:incoming>Flow_ToDDayTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRecheck</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_DDay">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">= recheckWaitDuration</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- APPLY MANUAL OVERRIDE -->
+    <bpmn:serviceTask id="Task_ApplyOverride" name="Apply Manual Override">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="apply-go-override" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= overrideId" target="overrideId" />
+          <zeebe:input source="= approvedBy" target="approvedBy" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_OverrideReceived</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOverriddenEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- D-DAY RECHECK - Return to payment/delivery check -->
+    <bpmn:exclusiveGateway id="Gateway_Recheck" name="Recheck Merge">
+      <bpmn:incoming>Flow_ToRecheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_RecheckPayment</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="EndEvent_GoOK" name="Check-In Allowed">
+      <bpmn:incoming>Flow_ToOKEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_Overridden" name="Manually Overridden">
+      <bpmn:incoming>Flow_ToOverriddenEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToCheckPayment" sourceRef="StartEvent_PreFlightCheck" targetRef="Task_CheckPaymentStatus" />
+    <bpmn:sequenceFlow id="Flow_ToCheckDelivery" sourceRef="Task_CheckPaymentStatus" targetRef="Task_CheckDeliveryStatus" />
+    <bpmn:sequenceFlow id="Flow_ToGoDecision" sourceRef="Task_CheckDeliveryStatus" targetRef="Gateway_GoExecutionDecision" />
+    <bpmn:sequenceFlow id="Flow_GoOK" name="OK" sourceRef="Gateway_GoExecutionDecision" targetRef="Task_AllowCheckIn">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= paymentOK = true and deliveryOK = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_GoNOK" name="NOT OK" sourceRef="Gateway_GoExecutionDecision" targetRef="Task_BlockCheckIn">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= paymentOK = false or deliveryOK = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToOKEnd" sourceRef="Task_AllowCheckIn" targetRef="EndEvent_GoOK" />
+    <bpmn:sequenceFlow id="Flow_ToCreateAlert" sourceRef="Task_BlockCheckIn" targetRef="Task_CreateAlert" />
+    <bpmn:sequenceFlow id="Flow_ToCreateTask" sourceRef="Task_CreateAlert" targetRef="Task_CreateOperatorTask" />
+    <bpmn:sequenceFlow id="Flow_ToNotifyOperator" sourceRef="Task_CreateOperatorTask" targetRef="Task_NotifyParties" />
+    <bpmn:sequenceFlow id="Flow_ToAwaitOverride" sourceRef="Task_NotifyParties" targetRef="Gateway_AwaitResolution" />
+    <bpmn:sequenceFlow id="Flow_ToOverrideMessage" sourceRef="Gateway_AwaitResolution" targetRef="Event_ManualOverride" />
+    <bpmn:sequenceFlow id="Flow_ToDDayTimer" sourceRef="Gateway_AwaitResolution" targetRef="Event_DDayRecheck" />
+    <bpmn:sequenceFlow id="Flow_OverrideReceived" sourceRef="Event_ManualOverride" targetRef="Task_ApplyOverride" />
+    <bpmn:sequenceFlow id="Flow_ToOverriddenEnd" sourceRef="Task_ApplyOverride" targetRef="EndEvent_Overridden" />
+    <bpmn:sequenceFlow id="Flow_ToRecheck" sourceRef="Event_DDayRecheck" targetRef="Gateway_Recheck" />
+    <bpmn:sequenceFlow id="Flow_RecheckPayment" sourceRef="Gateway_Recheck" targetRef="Task_CheckPaymentStatus" />
+    
+  </bpmn:process>
+  
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_ManualOverride" name="ManualOverrideApproved">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= serviceOrderId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <!-- DIAGRAM SECTION -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_GoExecutionCheck">
+    <bpmndi:BPMNPlane id="BPMNPlane_GoExecutionCheck" bpmnElement="GoExecutionCheck">
+      <bpmndi:BPMNShape id="StartEvent_PreFlightCheck_di" bpmnElement="StartEvent_PreFlightCheck">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="130" y="243" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckPaymentStatus_di" bpmnElement="Task_CheckPaymentStatus">
+        <dc:Bounds x="240" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_CheckDeliveryStatus_di" bpmnElement="Task_CheckDeliveryStatus">
+        <dc:Bounds x="390" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_GoExecutionDecision_di" bpmnElement="Gateway_GoExecutionDecision" isMarkerVisible="true">
+        <dc:Bounds x="545" y="193" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="527" y="163" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AllowCheckIn_di" bpmnElement="Task_AllowCheckIn">
+        <dc:Bounds x="650" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_BlockCheckIn_di" bpmnElement="Task_BlockCheckIn">
+        <dc:Bounds x="650" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_GoOK_di" bpmnElement="EndEvent_GoOK">
+        <dc:Bounds x="812" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="788" y="145" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToCheckPayment_di" bpmnElement="Flow_ToCheckPayment">
+        <di:waypoint x="188" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCheckDelivery_di" bpmnElement="Flow_ToCheckDelivery">
+        <di:waypoint x="340" y="218" />
+        <di:waypoint x="390" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToGoDecision_di" bpmnElement="Flow_ToGoDecision">
+        <di:waypoint x="490" y="218" />
+        <di:waypoint x="545" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_GoOK_di" bpmnElement="Flow_GoOK">
+        <di:waypoint x="570" y="193" />
+        <di:waypoint x="570" y="120" />
+        <di:waypoint x="650" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="579" y="153" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_GoNOK_di" bpmnElement="Flow_GoNOK">
+        <di:waypoint x="570" y="243" />
+        <di:waypoint x="570" y="320" />
+        <di:waypoint x="650" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="575" y="278" width="42" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToOKEnd_di" bpmnElement="Flow_ToOKEnd">
+        <di:waypoint x="750" y="120" />
+        <di:waypoint x="812" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

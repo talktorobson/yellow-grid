@@ -2,8 +2,8 @@
  * Duration Calculation Utility
  *
  * Implements comprehensive duration calculation for field service check-out operations.
- * Based on product-docs/api/06-execution-mobile-api.md
- * and product-docs/domain/06-execution-field-operations.md
+ * Based on documentation/api/06-execution-mobile-api.md
+ * and documentation/domain/06-execution-field-operations.md
  */
 
 export interface TimeEntry {

@@ -529,6 +529,6 @@ See the following files for complete examples:
 
 ## Further Reading
 
-- [Kafka Topics Design](../../../product-docs/infrastructure/03-kafka-topics.md)
-- [Event Schema Registry](../../../product-docs/integration/02-event-schema-registry.md)
+- [Kafka Topics Design](../../../documentation/infrastructure/03-kafka-topics.md)
+- [Event Schema Registry](../../../documentation/integration/02-event-schema-registry.md)
 - [KafkaJS Documentation](https://kafka.js.org/)

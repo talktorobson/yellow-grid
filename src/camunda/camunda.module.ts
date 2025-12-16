@@ -17,6 +17,18 @@ import { ReserveSlotWorker } from './workers/booking/reserve-slot.worker';
 import { GoCheckWorker } from './workers/execution/go-check.worker';
 import { SendNotificationWorker } from './workers/notification/send-notification.worker';
 import { EscalateOfferTimeoutWorker } from './workers/escalation/escalate-offer-timeout.worker';
+import { RecordDateProposalWorker } from './workers/negotiation/record-date-proposal.worker';
+import { FinalizeDateAgreementWorker } from './workers/negotiation/finalize-date-agreement.worker';
+import { AutoConfirmDateWorker } from './workers/negotiation/auto-confirm-date.worker';
+import { EscalateDateNegotiationWorker } from './workers/negotiation/escalate-date-negotiation.worker';
+import { CheckPaymentStatusWorker } from './workers/execution/check-payment-status.worker';
+import { CheckDeliveryStatusWorker } from './workers/execution/check-delivery-status.worker';
+import { BlockCheckInWorker } from './workers/execution/block-checkin.worker';
+
+import { ApplyGoOverrideWorker } from './workers/execution/apply-go-override.worker';
+import { GenerateWCFWorker } from './workers/wcf/generate-wcf.worker';
+import { SendWCFWorker } from './workers/wcf/send-wcf.worker';
+import { TriggerInvoiceWorker } from './workers/wcf/trigger-invoice.worker';
 
 // Common modules (no circular dependency)
 import { PrismaModule } from '../common/prisma/prisma.module';
@@ -40,6 +52,17 @@ import { PrismaModule } from '../common/prisma/prisma.module';
     GoCheckWorker,
     SendNotificationWorker,
     EscalateOfferTimeoutWorker,
+    RecordDateProposalWorker,
+    FinalizeDateAgreementWorker,
+    AutoConfirmDateWorker,
+    EscalateDateNegotiationWorker,
+    CheckPaymentStatusWorker,
+    CheckDeliveryStatusWorker,
+    BlockCheckInWorker,
+    ApplyGoOverrideWorker,
+    GenerateWCFWorker,
+    SendWCFWorker,
+    TriggerInvoiceWorker,
   ],
   exports: [CamundaService, OperateService],
 })
@@ -49,7 +72,7 @@ export class CamundaModule implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly camundaService: CamundaService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     const enabledValue = this.configService.get<string>('CAMUNDA_ENABLED', 'false');

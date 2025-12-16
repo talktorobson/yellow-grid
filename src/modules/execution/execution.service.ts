@@ -25,7 +25,7 @@ export class ExecutionService {
     });
     if (!serviceOrder) throw new NotFoundException('Service order not found');
 
-    // Geofence validation (product-docs/domain/06-execution-field-operations.md:883-888)
+    // Geofence validation (documentation/domain/06-execution-field-operations.md:883-888)
     // Extract service location from serviceAddress JSON field
     const serviceAddress = serviceOrder.serviceAddress as any;
     if (!serviceAddress?.lat || !serviceAddress?.lng) {
@@ -170,7 +170,7 @@ export class ExecutionService {
     }
 
     // Validate completion requirements per domain spec
-    // (product-docs/domain/06-execution-field-operations.md:900-916)
+    // (documentation/domain/06-execution-field-operations.md:900-916)
     this.validateCompletionRequirements(dto, durationResult);
 
     // Log all warnings from duration calculation
@@ -242,7 +242,7 @@ export class ExecutionService {
 
   /**
    * Validate completion requirements per domain specification
-   * Based on product-docs/domain/06-execution-field-operations.md:900-916
+   * Based on documentation/domain/06-execution-field-operations.md:900-916
    */
   private validateCompletionRequirements(dto: CheckOutDto, durationResult: any): void {
     const warnings: string[] = [];

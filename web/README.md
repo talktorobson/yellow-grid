@@ -4,7 +4,7 @@
 
 ## Overview
 
-This is the official Operator Web Application for the Yellow Grid platform. It is built following production specifications from `/product-docs/` and is completely separate from the `/roadshow-mockup/` demo application.
+This is the official Operator Web Application for the Yellow Grid platform. It is built following production specifications from `/documentation/` and is completely separate from the `/roadshow-mockup/` demo application.
 
 ## Key Features
 
@@ -393,14 +393,14 @@ Can be deployed to:
 
 ## Documentation
 
-- **Product Specs**: `/product-docs/`
-- **API Docs**: `/product-docs/api/`
-- **Architecture**: `/product-docs/architecture/`
-- **Security**: `/product-docs/security/`
+- **Product Specs**: `/documentation/`
+- **API Docs**: `/documentation/api/`
+- **Architecture**: `/documentation/architecture/`
+- **Security**: `/documentation/security/`
 
 ## Contributing
 
-1. Read `/product-docs/development/` guidelines
+1. Read `/documentation/development/` guidelines
 2. Create feature branch from `main`
 3. Follow code style and testing requirements
 4. Submit PR with clear description

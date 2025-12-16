@@ -368,4 +368,4 @@ Key metrics to track:
 - [Twilio API Documentation](https://www.twilio.com/docs/sms)
 - [SendGrid API Documentation](https://docs.sendgrid.com/)
 - [Handlebars Documentation](https://handlebarsjs.com/)
-- [Product Docs: Communication & Notifications](/product-docs/architecture/03-service-boundaries.md#7-communication--notifications-service)
+- [Product Docs: Communication & Notifications](/documentation/architecture/03-service-boundaries.md#7-communication--notifications-service)

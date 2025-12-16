@@ -37,15 +37,14 @@ yellow-grid/
 │
 ├── business-requirements/             # Source business requirements (READ-ONLY)
 │
-├── product-docs/                      # ⭐ ENGINEERING SPECS (69 files)
+├── documentation/                     # ⭐ ENGINEERING SPECS
 │   ├── README.md                      # Master documentation index
 │   ├── architecture/ (11 docs)        # System design & technical decisions
 │   ├── domain/ (13 docs)              # Business domain models & logic
 │   ├── api/ (9 docs)                  # REST API specifications
+│   ├── implementation/                # 📋 IMPLEMENTATION TRACKING
+│   │   └── IMPLEMENTATION_TRACKING.md # Authoritative progress tracker
 │   └── ...
-│
-├── docs/                              # 📋 IMPLEMENTATION TRACKING
-│   └── IMPLEMENTATION_TRACKING.md     # Authoritative progress tracker
 │
 └── roadshow-mockup/                   # ARCHIVED - Demo only
 ```
@@ -75,7 +74,7 @@ Provider (legal entity)
 ### ⚠️ Legal Note: Work Teams vs Technicians
 The platform intentionally operates at the **Work Team level** only.
 Individual technicians are NOT tracked to avoid co-employer liability under EU/French labor law.
-See: `docs/LEGAL_BOUNDARY_WORKTEAM_VS_TECHNICIAN.md`
+See: `documentation/design/LEGAL_BOUNDARY_WORKTEAM_VS_TECHNICIAN.md`
 
 ### Key Enums
 ```typescript
@@ -137,16 +136,16 @@ Provider-level schedules inherit to WorkTeams unless overridden:
 ### For New AI Assistants - Read These First
 
 **Phase 1 - Understanding the System** (30 min):
-1. `product-docs/00-ENGINEERING_KIT_SUMMARY.md` - High-level overview
-2. `product-docs/README.md` - Master index
-3. `product-docs/architecture/01-architecture-overview.md` - System design
+1. `documentation/00-ENGINEERING_KIT_SUMMARY.md` - High-level overview
+2. `documentation/README.md` - Master index
+3. `documentation/architecture/01-architecture-overview.md` - System design
 
 **Phase 2 - Domain Knowledge** (As needed):
-- `product-docs/domain/01-domain-model-overview.md` - DDD principles
+- `documentation/domain/01-domain-model-overview.md` - DDD principles
 - Specific domain files for the feature you're working on
 
 **Phase 3 - API Contracts** (As needed):
-- `product-docs/api/01-api-design-principles.md` - REST standards
+- `documentation/api/01-api-design-principles.md` - REST standards
 - Specific API files for the endpoints you're implementing
 
 ### Quick Reference by Task
@@ -369,7 +368,7 @@ docs(api): update scheduling API examples
 - ✅ Log with correlation IDs
 
 **API Design**:
-- ✅ Follow OpenAPI specs in product-docs/api/
+- ✅ Follow OpenAPI specs in documentation/api/
 - ✅ Version APIs (/api/v1/...)
 - ✅ Use proper HTTP status codes
 - ✅ Paginate list endpoints
@@ -410,10 +409,10 @@ docs(api): update scheduling API examples
 ### When Implementing Features
 
 1. **Read Relevant Docs First**:
-   - Check product-docs/domain/ for business rules
-   - Check product-docs/api/ for API contracts
-   - Check product-docs/architecture/ for patterns
-
+   - Check documentation/domain/ for business rules
+   - Check documentation/api/ for API contracts
+   - Check documentation/architecture/ for patterns
+   
 2. **Follow the Spec**:
    - Implement exactly as documented
    - Don't deviate without explicit approval
@@ -427,7 +426,7 @@ docs(api): update scheduling API examples
 4. **Write Tests**:
    - Unit tests for business logic
    - Integration tests for API endpoints
-   - Follow patterns in product-docs/testing/
+   - Follow patterns in documentation/testing/
 
 5. **Update Documentation**:
    - Update API specs if changes are made
@@ -457,7 +456,7 @@ docs(api): update scheduling API examples
 
 1. **Cite Documentation**:
    - Reference specific files and sections
-   - Example: "See product-docs/domain/02-provider-capacity-domain.md:45-67"
+   - Example: "See documentation/domain/02-provider-capacity-domain.md:45-67"
 
 2. **Consider Context**:
    - Project is pre-implementation (no code yet)
@@ -540,10 +539,10 @@ This repository has:
 ## 📞 Additional Resources
 
 ### Documentation Index
-- **Master Index**: product-docs/README.md
-- **Implementation Guide**: product-docs/IMPLEMENTATION_GUIDE.md
-- **Status Tracker**: product-docs/DOCUMENTATION_STATUS.md
-- **Consolidation Plan**: DOCUMENTATION_CONSOLIDATION_PLAN.md (latest changes)
+- **Master Index**: documentation/README.md
+- **Implementation Guide**: documentation/implementation/IMPLEMENTATION_GUIDE.md
+- **Status Tracker**: documentation/DOCUMENTATION_STATUS.md
+- **Consolidation Plan**: documentation/implementation/DOCUMENTATION_CONSOLIDATION_PLAN.md (latest changes)
 
 ### External References
 - NestJS: https://docs.nestjs.com/

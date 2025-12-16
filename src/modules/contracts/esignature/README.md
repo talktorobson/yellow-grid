@@ -463,7 +463,7 @@ See TypeScript interfaces in:
 ## Support
 
 - **Issues**: Report bugs at [GitHub Issues](https://github.com/your-org/yellow-grid/issues)
-- **Documentation**: See `product-docs/domain/07-contract-document-lifecycle.md`
+- **Documentation**: See `documentation/domain/07-contract-document-lifecycle.md`
 - **Provider Docs**:
   - [DocuSign API](https://developers.docusign.com/)
   - [Adobe Sign API](https://secure.adobesign.com/public/docs/restapi/v6)

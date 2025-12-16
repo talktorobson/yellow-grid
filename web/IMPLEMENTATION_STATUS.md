@@ -226,7 +226,7 @@
 - `getCandidates(serviceOrderId)` - Ranked providers with scores
 
 **Key Differentiator:**
-The **scoring transparency** feature provides complete audit trail and rationale for provider selection - a unique requirement from product-docs/.
+The **scoring transparency** feature provides complete audit trail and rationale for provider selection - a unique requirement from documentation/.
 
 ---
 
@@ -813,7 +813,7 @@ A **production-grade Field Service Management Operator Web Application** with:
 
 🌟 **AI Integration Ready** - Sales potential and risk assessment displays
 
-🌟 **Production Architecture** - Follows product-docs/ specifications exactly
+🌟 **Production Architecture** - Follows documentation/ specifications exactly
 
 🌟 **Separate from Demo** - Not evolved from roadshow-mockup
 

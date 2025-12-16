@@ -871,15 +871,15 @@ No data migration needed - this is a greenfield implementation.
 - **Utilities**: Pure function documentation
 
 ### External Documentation
-- **Architecture**: See `product-docs/architecture/`
-- **API Specs**: See `product-docs/api/`
-- **Domain Models**: See `product-docs/domain/`
-- **Security**: See `product-docs/security/`
+- **Architecture**: See `documentation/architecture/`
+- **API Specs**: See `documentation/api/`
+- **Domain Models**: See `documentation/domain/`
+- **Security**: See `documentation/security/`
 
 ### Getting Help
 - **Issues**: GitHub Issues for bug reports
 - **Questions**: Team Slack or Microsoft Teams
-- **Documentation**: This file and product-docs/
+- **Documentation**: This file and documentation/
 
 ---
 

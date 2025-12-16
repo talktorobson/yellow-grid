@@ -34,7 +34,7 @@ export interface DistanceCalculationOptions {
  * 1. Haversine formula (default) - fast, accurate as-the-crow-flies distance
  * 2. Google Distance Matrix API (optional) - real driving distance via roads
  *
- * Based on product-docs/domain/05-assignment-dispatch-logic.md
+ * Based on documentation/domain/05-assignment-dispatch-logic.md
  * Distance scoring is 20% of provider ranking score.
  */
 @Injectable()
@@ -102,7 +102,7 @@ export class DistanceCalculationService {
   /**
    * Calculate distance score for provider ranking
    *
-   * Scoring ranges (from product-docs/domain/05-assignment-dispatch-logic.md):
+   * Scoring ranges (from documentation/domain/05-assignment-dispatch-logic.md):
    * - 0-10 km = 20 points
    * - 10-30 km = 15 points
    * - 30-50 km = 10 points

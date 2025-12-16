@@ -5,7 +5,7 @@
 - **Backend**: `src/` (NestJS + Prisma + PostgreSQL + Redis). 280+ files, 55,000+ lines. Phases 1-5 complete. Production-ready.
 - **Mobile App**: `mobile/` (React Native + Expo). 6 screens + 4-party Chat. Deployed at `/mobile/`. Production-ready.
 - **Web App**: `web/` (React + Vite). 161 files, 5,969 lines. Phase 5 complete. Multi-experience platform deployed.
-- **Documentation**: `product-docs/` holds v2.0 production-ready specs. `docs/IMPLEMENTATION_TRACKING.md` is the authoritative progress tracker.
+- **Documentation**: `documentation/` holds v2.0 production-ready specs. `documentation/implementation/IMPLEMENTATION_TRACKING.md` is the authoritative progress tracker.
 - **Legacy/Reference**: `roadshow-mockup/` is archived. `business-requirements/` are read-only source materials.
 - **Live Demo**: https://135.181.96.93 (Web) | https://135.181.96.93/mobile/ (Mobile)
 
@@ -132,7 +132,7 @@ EOSQL'
 
 ### Legal Note: Work Teams vs Technicians
 
-The platform intentionally operates at the **Work Team level** only, not tracking individual technicians. This avoids co-employer liability under EU/French labor law. See `docs/LEGAL_BOUNDARY_WORKTEAM_VS_TECHNICIAN.md` for details.
+The platform intentionally operates at the **Work Team level** only, not tracking individual technicians. This avoids co-employer liability under EU/French labor law. See `documentation/design/LEGAL_BOUNDARY_WORKTEAM_VS_TECHNICIAN.md` for details.
 
 ### Service Orders
 - **ServiceOrder**: Core entity with `urgency` field (URGENT, STANDARD, LOW) for response time requirements
@@ -175,9 +175,9 @@ The platform intentionally operates at the **Work Team level** only, not trackin
 
 ## Documentation
 
-- **Specs are authoritative**: Align code with `product-docs/`.
-- **Track Progress**: Update `docs/IMPLEMENTATION_TRACKING.md` when completing tasks.
+- **Specs are authoritative**: Align code with `documentation/`.
+- **Track Progress**: Update `documentation/implementation/IMPLEMENTATION_TRACKING.md` when completing tasks.
 - **Key Files**:
   - `prisma/schema.prisma` - Database schema (~3,200 lines, 65+ models)
-  - `product-docs/domain/02-provider-capacity-domain.md` - Provider domain spec
-  - `docs/IMPLEMENTATION_TRACKING.md` - Progress tracker
+  - `documentation/domain/02-provider-capacity-domain.md` - Provider domain spec
+  - `documentation/implementation/IMPLEMENTATION_TRACKING.md` - Progress tracker

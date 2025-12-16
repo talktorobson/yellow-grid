@@ -312,9 +312,9 @@ Return user-friendly error
 ## API Documentation
 
 Refer to backend API documentation:
-- **Mobile API**: `/product-docs/api/06-execution-mobile-api.md`
-- **Field Operations**: `/product-docs/domain/06-execution-field-operations.md`
-- **RBAC**: `/product-docs/security/02-rbac-model.md`
+- **Mobile API**: `/documentation/api/06-execution-mobile-api.md`
+- **Field Operations**: `/documentation/domain/06-execution-field-operations.md`
+- **RBAC**: `/documentation/security/02-rbac-model.md`
 
 ## Testing
 

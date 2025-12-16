@@ -49,7 +49,7 @@ Admin (IT): admin-it@adeo.com / Admin123!
 Admin (PT): admin-pt@adeo.com / Admin123!
 ```
 
-**For detailed progress**: See [docs/IMPLEMENTATION_TRACKING.md](docs/IMPLEMENTATION_TRACKING.md)
+**For detailed progress**: See [documentation/implementation/IMPLEMENTATION_TRACKING.md](documentation/implementation/IMPLEMENTATION_TRACKING.md)
 
 ---
 
@@ -85,7 +85,7 @@ yellow-grid-platform/
 │   ├── schema.prisma      70+ models, multi-tenancy support
 │   └── migrations/        Version-controlled database changes
 │
-├── product-docs/          📚 ENGINEERING SPECIFICATIONS (69 files)
+├── documentation/          📚 ENGINEERING SPECIFICATIONS & DOCUMENTATION
 │   ├── architecture/      System design, technical decisions
 │   ├── domain/            Business domain models & logic
 │   ├── api/               REST API specifications (OpenAPI 3.1)
@@ -94,10 +94,12 @@ yellow-grid-platform/
 │   ├── infrastructure/    Database, messaging, deployment
 │   ├── operations/        Monitoring, logging, incident response
 │   ├── testing/           Testing strategies & standards
-│   └── development/       Dev workflows, coding standards
+│   ├── development/       Dev workflows, coding standards
+│   ├── implementation/    Implementation tracking & guides
+│   ├── features/          Feature specifications
+│   ├── design/            Design documents
+│   └── migrations/        Migration guides
 │
-├── docs/                  📋 Implementation tracking & progress
-│   └── IMPLEMENTATION_TRACKING.md  24-week roadmap with status
 │
 ├── roadshow-mockup/       🎬 DEMO ONLY - For presentations (archived)
 │
@@ -162,10 +164,10 @@ npx ts-node scripts/create-admin.ts admin@example.com
 
 ---
 
-## ⚠️ IMPORTANT: Documentation vs. Implementation
+### ⚠️ IMPORTANT: Documentation vs. Implementation
 
-### 📚 Product Documentation (`/product-docs/`)
-- **Status**: Complete, production-ready specifications (69 files, ~45,000 lines)
+### 📚 Documentation (`/documentation/`)
+- **Status**: Complete, production-ready specifications
 - **Purpose**: Blueprint for building the real Yellow Grid platform
 - **Use**: Reference for actual product development
 - **Team Size**: 10-14 engineers recommended (currently: 1 solo developer)
@@ -177,6 +179,7 @@ npx ts-node scripts/create-admin.ts admin@example.com
 - **Content**: Working backend API with authentication and user management
 - **Technology**: TypeScript + NestJS + Prisma + PostgreSQL + Redis
 - **Timeline**: Following 24-week phased implementation plan
+
 
 ### 🎬 Roadshow Mockup (`/roadshow-mockup/`)
 - **Status**: Archived - replaced by production implementation
@@ -229,18 +232,18 @@ Yellow Grid is a comprehensive **Field Service Management (FSM) platform** desig
 1. **Read Specifications**:
    ```bash
    # Start here
-   cat product-docs/README.md
-   cat product-docs/IMPLEMENTATION_GUIDE.md
+   cat documentation/README.md
+   cat documentation/implementation/IMPLEMENTATION_GUIDE.md
    cat CLAUDE.md  # If you're an AI assistant
    ```
 
 2. **Understand Architecture**:
-   - Review `/product-docs/architecture/` for system design
-   - Check `/product-docs/domain/` for business logic
-   - Study `/ARCHITECTURE_SIMPLIFICATION.md` for recommendations
+   - Review `/documentation/architecture/` for system design
+   - Check `/documentation/domain/` for business logic
+   - Study `/documentation/architecture/08-architecture-simplification-options.md` for recommendations
 
 3. **Plan Implementation**:
-   - Follow the 28-week roadmap in `IMPLEMENTATION_GUIDE.md`
+   - Follow the 28-week roadmap in `documentation/implementation/IMPLEMENTATION_GUIDE.md`
    - Assemble 10-14 person team
    - Set up infrastructure per specs
 
@@ -263,11 +266,11 @@ Yellow Grid is a comprehensive **Field Service Management (FSM) platform** desig
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| **product-docs/README.md** | Master documentation index | All team members |
-| **IMPLEMENTATION_GUIDE.md** | 28-week roadmap | Tech lead, PM |
+| **documentation/README.md** | Master documentation index | All team members |
+| **documentation/implementation/IMPLEMENTATION_GUIDE.md** | 28-week roadmap | Tech lead, PM |
 | **CLAUDE.md** | AI assistant guide | AI assistants |
-| **ENGINEERING_KIT_SUMMARY.md** | High-level overview | Stakeholders |
-| **ARCHITECTURE_SIMPLIFICATION.md** | Simplification recommendations | Tech lead, architects |
+| **documentation/00-ENGINEERING_KIT_SUMMARY.md** | High-level overview | Stakeholders |
+| **documentation/architecture/08-architecture-simplification-options.md** | Simplification recommendations | Tech lead, architects |
 | **roadshow-mockup/README.md** | Demo setup & usage | Sales, marketing |
 
 ---
@@ -275,16 +278,16 @@ Yellow Grid is a comprehensive **Field Service Management (FSM) platform** desig
 ## 📝 Key Documents by Use Case
 
 **Starting Development?**
-→ `product-docs/IMPLEMENTATION_GUIDE.md`
+→ `documentation/implementation/IMPLEMENTATION_GUIDE.md`
 
 **Understanding Architecture?**
-→ `product-docs/architecture/01-architecture-overview.md`
+→ `documentation/architecture/01-architecture-overview.md`
 
 **Building APIs?**
-→ `product-docs/api/01-api-design-principles.md`
+→ `documentation/api/01-api-design-principles.md`
 
 **Security & Compliance?**
-→ `product-docs/security/03-data-privacy-gdpr.md`
+→ `documentation/security/03-data-privacy-gdpr.md`
 
 **Running Demo?**
 → `roadshow-mockup/README.md`

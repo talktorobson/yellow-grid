@@ -1707,7 +1707,12 @@ model ServiceOrder {
   earliestDeliveryDate    DateTime?       @map("earliest_delivery_date")
   latestDeliveryDate      DateTime?       @map("latest_delivery_date")
   allProductsDelivered    Boolean         @default(false) @map("all_products_delivered")
+
   deliveryBlocksExecution Boolean         @default(false) @map("delivery_blocks_execution")
+  
+  // Execution blocking (Generic)
+  executionBlocked        Boolean         @default(false) @map("execution_blocked")
+  executionBlockedReason  String?         @map("execution_blocked_reason") @db.Text
 
   // Sales potential (TV/Quotation only - v2.0)
   salesPotential          SalesPotential? @map("sales_potential")
@@ -2120,6 +2125,40 @@ model Assignment {
   @@index([state])
   @@index([funnelExecutionId])
   @@map("assignments")
+  
+  dateNegotiations DateNegotiation[]
+}
+
+model DateNegotiation {
+  id           String @id @default(uuid())
+  assignmentId String @map("assignment_id")
+
+  // Negotiation details
+  proposedDate DateTime  @map("proposed_date")
+  proposedBy   NegotiationInitiator @map("proposed_by")
+  round        Int       @default(1)
+  status       NegotiationStatus @default(PROPOSED)
+
+  // Relations
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  // Audit
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([assignmentId])
+  @@map("date_negotiations")
+}
+
+enum NegotiationInitiator {
+  PROVIDER
+  CUSTOMER
+}
+
+enum NegotiationStatus {
+  PROPOSED
+  ACCEPTED
+  REJECTED
+  COUNTERED
 }
 
 enum AssignmentMode {

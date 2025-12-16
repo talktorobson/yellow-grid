@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_WCFWorkflow" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <bpmn:process id="WCFWorkflow" name="Work Completion Form Workflow" isExecutable="true">
+    
+    <!-- START EVENT - Triggered after checkout -->
+    <bpmn:startEvent id="StartEvent_WCF" name="Check-Out Completed">
+      <bpmn:outgoing>Flow_ToGenerateWCF</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- GENERATE WCF -->
+    <bpmn:serviceTask id="Task_GenerateWCF" name="Generate WCF">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="generate-wcf" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= checkoutId" target="checkoutId" />
+          <zeebe:input source="= providerId" target="providerId" />
+          <zeebe:input source="= customerId" target="customerId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToGenerateWCF</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSendWCF</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- SEND WCF TO CUSTOMER -->
+    <bpmn:serviceTask id="Task_SendWCF" name="Send WCF to Customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-wcf" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= wcfId" target="wcfId" />
+          <zeebe:input source="= customerId" target="customerId" />
+          <zeebe:input source="= customerEmail" target="customerEmail" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToSendWCF</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAwaitSignature</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT CUSTOMER SIGNATURE (7-day timeout) -->
+    <bpmn:eventBasedGateway id="Gateway_AwaitSignature" name="Await Signature">
+      <bpmn:incoming>Flow_ToAwaitSignature</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSignedOK</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToSignedWithReserves</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToRefused</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToWCFTimeout</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- SIGNED OK -->
+    <bpmn:intermediateCatchEvent id="Event_SignedOK" name="Signed OK">
+      <bpmn:incoming>Flow_ToSignedOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_SignedOK</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_SignedOK" messageRef="Message_WCFSignedOK" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- SIGNED WITH RESERVES -->
+    <bpmn:intermediateCatchEvent id="Event_SignedWithReserves" name="Signed With Reserves">
+      <bpmn:incoming>Flow_ToSignedWithReserves</bpmn:incoming>
+      <bpmn:outgoing>Flow_SignedWithReserves</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_SignedReserves" messageRef="Message_WCFSignedWithReserves" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- REFUSED -->
+    <bpmn:intermediateCatchEvent id="Event_Refused" name="Customer Refuses">
+      <bpmn:incoming>Flow_ToRefused</bpmn:incoming>
+      <bpmn:outgoing>Flow_Refused</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Refused" messageRef="Message_WCFRefused" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- WCF TIMEOUT (7 days) -->
+    <bpmn:intermediateCatchEvent id="Event_WCFTimeout" name="WCF Expires (7d)">
+      <bpmn:incoming>Flow_ToWCFTimeout</bpmn:incoming>
+      <bpmn:outgoing>Flow_WCFExpired</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_WCFExpiry">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P7D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- PROCESS SIGNED OK - Trigger Invoice -->
+    <bpmn:serviceTask id="Task_TriggerInvoice" name="Trigger Provider Invoice">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="trigger-invoice" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= wcfId" target="wcfId" />
+          <zeebe:input source="= providerId" target="providerId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SignedOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCompletedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CREATE RESERVES TASK -->
+    <bpmn:serviceTask id="Task_CreateReservesTask" name="Create Reserves Review Task">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= \"RESOLVE_WCF_RESERVES\"" target="taskType" />
+          <zeebe:input source="= wcfId" target="entityId" />
+          <zeebe:input source="= reserves" target="context" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_SignedWithReserves</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToReservesReview</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT RESERVES RESOLUTION -->
+    <bpmn:intermediateCatchEvent id="Event_ReservesResolved" name="Reserves Resolved">
+      <bpmn:incoming>Flow_ToReservesReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReservesResolved</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ReservesResolved" messageRef="Message_ReservesResolved" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- TRIGGER INVOICE AFTER RESERVES RESOLVED -->
+    <bpmn:serviceTask id="Task_TriggerInvoiceAfterReserves" name="Trigger Invoice (Resolved)">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="trigger-invoice" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= wcfId" target="wcfId" />
+          <zeebe:input source="= providerId" target="providerId" />
+          <zeebe:input source="= adjustedAmount" target="adjustedAmount" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ReservesResolved</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToReservedCompletedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CREATE REFUSED TASK -->
+    <bpmn:serviceTask id="Task_CreateRefusedTask" name="Create WCF Not Signed Task">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
+          <zeebe:input source="= \"WCF_NOT_SIGNED\"" target="taskType" />
+          <zeebe:input source="= wcfId" target="entityId" />
+          <zeebe:input source="= \"HIGH\"" target="priority" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Refused</bpmn:incoming>
+      <bpmn:incoming>Flow_WCFExpired</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRefusedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="EndEvent_Completed" name="WCF Completed">
+      <bpmn:incoming>Flow_ToCompletedEnd</bpmn:incoming>
+      <bpmn:incoming>Flow_ToReservedCompletedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_Refused" name="WCF Refused/Expired">
+      <bpmn:incoming>Flow_ToRefusedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToGenerateWCF" sourceRef="StartEvent_WCF" targetRef="Task_GenerateWCF" />
+    <bpmn:sequenceFlow id="Flow_ToSendWCF" sourceRef="Task_GenerateWCF" targetRef="Task_SendWCF" />
+    <bpmn:sequenceFlow id="Flow_ToAwaitSignature" sourceRef="Task_SendWCF" targetRef="Gateway_AwaitSignature" />
+    <bpmn:sequenceFlow id="Flow_ToSignedOK" sourceRef="Gateway_AwaitSignature" targetRef="Event_SignedOK" />
+    <bpmn:sequenceFlow id="Flow_ToSignedWithReserves" sourceRef="Gateway_AwaitSignature" targetRef="Event_SignedWithReserves" />
+    <bpmn:sequenceFlow id="Flow_ToRefused" sourceRef="Gateway_AwaitSignature" targetRef="Event_Refused" />
+    <bpmn:sequenceFlow id="Flow_ToWCFTimeout" sourceRef="Gateway_AwaitSignature" targetRef="Event_WCFTimeout" />
+    <bpmn:sequenceFlow id="Flow_SignedOK" sourceRef="Event_SignedOK" targetRef="Task_TriggerInvoice" />
+    <bpmn:sequenceFlow id="Flow_SignedWithReserves" sourceRef="Event_SignedWithReserves" targetRef="Task_CreateReservesTask" />
+    <bpmn:sequenceFlow id="Flow_Refused" sourceRef="Event_Refused" targetRef="Task_CreateRefusedTask" />
+    <bpmn:sequenceFlow id="Flow_WCFExpired" sourceRef="Event_WCFTimeout" targetRef="Task_CreateRefusedTask" />
+    <bpmn:sequenceFlow id="Flow_ToCompletedEnd" sourceRef="Task_TriggerInvoice" targetRef="EndEvent_Completed" />
+    <bpmn:sequenceFlow id="Flow_ToReservesReview" sourceRef="Task_CreateReservesTask" targetRef="Event_ReservesResolved" />
+    <bpmn:sequenceFlow id="Flow_ReservesResolved" sourceRef="Event_ReservesResolved" targetRef="Task_TriggerInvoiceAfterReserves" />
+    <bpmn:sequenceFlow id="Flow_ToReservedCompletedEnd" sourceRef="Task_TriggerInvoiceAfterReserves" targetRef="EndEvent_Completed" />
+    <bpmn:sequenceFlow id="Flow_ToRefusedEnd" sourceRef="Task_CreateRefusedTask" targetRef="EndEvent_Refused" />
+    
+  </bpmn:process>
+  
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_WCFSignedOK" name="WCFSignedOK">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= wcfId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_WCFSignedWithReserves" name="WCFSignedWithReserves">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= wcfId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_WCFRefused" name="WCFRefused">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= wcfId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_ReservesResolved" name="ReservesResolved">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= wcfId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <!-- DIAGRAM SECTION -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_WCFWorkflow">
+    <bpmndi:BPMNPlane id="BPMNPlane_WCFWorkflow" bpmnElement="WCFWorkflow">
+      <bpmndi:BPMNShape id="StartEvent_WCF_di" bpmnElement="StartEvent_WCF">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="130" y="243" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_GenerateWCF_di" bpmnElement="Task_GenerateWCF">
+        <dc:Bounds x="240" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendWCF_di" bpmnElement="Task_SendWCF">
+        <dc:Bounds x="390" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToGenerateWCF_di" bpmnElement="Flow_ToGenerateWCF">
+        <di:waypoint x="188" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToSendWCF_di" bpmnElement="Flow_ToSendWCF">
+        <di:waypoint x="340" y="218" />
+        <di:waypoint x="390" y="218" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -16,7 +16,7 @@ import { Type } from 'class-transformer';
 
 /**
  * Completion status for check-out
- * Based on product-docs/domain/06-execution-field-operations.md:112-118
+ * Based on documentation/domain/06-execution-field-operations.md:112-118
  */
 export enum CompletionStatus {
   COMPLETED = 'COMPLETED',
@@ -51,7 +51,7 @@ export class LocationDto {
 
 /**
  * Material usage tracking
- * Based on product-docs/domain/06-execution-field-operations.md:128-136
+ * Based on documentation/domain/06-execution-field-operations.md:128-136
  */
 export class MaterialUsageDto {
   @ApiProperty({ description: 'Material ID' })
@@ -85,7 +85,7 @@ export class MaterialUsageDto {
 
 /**
  * Work summary for check-out
- * Based on product-docs/domain/06-execution-field-operations.md:120-126
+ * Based on documentation/domain/06-execution-field-operations.md:120-126
  */
 export class WorkSummaryDto {
   @ApiProperty({ description: 'Work description' })
@@ -133,8 +133,8 @@ export class SignatureDto {
 
 /**
  * Enhanced Check-Out DTO
- * Based on product-docs/api/06-execution-mobile-api.md:427-487
- * and product-docs/domain/06-execution-field-operations.md:89-159
+ * Based on documentation/api/06-execution-mobile-api.md:427-487
+ * and documentation/domain/06-execution-field-operations.md:89-159
  */
 export class CheckOutDto {
   @ApiProperty({ description: 'Service order ID' })

@@ -42,6 +42,15 @@ Event_OfferTimeout (4h) → Task_EscalateTimeout → Gateway_EscalationResult
 |-------------|----------------|----------|
 | OfferAccepted | `offerId` (assignmentId) | Provider accepts service offer |
 | OfferRejected | `offerId` (assignmentId) | Provider rejects service offer |
+| CustomerAcceptsDate | `negotiationId` | Customer accepts proposed date |
+| CustomerCounterProposes | `negotiationId` | Customer counter-proposes date |
+| ProviderAcceptsDate | `negotiationId` | Provider accepts customer date |
+| ProviderCounterProposes | `negotiationId` | Provider counter-proposes date |
+| ManualOverrideApproved | `serviceOrderId` | Operator approves GO execution override |
+| WCFSignedOK | `wcfId` | Customer signs WCF without reserves |
+| WCFSignedWithReserves | `wcfId` | Customer signs WCF with quality reserves |
+| WCFRefused | `wcfId` | Customer refuses to sign WCF |
+| ReservesResolved | `wcfId` | Operator resolves WCF reserves |
 
 ## Editing
 

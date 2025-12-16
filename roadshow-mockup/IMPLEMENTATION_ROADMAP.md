@@ -588,9 +588,9 @@ apps/web/src/
 ## 📖 Resources
 
 **Product Documentation**:
-- `/product-docs/domain/05-assignment-dispatch-logic.md` - Complete assignment spec
-- `/product-docs/domain/03-project-service-order-domain.md` - Service order lifecycle
-- `/product-docs/api/05-assignment-dispatch-api.md` - API contracts
+- `/documentation/domain/05-assignment-dispatch-logic.md` - Complete assignment spec
+- `/documentation/domain/03-project-service-order-domain.md` - Service order lifecycle
+- `/documentation/api/05-assignment-dispatch-api.md` - API contracts
 
 **Mockup Files**:
 - `roadshow-mockup/README.md` - Demo scenarios

@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_DateNegotiation" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <bpmn:process id="DateNegotiation" name="Date Negotiation" isExecutable="true">
+    
+    <!-- START EVENT -->
+    <bpmn:startEvent id="StartEvent_Negotiation" name="Provider Proposes Different Date">
+      <bpmn:outgoing>Flow_ToRecordProposal</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- RECORD INITIAL PROPOSAL -->
+    <bpmn:serviceTask id="Task_RecordProposal" name="Record Date Proposal">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="record-date-proposal" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= assignmentId" target="assignmentId" />
+          <zeebe:input source="= proposedDate" target="proposedDate" />
+          <zeebe:input source="= proposedBy" target="proposedBy" />
+          <zeebe:input source="= 1" target="round" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToRecordProposal</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotifyCustomer</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- NOTIFY CUSTOMER OF PROPOSAL -->
+    <bpmn:serviceTask id="Task_NotifyCustomer" name="Notify Customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-notification" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= \"DATE_PROPOSAL_FROM_PROVIDER\"" target="notificationType" />
+          <zeebe:input source="= customerId" target="recipientUserId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNotifyCustomer</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAwaitCustomerResponse</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT CUSTOMER RESPONSE (EVENT-BASED GATEWAY) -->
+    <bpmn:eventBasedGateway id="Gateway_AwaitCustomerResponse" name="Await Customer Response">
+      <bpmn:incoming>Flow_ToAwaitCustomerResponse</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCustomerAccept</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToCustomerCounter</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToCustomerTimeout</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- CUSTOMER ACCEPTS -->
+    <bpmn:intermediateCatchEvent id="Event_CustomerAccepts" name="Customer Accepts">
+      <bpmn:incoming>Flow_ToCustomerAccept</bpmn:incoming>
+      <bpmn:outgoing>Flow_CustomerAccepted</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_CustomerAccepts" messageRef="Message_CustomerAcceptsDate" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CUSTOMER COUNTER-PROPOSES -->
+    <bpmn:intermediateCatchEvent id="Event_CustomerCounterProposes" name="Customer Counter-Proposes">
+      <bpmn:incoming>Flow_ToCustomerCounter</bpmn:incoming>
+      <bpmn:outgoing>Flow_CustomerCountered</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_CustomerCounter" messageRef="Message_CustomerCounterProposes" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CUSTOMER TIMEOUT (48 hours) -->
+    <bpmn:intermediateCatchEvent id="Event_CustomerTimeout" name="Customer Timeout (48h)">
+      <bpmn:incoming>Flow_ToCustomerTimeout</bpmn:incoming>
+      <bpmn:outgoing>Flow_CustomerTimedOut</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_CustomerTimeout">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT48H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CHECK ROUND AFTER CUSTOMER COUNTER-PROPOSAL -->
+    <bpmn:exclusiveGateway id="Gateway_CheckRoundAfterCustomer" name="Round Check">
+      <bpmn:incoming>Flow_CustomerCountered</bpmn:incoming>
+      <bpmn:outgoing>Flow_Round1Or2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Round3Exceeded</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- INCREMENT ROUND AND NOTIFY PROVIDER -->
+    <bpmn:serviceTask id="Task_RecordCustomerCounter" name="Record Customer Counter-Proposal">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="record-date-proposal" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= assignmentId" target="assignmentId" />
+          <zeebe:input source="= customerProposedDate" target="proposedDate" />
+          <zeebe:input source="= \"CUSTOMER\"" target="proposedBy" />
+          <zeebe:input source="= round + 1" target="round" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Round1Or2</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotifyProvider</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- NOTIFY PROVIDER OF COUNTER-PROPOSAL -->
+    <bpmn:serviceTask id="Task_NotifyProvider" name="Notify Provider">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-notification" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= \"DATE_COUNTER_PROPOSAL_FROM_CUSTOMER\"" target="notificationType" />
+          <zeebe:input source="= providerId" target="recipientUserId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNotifyProvider</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAwaitProviderResponse</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT PROVIDER RESPONSE -->
+    <bpmn:eventBasedGateway id="Gateway_AwaitProviderResponse" name="Await Provider Response">
+      <bpmn:incoming>Flow_ToAwaitProviderResponse</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToProviderAccept</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToProviderCounter</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToProviderTimeout</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- PROVIDER ACCEPTS -->
+    <bpmn:intermediateCatchEvent id="Event_ProviderAccepts" name="Provider Accepts">
+      <bpmn:incoming>Flow_ToProviderAccept</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProviderAccepted</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ProviderAccepts" messageRef="Message_ProviderAcceptsDate" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- PROVIDER COUNTER-PROPOSES -->
+    <bpmn:intermediateCatchEvent id="Event_ProviderCounterProposes" name="Provider Counter-Proposes">
+      <bpmn:incoming>Flow_ToProviderCounter</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProviderCountered</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ProviderCounter" messageRef="Message_ProviderCounterProposes" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- PROVIDER TIMEOUT (24 hours) -->
+    <bpmn:intermediateCatchEvent id="Event_ProviderTimeout" name="Provider Timeout (24h)">
+      <bpmn:incoming>Flow_ToProviderTimeout</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProviderTimedOut</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_ProviderTimeout">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT24H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CHECK ROUND AFTER PROVIDER COUNTER-PROPOSAL -->
+    <bpmn:exclusiveGateway id="Gateway_CheckRoundAfterProvider" name="Round Check">
+      <bpmn:incoming>Flow_ProviderCountered</bpmn:incoming>
+      <bpmn:outgoing>Flow_ProviderRound1Or2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ProviderRound3Exceeded</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- RECORD PROVIDER COUNTER-PROPOSAL AND LOOP BACK -->
+    <bpmn:serviceTask id="Task_RecordProviderCounter" name="Record Provider Counter-Proposal">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="record-date-proposal" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= assignmentId" target="assignmentId" />
+          <zeebe:input source="= providerProposedDate" target="proposedDate" />
+          <zeebe:input source="= \"PROVIDER\"" target="proposedBy" />
+          <zeebe:input source="= round + 1" target="round" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ProviderRound1Or2</bpmn:incoming>
+      <bpmn:outgoing>Flow_BackToCustomerNotify</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- FINALIZE AGREEMENT -->
+    <bpmn:serviceTask id="Task_FinalizeAgreement" name="Finalize Date Agreement">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="finalize-date-agreement" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CustomerAccepted</bpmn:incoming>
+      <bpmn:incoming>Flow_ProviderAccepted</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAgreedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AUTO-CONFIRM (Customer timeout = original date confirmed) -->
+    <bpmn:serviceTask id="Task_AutoConfirmOriginalDate" name="Auto-Confirm Original Date">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="auto-confirm-date" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CustomerTimedOut</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAutoConfirmedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- ESCALATE TO OPERATOR (Max rounds or provider timeout) -->
+    <bpmn:serviceTask id="Task_EscalateToOperator" name="Escalate to Operator">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="escalate-date-negotiation" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Round3Exceeded</bpmn:incoming>
+      <bpmn:incoming>Flow_ProviderRound3Exceeded</bpmn:incoming>
+      <bpmn:incoming>Flow_ProviderTimedOut</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEscalatedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="EndEvent_Agreed" name="Date Agreed">
+      <bpmn:incoming>Flow_ToAgreedEnd</bpmn:incoming>
+      <bpmn:incoming>Flow_ToAutoConfirmedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_Escalated" name="Escalated to Operator">
+      <bpmn:incoming>Flow_ToEscalatedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToRecordProposal" sourceRef="StartEvent_Negotiation" targetRef="Task_RecordProposal" />
+    <bpmn:sequenceFlow id="Flow_ToNotifyCustomer" sourceRef="Task_RecordProposal" targetRef="Task_NotifyCustomer" />
+    <bpmn:sequenceFlow id="Flow_ToAwaitCustomerResponse" sourceRef="Task_NotifyCustomer" targetRef="Gateway_AwaitCustomerResponse" />
+    <bpmn:sequenceFlow id="Flow_ToCustomerAccept" sourceRef="Gateway_AwaitCustomerResponse" targetRef="Event_CustomerAccepts" />
+    <bpmn:sequenceFlow id="Flow_ToCustomerCounter" sourceRef="Gateway_AwaitCustomerResponse" targetRef="Event_CustomerCounterProposes" />
+    <bpmn:sequenceFlow id="Flow_ToCustomerTimeout" sourceRef="Gateway_AwaitCustomerResponse" targetRef="Event_CustomerTimeout" />
+    <bpmn:sequenceFlow id="Flow_CustomerAccepted" sourceRef="Event_CustomerAccepts" targetRef="Task_FinalizeAgreement" />
+    <bpmn:sequenceFlow id="Flow_CustomerCountered" sourceRef="Event_CustomerCounterProposes" targetRef="Gateway_CheckRoundAfterCustomer" />
+    <bpmn:sequenceFlow id="Flow_CustomerTimedOut" sourceRef="Event_CustomerTimeout" targetRef="Task_AutoConfirmOriginalDate" />
+    <bpmn:sequenceFlow id="Flow_Round1Or2" name="Round &lt; 3" sourceRef="Gateway_CheckRoundAfterCustomer" targetRef="Task_RecordCustomerCounter">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= round &lt; 3</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Round3Exceeded" name="Round &gt;= 3" sourceRef="Gateway_CheckRoundAfterCustomer" targetRef="Task_EscalateToOperator">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= round &gt;= 3</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToNotifyProvider" sourceRef="Task_RecordCustomerCounter" targetRef="Task_NotifyProvider" />
+    <bpmn:sequenceFlow id="Flow_ToAwaitProviderResponse" sourceRef="Task_NotifyProvider" targetRef="Gateway_AwaitProviderResponse" />
+    <bpmn:sequenceFlow id="Flow_ToProviderAccept" sourceRef="Gateway_AwaitProviderResponse" targetRef="Event_ProviderAccepts" />
+    <bpmn:sequenceFlow id="Flow_ToProviderCounter" sourceRef="Gateway_AwaitProviderResponse" targetRef="Event_ProviderCounterProposes" />
+    <bpmn:sequenceFlow id="Flow_ToProviderTimeout" sourceRef="Gateway_AwaitProviderResponse" targetRef="Event_ProviderTimeout" />
+    <bpmn:sequenceFlow id="Flow_ProviderAccepted" sourceRef="Event_ProviderAccepts" targetRef="Task_FinalizeAgreement" />
+    <bpmn:sequenceFlow id="Flow_ProviderCountered" sourceRef="Event_ProviderCounterProposes" targetRef="Gateway_CheckRoundAfterProvider" />
+    <bpmn:sequenceFlow id="Flow_ProviderTimedOut" sourceRef="Event_ProviderTimeout" targetRef="Task_EscalateToOperator" />
+    <bpmn:sequenceFlow id="Flow_ProviderRound1Or2" name="Round &lt; 3" sourceRef="Gateway_CheckRoundAfterProvider" targetRef="Task_RecordProviderCounter">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= round &lt; 3</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ProviderRound3Exceeded" name="Round &gt;= 3" sourceRef="Gateway_CheckRoundAfterProvider" targetRef="Task_EscalateToOperator">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= round &gt;= 3</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_BackToCustomerNotify" sourceRef="Task_RecordProviderCounter" targetRef="Task_NotifyCustomer" />
+    <bpmn:sequenceFlow id="Flow_ToAgreedEnd" sourceRef="Task_FinalizeAgreement" targetRef="EndEvent_Agreed" />
+    <bpmn:sequenceFlow id="Flow_ToAutoConfirmedEnd" sourceRef="Task_AutoConfirmOriginalDate" targetRef="EndEvent_Agreed" />
+    <bpmn:sequenceFlow id="Flow_ToEscalatedEnd" sourceRef="Task_EscalateToOperator" targetRef="EndEvent_Escalated" />
+    
+  </bpmn:process>
+  
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_CustomerAcceptsDate" name="CustomerAcceptsDate">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= negotiationId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_CustomerCounterProposes" name="CustomerCounterProposes">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= negotiationId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_ProviderAcceptsDate" name="ProviderAcceptsDate">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= negotiationId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_ProviderCounterProposes" name="ProviderCounterProposes">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= negotiationId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <!-- DIAGRAM SECTION -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_DateNegotiation">
+    <bpmndi:BPMNPlane id="BPMNPlane_DateNegotiation" bpmnElement="DateNegotiation">
+      <bpmndi:BPMNShape id="StartEvent_Negotiation_di" bpmnElement="StartEvent_Negotiation">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="130" y="243" width="80" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_RecordProposal_di" bpmnElement="Task_RecordProposal">
+        <dc:Bounds x="240" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyCustomer_di" bpmnElement="Task_NotifyCustomer">
+        <dc:Bounds x="390" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AwaitCustomerResponse_di" bpmnElement="Gateway_AwaitCustomerResponse">
+        <dc:Bounds x="545" y="193" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="530" y="163" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CustomerAccepts_di" bpmnElement="Event_CustomerAccepts">
+        <dc:Bounds x="652" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="628" y="76" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CustomerCounterProposes_di" bpmnElement="Event_CustomerCounterProposes">
+        <dc:Bounds x="652" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="627" y="243" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_CustomerTimeout_di" bpmnElement="Event_CustomerTimeout">
+        <dc:Bounds x="652" y="300" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="627" y="343" width="87" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToRecordProposal_di" bpmnElement="Flow_ToRecordProposal">
+        <di:waypoint x="188" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToNotifyCustomer_di" bpmnElement="Flow_ToNotifyCustomer">
+        <di:waypoint x="340" y="218" />
+        <di:waypoint x="390" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAwaitCustomerResponse_di" bpmnElement="Flow_ToAwaitCustomerResponse">
+        <di:waypoint x="490" y="218" />
+        <di:waypoint x="545" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCustomerAccept_di" bpmnElement="Flow_ToCustomerAccept">
+        <di:waypoint x="570" y="193" />
+        <di:waypoint x="570" y="118" />
+        <di:waypoint x="652" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCustomerCounter_di" bpmnElement="Flow_ToCustomerCounter">
+        <di:waypoint x="595" y="218" />
+        <di:waypoint x="652" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCustomerTimeout_di" bpmnElement="Flow_ToCustomerTimeout">
+        <di:waypoint x="570" y="243" />
+        <di:waypoint x="570" y="318" />
+        <di:waypoint x="652" y="318" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -2,7 +2,7 @@
  * Technical Visit Outcome Kafka Event DTOs
  *
  * Based on event schema from:
- * product-docs/architecture/05-event-driven-architecture.md
+ * documentation/architecture/05-event-driven-architecture.md
  *
  * Event: projects.tv_outcome.recorded
  * Topic: fsm.projects
