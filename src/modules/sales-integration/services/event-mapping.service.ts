@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { KafkaProducerService } from '../../../common/kafka/kafka-producer.service';
-import { OrderIntakeRequestDto, SalesSystem, OrderType, Priority } from '../dto';
+import { OrderIntakeRequestDto, OrderType, Priority } from '../dto';
 
 export interface FSMServiceOrderCreatedEvent {
   eventId: string;
@@ -33,19 +33,25 @@ export interface FSMServiceOrderCreatedEvent {
 export class EventMappingService {
   private readonly logger = new Logger(EventMappingService.name);
 
-  constructor(private readonly kafkaService: KafkaProducerService) {}
+  constructor(private readonly kafkaService: KafkaProducerService) { }
 
   /**
    * Map external sales system event to FSM internal event
    */
   async mapOrderIntakeToServiceOrderCreated(
     externalOrderId: string,
-    salesSystem: SalesSystem,
+    salesSystem: string,
     orderData: OrderIntakeRequestDto,
     fsmOrderId: string,
     correlationId: string,
   ): Promise<void> {
     this.logger.log(`Mapping external order ${externalOrderId} to FSM service order ${fsmOrderId}`);
+
+    // Infer order type from items (placeholder logic for now)
+    const orderType = OrderType.INSTALLATION; // Default as per user instruction (logic is in service catalog)
+
+    // Infer priority from scheduling/context
+    const priority = Priority.MEDIUM; // Default
 
     // Create FSM service order created event
     const fsmEvent: FSMServiceOrderCreatedEvent = {
@@ -54,29 +60,25 @@ export class EventMappingService {
       timestamp: new Date().toISOString(),
       correlationId,
       serviceOrderId: fsmOrderId,
-      customerId: orderData.customer.customerId,
-      orderType: this.mapOrderType(orderData.orderType),
-      urgency: this.mapPriorityToUrgency(orderData.priority),
+      customerId: orderData.customer.fiscalId || orderData.customer.email, // Use fiscalId or email as ID
+      orderType: this.mapOrderType(orderType),
+      urgency: this.mapPriorityToUrgency(priority),
       status: 'CREATED',
       externalReferences: {
-        salesOrderId: orderData.externalReferences.salesOrderId,
-        projectId: orderData.externalReferences.projectId,
-        leadId: orderData.externalReferences.leadId,
+        salesOrderId: orderData.order.id,
         systemSource: salesSystem,
       },
       schedulingWindow: {
-        startDate: orderData.schedulingPreferences?.preferredDate || new Date().toISOString(),
-        endDate: this.calculateEndDate(orderData.schedulingPreferences?.preferredDate),
-        preferredDate: orderData.schedulingPreferences?.preferredDate,
+        startDate: orderData.order.scheduledDate || new Date().toISOString(),
+        endDate: this.calculateEndDate(orderData.order.scheduledDate),
+        preferredDate: orderData.order.scheduledDate,
       },
-      requiredSkills: orderData.requiredSkills || [],
-      estimatedDuration: orderData.estimatedDuration,
+      requiredSkills: [], // No info in new schema yet
       metadata: {
         salesSystem,
         externalOrderId,
-        serviceItems: orderData.serviceItems,
-        totalAmount: orderData.totalAmount,
-        ...orderData.metadata,
+        items: orderData.items,
+        ...orderData.order as any,
       },
     };
 
@@ -98,7 +100,7 @@ export class EventMappingService {
   async mapServiceOrderStatusToSalesSystemEvent(
     serviceOrderId: string,
     externalOrderId: string,
-    salesSystem: SalesSystem,
+    salesSystem: string,
     previousStatus: string,
     newStatus: string,
     correlationId: string,

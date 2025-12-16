@@ -18,8 +18,7 @@ import { RedisService } from '../../../common/redis/redis.service';
 
 @Injectable()
 export class OrderIntakeService
-  implements IntegrationAdapter<OrderIntakeRequestDto, OrderIntakeResponseDto>
-{
+  implements IntegrationAdapter<OrderIntakeRequestDto, OrderIntakeResponseDto> {
   readonly adapterId = 'sales-order-intake';
   readonly version = '2.1.0';
   private readonly logger = new Logger(OrderIntakeService.name);
@@ -28,7 +27,7 @@ export class OrderIntakeService
     private readonly kafkaService: KafkaProducerService,
     private readonly redisService: RedisService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   /**
    * Execute order intake processing
@@ -37,7 +36,7 @@ export class OrderIntakeService
     request: OrderIntakeRequestDto,
     context: IntegrationContext,
   ): Promise<OrderIntakeResponseDto> {
-    this.logger.log(`Processing order intake for external order: ${request.externalOrderId}`);
+    this.logger.log(`Processing order intake for external order: ${request.order.id} from ${request.system}`);
 
     // Generate idempotency key
     const idempotencyKey = this.generateIdempotencyKey(request, context);
@@ -45,7 +44,7 @@ export class OrderIntakeService
     // Check if already processed (idempotency)
     const existingResultJson = await this.redisService.get(idempotencyKey);
     if (existingResultJson) {
-      this.logger.log(`Idempotent request detected for order: ${request.externalOrderId}`);
+      this.logger.log(`Idempotent request detected for order: ${request.order.id}`);
       return JSON.parse(existingResultJson) as OrderIntakeResponseDto;
     }
 
@@ -54,7 +53,7 @@ export class OrderIntakeService
     if (!validation.isValid) {
       const response: OrderIntakeResponseDto = {
         orderId: '',
-        externalOrderId: request.externalOrderId,
+        externalOrderId: request.order.id,
         status: OrderIntakeStatus.FAILED,
         correlationId: context.correlationId,
         receivedAt: new Date().toISOString(),
@@ -72,7 +71,7 @@ export class OrderIntakeService
     // Create response
     const response: OrderIntakeResponseDto = {
       orderId,
-      externalOrderId: request.externalOrderId,
+      externalOrderId: request.order.id,
       status: OrderIntakeStatus.RECEIVED,
       correlationId: context.correlationId,
       receivedAt: new Date().toISOString(),
@@ -93,11 +92,11 @@ export class OrderIntakeService
     const errors: ValidationErrorDto[] = [];
 
     // Validate required fields
-    if (!request.externalOrderId) {
+    if (!request.order?.id) {
       errors.push({
-        field: 'externalOrderId',
+        field: 'order.id',
         code: 'FIELD_REQUIRED',
-        message: 'External order ID is required',
+        message: 'Order ID is required',
       });
     }
 
@@ -128,36 +127,12 @@ export class OrderIntakeService
       });
     }
 
-    // Validate service items
-    if (!request.serviceItems || request.serviceItems.length === 0) {
+    // Validate items
+    if (!request.items || request.items.length === 0) {
       errors.push({
-        field: 'serviceItems',
+        field: 'items',
         code: 'FIELD_REQUIRED',
-        message: 'At least one service item is required',
-      });
-    }
-
-    // Validate total amount calculation
-    if (request.totalAmount) {
-      const subtotal = parseFloat(request.totalAmount.subtotal);
-      const tax = parseFloat(request.totalAmount.tax);
-      const total = parseFloat(request.totalAmount.total);
-
-      if (Math.abs(subtotal + tax - total) > 0.01) {
-        errors.push({
-          field: 'totalAmount',
-          code: 'INVALID_CALCULATION',
-          message: 'Total amount does not match subtotal + tax',
-        });
-      }
-    }
-
-    // Validate external references
-    if (!request.externalReferences?.salesOrderId) {
-      errors.push({
-        field: 'externalReferences.salesOrderId',
-        code: 'FIELD_REQUIRED',
-        message: 'Sales order ID is required in external references',
+        message: 'At least one item is required',
       });
     }
 
@@ -218,8 +193,8 @@ export class OrderIntakeService
       correlationId: context.correlationId,
       timestamp: new Date().toISOString(),
       orderId,
-      externalOrderId: request.externalOrderId,
-      salesSystem: request.salesSystem,
+      externalOrderId: request.order.id,
+      salesSystem: request.system,
       orderData: request,
     };
 
@@ -239,7 +214,7 @@ export class OrderIntakeService
     request: OrderIntakeRequestDto,
     context: IntegrationContext,
   ): string {
-    const key = `order-intake:${request.externalOrderId}:${request.salesSystem}`;
+    const key = `order-intake:${request.order.id}:${request.system}`;
     return createHash('sha256').update(key).digest('hex');
   }
 

@@ -1,11 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
     OrderIntakeRequestDto,
-    SalesSystem,
-    OrderType,
-    Priority,
-    ContactMethod,
-    ConfidenceLevel,
 } from '../sales-integration/dto';
 import { SimulatorScenario, SimulatorTriggerRequestDto } from './dto/simulator-trigger-request.dto';
 import {
@@ -55,8 +50,8 @@ export class SimulatorService {
                 if (response.status === 'RECEIVED') {
                     // Trigger event mapping (simulating Controller logic)
                     await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
-                        payload.externalOrderId,
-                        payload.salesSystem,
+                        payload.order.id,
+                        payload.system,
                         payload,
                         response.orderId,
                         context.correlationId,
@@ -116,229 +111,102 @@ export class SimulatorService {
     }
 
     private createStandardInstallationScenario(): OrderIntakeRequestDto {
-        const externalId = `SIM-STD-${Date.now()}-${faker.string.numeric(3)}`;
+        const orderId = `72${faker.string.numeric(4)}`;
 
         return {
-            externalOrderId: externalId,
-            salesSystem: SalesSystem.PYXIS,
-            orderType: OrderType.INSTALLATION,
-            priority: Priority.MEDIUM,
-            externalReferences: {
-                salesOrderId: `SO-${faker.string.alphanumeric(6).toUpperCase()}`,
-                customerId: `CUST-${faker.string.numeric(5)}`,
+            items: [
+                {
+                    id: faker.string.numeric(8),
+                    type: "SE",
+                    vatCode: "21",
+                    vatRate: 21,
+                    quantity: 1,
+                    unitPrice: 29.99,
+                    itemNumber: faker.string.numeric(5),
+                    description: "INSTALACIÓN MUEBLE LAVAB HAST 100 COLG A",
+                    expectedDate: faker.date.future().toISOString(),
+                    paymentStatus: "Not Paid",
+                    providersPrice: null,
+                    configurationIdentifier: null
+                }
+            ],
+            order: {
+                id: orderId,
+                vats: [{ rate: 21, amount: 5.2 }],
+                shift: "M",
+                channel: "STORE",
+                storeId: "011",
+                mavNumber: null,
+                orderUUID: null,
+                sellerNotes: "",
+                creationDate: new Date().toISOString(),
+                scheduledDate: faker.date.future().toISOString(),
+                businessUnitId: "002",
+                deliveryStatus: "DELIVERED",
+                maxDeliveryDate: null,
+                preEstimationId: null,
+                salesAdapterNotes: null,
+                orderPaymentStatus: "NOT_PAID",
+                transactionLinkedTo: null,
+                preEstimationVersion: null,
+                saleSystemOrderStatus: "AVAILABLE",
+                technicalVisitMandatory: null,
+                servcProviderAgreedPrice: null
             },
+            system: "Pyxis Order",
+            address: {
+                city: "Palma",
+                country: "ES",
+                province: "",
+                postalCode: "07012",
+                streetName: faker.location.streetAddress(),
+                streetNumber: "130s",
+                buildingComplement: ""
+            },
+            version: 1,
             customer: {
-                customerId: `CUST-${faker.string.numeric(5)}`,
-                firstName: faker.person.firstName(),
-                lastName: faker.person.lastName(),
                 email: faker.internet.email(),
                 phone: faker.phone.number({ style: 'international' }),
-                preferredContactMethod: ContactMethod.EMAIL,
+                number: faker.string.numeric(9),
+                fiscalId: faker.string.numeric(9),
+                lastName: faker.person.lastName(),
+                firstName: faker.person.firstName()
             },
-            serviceAddress: {
-                street: faker.location.streetAddress(),
-                city: faker.location.city(),
-                state: faker.location.state({ abbreviated: true }),
-                postalCode: faker.location.zipCode(),
-                country: 'US', // Fixed for demo simplicity
+            modifiedBy: {
+                id: "0",
+                type: "COLLABORATOR",
+                lastName: "SYSTEME",
+                firstName: "SYSTEME"
             },
-            serviceItems: [
-                {
-                    itemId: `ITM-${faker.string.numeric(4)}`,
-                    productId: 'PROD-INTERNET-FIBER-1G',
-                    productName: 'Fiber Internet 1Gbps',
-                    quantity: 1,
-                    requiresInstallation: true,
-                    unitPrice: { amount: '89.99', currency: 'USD' },
-                },
-                {
-                    itemId: `ITM-${faker.string.numeric(4)}`,
-                    productId: 'PROD-ROUTER-WIFI6',
-                    productName: 'WiFi 6 Router',
-                    quantity: 1,
-                    requiresInstallation: true,
-                    unitPrice: { amount: '199.99', currency: 'USD' },
-                },
-            ],
-            totalAmount: {
-                subtotal: '289.98',
-                tax: '28.99',
-                total: '318.97',
-                currency: 'USD',
+            generatedBy: {
+                id: "0",
+                type: "COLLABORATOR",
+                lastName: "SYSTEME",
+                firstName: "SYSTEME"
             },
-            schedulingPreferences: {
-                preferredDate: new Date(Date.now() + 86400000 * 3).toISOString(), // 3 days from now
-                timeWindow: { start: '09:00', end: '12:00' },
-            },
-            requiredSkills: ['FIBER_INSTALLATION', 'ROUTER_CONFIG'],
-            estimatedDuration: 120,
+            configurationIds: []
         };
     }
 
     private createEmergencyRepairScenario(): OrderIntakeRequestDto {
-        const externalId = `SIM-EMG-${Date.now()}-${faker.string.numeric(3)}`;
-
-        return {
-            externalOrderId: externalId,
-            salesSystem: SalesSystem.TEMPO,
-            orderType: OrderType.REPAIR,
-            priority: Priority.URGENT,
-            externalReferences: {
-                salesOrderId: `TKT-${faker.string.alphanumeric(6).toUpperCase()}`,
-                customerId: `CUST-${faker.string.numeric(5)}`,
-            },
-            customer: {
-                customerId: `CUST-${faker.string.numeric(5)}`,
-                firstName: faker.person.firstName(),
-                lastName: faker.person.lastName(),
-                email: faker.internet.email(),
-                phone: faker.phone.number(),
-                preferredContactMethod: ContactMethod.SMS,
-            },
-            serviceAddress: {
-                street: faker.location.streetAddress(),
-                city: faker.location.city(),
-                state: faker.location.state({ abbreviated: true }),
-                postalCode: faker.location.zipCode(),
-                country: 'US',
-            },
-            serviceItems: [
-                {
-                    itemId: `ITM-${faker.string.numeric(4)}`,
-                    productId: 'SVC-REPAIR-URGENT',
-                    productName: 'Emergency Repair Service',
-                    quantity: 1,
-                    requiresInstallation: false,
-                    unitPrice: { amount: '150.00', currency: 'USD' },
-                },
-            ],
-            totalAmount: {
-                subtotal: '150.00',
-                tax: '15.00',
-                total: '165.00',
-                currency: 'USD',
-            },
-            requiredSkills: ['FIBER_REPAIR', 'OUTAGE_TROUBLESHOOTING'],
-            estimatedDuration: 60,
-            metadata: {
-                outageDetail: 'Customer reported total loss of service',
-                reportedAt: new Date().toISOString(),
-            },
-        };
+        const base = this.createStandardInstallationScenario();
+        base.system = "TEMPO"; // Using different system for scenario variety
+        base.items[0].description = "URGENT REPAIR SERVICE";
+        base.order.sellerNotes = "Emergency request from customer";
+        return base;
     }
 
     private createVipMaintenanceScenario(): OrderIntakeRequestDto {
-        const externalId = `SIM-VIP-${Date.now()}-${faker.string.numeric(3)}`;
-
-        return {
-            externalOrderId: externalId,
-            salesSystem: SalesSystem.SAP,
-            orderType: OrderType.MAINTENANCE,
-            priority: Priority.HIGH,
-            externalReferences: {
-                salesOrderId: `MNT-${faker.string.alphanumeric(6).toUpperCase()}`,
-                customerId: `VIP-${faker.string.numeric(4)}`,
-            },
-            customer: {
-                customerId: `VIP-${faker.string.numeric(4)}`,
-                firstName: faker.person.firstName(),
-                lastName: faker.person.lastName(),
-                email: faker.internet.email(),
-                phone: faker.phone.number(),
-                preferredContactMethod: ContactMethod.PHONE,
-            },
-            serviceAddress: {
-                street: faker.location.streetAddress(),
-                city: faker.location.city(),
-                state: faker.location.state({ abbreviated: true }),
-                postalCode: faker.location.zipCode(),
-                country: 'US',
-                accessNotes: 'Gated community. Call upon arrival.',
-                parkingInstructions: 'Reserved spot #42',
-            },
-            serviceItems: [
-                {
-                    itemId: `ITM-${faker.string.numeric(4)}`,
-                    productId: 'SVC-MAINTENANCE-PREMIUM',
-                    productName: 'Premium System Maintenance',
-                    quantity: 1,
-                    requiresInstallation: false,
-                    unitPrice: { amount: '350.00', currency: 'USD' },
-                },
-            ],
-            totalAmount: {
-                subtotal: '350.00',
-                tax: '35.00',
-                total: '385.00',
-                currency: 'USD',
-            },
-            schedulingPreferences: {
-                technicianPreference: 'Senior Technician',
-                notes: 'VIP Client. Ensure shoe covers are worn.',
-            },
-            requiredSkills: ['PREMIUM_CARE', 'SYSTEM_AUDIT'],
-            estimatedDuration: 180,
-        };
+        const base = this.createStandardInstallationScenario();
+        base.system = "SAP";
+        base.items[0].description = "VIP MAINTENANCE CHECK";
+        base.order.sellerNotes = "VIP Customer - Handle with care";
+        return base;
     }
 
     private createProjectRolloutScenario(): OrderIntakeRequestDto {
-        const externalId = `SIM-PRJ-${Date.now()}-${faker.string.numeric(3)}`;
-        const projectId = `PRJ-${faker.string.alphanumeric(4).toUpperCase()}`;
-
-        return {
-            externalOrderId: externalId,
-            salesSystem: SalesSystem.PYXIS,
-            orderType: OrderType.INSTALLATION,
-            priority: Priority.MEDIUM,
-            externalReferences: {
-                salesOrderId: `SO-${faker.string.alphanumeric(6).toUpperCase()}`,
-                projectId: projectId,
-                customerId: `CORP-${faker.string.numeric(4)}`,
-            },
-            customer: {
-                customerId: `CORP-${faker.string.numeric(4)}`,
-                firstName: 'Site Manager',
-                lastName: faker.person.lastName(),
-                email: `site.manager.${faker.string.numeric(3)}@corp-client.com`,
-                phone: faker.phone.number(),
-                preferredContactMethod: ContactMethod.EMAIL,
-            },
-            serviceAddress: {
-                street: faker.location.streetAddress(),
-                city: faker.location.city(),
-                state: faker.location.state({ abbreviated: true }),
-                postalCode: faker.location.zipCode(),
-                country: 'US',
-            },
-            serviceItems: [
-                {
-                    itemId: `ITM-${faker.string.numeric(4)}`,
-                    productId: 'PROD-BUSINESS-GW',
-                    productName: 'Business Gateway Pro',
-                    quantity: 1,
-                    requiresInstallation: true,
-                    unitPrice: { amount: '450.00', currency: 'USD' },
-                },
-            ],
-            totalAmount: {
-                subtotal: '450.00',
-                tax: '45.00',
-                total: '495.00',
-                currency: 'USD',
-            },
-            preEstimation: {
-                estimationId: `EST-${faker.string.alphanumeric(5).toUpperCase()}`,
-                estimatedValue: 5000,
-                currency: 'USD',
-                confidenceLevel: ConfidenceLevel.HIGH,
-                productCategories: ['BUSINESS_INTERNET'],
-            },
-            metadata: {
-                projectId: projectId,
-                phase: 'Phase 1 Rollout',
-            },
-            requiredSkills: ['BUSINESS_INSTALLATION'],
-            estimatedDuration: 240,
-        };
+        const base = this.createStandardInstallationScenario();
+        base.order.sellerNotes = "Part of Project Rollout Alpha";
+        return base;
     }
 }

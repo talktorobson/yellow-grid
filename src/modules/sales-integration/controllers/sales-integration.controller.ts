@@ -45,7 +45,7 @@ export class SalesIntegrationController {
     private readonly slotAvailabilityService: SlotAvailabilityService,
     private readonly installationOutcomeWebhookService: InstallationOutcomeWebhookService,
     private readonly preEstimationService: PreEstimationService,
-  ) {}
+  ) { }
 
   /**
    * POST /api/v1/integrations/sales/orders/intake
@@ -71,7 +71,7 @@ export class SalesIntegrationController {
     @Headers('x-tenant-id') tenantId?: string,
   ): Promise<OrderIntakeResponseDto> {
     this.logger.log(
-      `Received order intake request: ${request.externalOrderId} from ${request.salesSystem}`,
+      `Received order intake request: ${request.order.id} from ${request.system}`,
     );
 
     const context: IntegrationContext = {
@@ -85,8 +85,8 @@ export class SalesIntegrationController {
     // If successful, trigger event mapping
     if (response.status === 'RECEIVED') {
       await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
-        request.externalOrderId,
-        request.salesSystem,
+        request.order.id,
+        request.system,
         request,
         response.orderId,
         context.correlationId,

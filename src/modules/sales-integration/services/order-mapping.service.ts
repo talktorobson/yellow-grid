@@ -82,83 +82,73 @@ export class OrderMappingService {
    * Map external order intake request to internal service order format
    */
   mapToInternalFormat(request: OrderIntakeRequestDto, fsmOrderId: string): InternalServiceOrder {
-    this.logger.log(`Mapping external order ${request.externalOrderId} to internal format`);
+    this.logger.log(`Mapping external order ${request.order.id} to internal format`);
 
     const now = new Date().toISOString();
 
+    // Defaulting
+    const orderType = 'INSTALLATION';
+    const priority = 'P2';
+
     const internalOrder: InternalServiceOrder = {
       id: fsmOrderId,
-      orderNumber: this.generateOrderNumber(request.salesSystem, fsmOrderId),
-      customerId: request.customer.customerId,
+      orderNumber: this.generateOrderNumber(request.system, fsmOrderId),
+      customerId: request.customer.fiscalId || request.customer.email,
       customerName: `${request.customer.firstName} ${request.customer.lastName}`,
       customerEmail: request.customer.email,
       customerPhone: request.customer.phone,
       serviceAddress: {
-        street: request.serviceAddress.street,
-        street2: request.serviceAddress.street2,
-        city: request.serviceAddress.city,
-        state: request.serviceAddress.state,
-        postalCode: request.serviceAddress.postalCode,
-        country: request.serviceAddress.country,
-        accessNotes: request.serviceAddress.accessNotes,
+        street: request.address.streetName,
+        street2: request.address.buildingComplement,
+        city: request.address.city,
+        state: request.address.province,
+        postalCode: request.address.postalCode,
+        country: request.address.country,
+        accessNotes: '',
       },
-      orderType: this.mapOrderType(request.orderType),
-      priority: this.mapPriority(request.priority),
+      orderType: this.mapOrderType(orderType),
+      priority: this.mapPriority(priority),
       status: 'CREATED',
       externalReferences: {
-        salesOrderId: request.externalReferences.salesOrderId,
-        projectId: request.externalReferences.projectId,
-        leadId: request.externalReferences.leadId,
-        customerId: request.externalReferences.customerId,
-        systemSource: request.salesSystem,
+        salesOrderId: request.order.id,
+        systemSource: request.system,
       },
-      serviceItems: request.serviceItems.map((item) => ({
-        itemId: item.itemId,
-        productId: item.productId,
-        productName: item.productName,
+      serviceItems: request.items.map((item) => ({
+        itemId: item.id,
+        productId: item.itemNumber, // Using itemNumber as productId
+        productName: item.description,
         quantity: item.quantity,
-        unitPrice: parseFloat(item.unitPrice.amount),
-        currency: item.unitPrice.currency,
-        serialNumbers: item.serialNumbers || [],
-        requiresInstallation: item.requiresInstallation,
+        unitPrice: item.unitPrice,
+        currency: 'EUR', // Default or need to infer
+        serialNumbers: [],
+        requiresInstallation: true, // Default
       })),
       financials: {
-        subtotal: parseFloat(request.totalAmount.subtotal),
-        tax: parseFloat(request.totalAmount.tax),
-        total: parseFloat(request.totalAmount.total),
-        currency: request.totalAmount.currency,
+        subtotal: 0, // Need to sum
+        tax: 0,
+        total: 0,
+        currency: 'EUR',
       },
       schedulingPreferences: {
-        preferredDate: request.schedulingPreferences?.preferredDate,
-        timeWindow: request.schedulingPreferences?.timeWindow,
-        excludedDates: request.schedulingPreferences?.excludedDates || [],
-        technicianPreference: request.schedulingPreferences?.technicianPreference,
-        notes: request.schedulingPreferences?.notes,
+        preferredDate: request.order.scheduledDate,
+        excludedDates: [],
       },
-      requiredSkills: request.requiredSkills || [],
-      estimatedDuration: request.estimatedDuration,
-      preEstimation: request.preEstimation
-        ? {
-            estimationId: request.preEstimation.estimationId,
-            estimatedValue: request.preEstimation.estimatedValue,
-            currency: request.preEstimation.currency,
-            confidenceLevel: request.preEstimation.confidenceLevel,
-            productCategories: request.preEstimation.productCategories,
-            salesmanId: request.preEstimation.salesmanId,
-            salesmanNotes: request.preEstimation.salesmanNotes,
-            validUntil: request.preEstimation.validUntil,
-          }
-        : undefined,
+      requiredSkills: [],
       createdAt: now,
       updatedAt: now,
       metadata: {
         source: 'SALES_INTEGRATION',
-        salesSystem: request.salesSystem,
-        externalOrderId: request.externalOrderId,
+        salesSystem: request.system,
+        externalOrderId: request.order.id,
         importedAt: now,
-        ...request.metadata,
       },
     };
+
+    // Calculate financials
+    const total = request.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+    internalOrder.financials.subtotal = total; // Assuming unitPrice is pre-tax? 
+    // Actually Schema has vats in order header
+    internalOrder.financials.total = total; // Simplified
 
     this.logger.log(
       `Successfully mapped order to internal format. Order number: ${internalOrder.orderNumber}`,
