@@ -8,14 +8,23 @@ import {
     ConfidenceLevel,
 } from '../sales-integration/dto';
 import { SimulatorScenario, SimulatorTriggerRequestDto } from './dto/simulator-trigger-request.dto';
-import { SalesIntegrationController } from '../sales-integration/controllers/sales-integration.controller';
+import {
+    OrderIntakeService,
+    EventMappingService,
+    OrderMappingService,
+} from '../sales-integration/services';
+import { IntegrationContext } from '../sales-integration/interfaces';
 import { faker } from '@faker-js/faker';
 
 @Injectable()
 export class SimulatorService {
     private readonly logger = new Logger(SimulatorService.name);
 
-    constructor(private readonly salesController: SalesIntegrationController) { }
+    constructor(
+        private readonly orderIntakeService: OrderIntakeService,
+        private readonly eventMappingService: EventMappingService,
+        private readonly orderMappingService: OrderMappingService,
+    ) { }
 
     async trigger(request: SimulatorTriggerRequestDto): Promise<{
         generatedCount: number;
@@ -33,13 +42,29 @@ export class SimulatorService {
             try {
                 const payload = this.generatePayload(request.scenario, request.overrides);
 
-                // Direct call to controller to simulate external request
-                // Using a fake correlation ID for tracing
-                const correlationId = `sim-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+                // Simulate context
+                const context: IntegrationContext = {
+                    correlationId: `sim-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                    tenantId: 'demo-tenant',
+                    timestamp: new Date(),
+                };
 
-                const response = await this.salesController.orderIntake(payload, correlationId, 'demo-tenant');
+                // Call OrderIntakeService
+                const response = await this.orderIntakeService.execute(payload, context);
 
                 if (response.status === 'RECEIVED') {
+                    // Trigger event mapping (simulating Controller logic)
+                    await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
+                        payload.externalOrderId,
+                        payload.salesSystem,
+                        payload,
+                        response.orderId,
+                        context.correlationId,
+                    );
+
+                    // Map to internal format
+                    this.orderMappingService.mapToInternalFormat(payload, response.orderId);
+
                     orderIds.push(response.orderId);
                 } else {
                     const errorMsg = response.errors ? JSON.stringify(response.errors) : 'Unknown Error';
@@ -107,7 +132,7 @@ export class SimulatorService {
                 firstName: faker.person.firstName(),
                 lastName: faker.person.lastName(),
                 email: faker.internet.email(),
-                phone: faker.phone.number(),
+                phone: faker.phone.number({ style: 'international' }),
                 preferredContactMethod: ContactMethod.EMAIL,
             },
             serviceAddress: {
