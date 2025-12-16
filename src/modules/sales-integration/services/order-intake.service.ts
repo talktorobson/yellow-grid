@@ -110,7 +110,7 @@ export class OrderIntakeService
       orderData: request,
     };
 
-    await this.kafkaService.send('sales.order.update', event, request.customerOrderNumber, {
+    await this.kafkaService.send('sales.order', event, request.customerOrderNumber, {
       'correlation-id': context.correlationId,
       'tenant-id': context.tenantId,
       'event-type': 'UpdateDeliveryDate',
@@ -240,7 +240,7 @@ export class OrderIntakeService
       orderData: request,
     };
 
-    await this.kafkaService.send('sales.order.intake', event, orderId, {
+    await this.kafkaService.send('sales.order', event, orderId, {
       'correlation-id': context.correlationId,
       'tenant-id': context.tenantId,
       'event-type': 'OrderIntakeReceived',
