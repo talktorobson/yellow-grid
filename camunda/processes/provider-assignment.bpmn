@@ -94,16 +94,33 @@
     <!-- OFFER TIMEOUT -->
     <bpmn:intermediateCatchEvent id="Event_OfferTimeout" name="Offer Timeout (4h)">
       <bpmn:incoming>Flow_ToTimeout</bpmn:incoming>
-      <bpmn:outgoing>Flow_Timeout</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToEscalation</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerDef_Timeout">
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT4H</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     
+    <!-- ESCALATION TASK -->
+    <bpmn:serviceTask id="Task_EscalateTimeout" name="Escalate Offer Timeout">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="escalate-offer-timeout" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToEscalation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEscalationCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CHECK ESCALATION RESULT -->
+    <bpmn:exclusiveGateway id="Gateway_EscalationResult" name="Escalation Result">
+      <bpmn:incoming>Flow_ToEscalationCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_Reassigned</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ManualReview</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
     <!-- END EVENTS -->
     <bpmn:endEvent id="EndEvent_Assigned" name="Provider Assigned">
       <bpmn:incoming>Flow_AutoAssigned</bpmn:incoming>
       <bpmn:incoming>Flow_Accepted</bpmn:incoming>
+      <bpmn:incoming>Flow_Reassigned</bpmn:incoming>
     </bpmn:endEvent>
     
     <bpmn:endEvent id="EndEvent_NoProvider" name="No Provider Available">
@@ -112,7 +129,10 @@
     
     <bpmn:endEvent id="EndEvent_OfferDeclined" name="Offer Declined">
       <bpmn:incoming>Flow_Rejected</bpmn:incoming>
-      <bpmn:incoming>Flow_Timeout</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_ManualReview" name="Manual Review Required">
+      <bpmn:incoming>Flow_ManualReview</bpmn:incoming>
     </bpmn:endEvent>
     
     <!-- SEQUENCE FLOWS -->
@@ -138,7 +158,14 @@
     <bpmn:sequenceFlow id="Flow_ToTimeout" sourceRef="Gateway_OfferResponse" targetRef="Event_OfferTimeout" />
     <bpmn:sequenceFlow id="Flow_Accepted" sourceRef="Event_OfferAccepted" targetRef="EndEvent_Assigned" />
     <bpmn:sequenceFlow id="Flow_Rejected" sourceRef="Event_OfferRejected" targetRef="EndEvent_OfferDeclined" />
-    <bpmn:sequenceFlow id="Flow_Timeout" sourceRef="Event_OfferTimeout" targetRef="EndEvent_OfferDeclined" />
+    <bpmn:sequenceFlow id="Flow_ToEscalation" sourceRef="Event_OfferTimeout" targetRef="Task_EscalateTimeout" />
+    <bpmn:sequenceFlow id="Flow_ToEscalationCheck" sourceRef="Task_EscalateTimeout" targetRef="Gateway_EscalationResult" />
+    <bpmn:sequenceFlow id="Flow_Reassigned" name="Reassigned" sourceRef="Gateway_EscalationResult" targetRef="EndEvent_Assigned">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= escalationResult = "REASSIGNED"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ManualReview" name="Manual Review" sourceRef="Gateway_EscalationResult" targetRef="EndEvent_ManualReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= escalationResult = "MANUAL_REVIEW"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     
   </bpmn:process>
   

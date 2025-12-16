@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
  * - Error classification (retryable vs. BPMN error)
  * - Logging with timing
  * - Type-safe input/output
+ * - Transient failure detection
  */
 export abstract class BaseWorker<TInput = any, TOutput = any> {
   protected abstract readonly logger: Logger;
@@ -21,6 +22,22 @@ export abstract class BaseWorker<TInput = any, TOutput = any> {
 
   /** Maximum retries for failed jobs */
   readonly maxRetries: number = 3;
+
+  /** Retryable error codes for transient failures */
+  protected readonly retryableErrorCodes = [
+    'ECONNREFUSED',
+    'ETIMEDOUT',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+    'ECONNRESET',
+    'EPIPE',
+    'ENETUNREACH',
+    'EHOSTUNREACH',
+    'ECONNABORTED',
+  ];
+
+  /** Retryable HTTP status codes */
+  protected readonly retryableHttpStatuses = [408, 429, 500, 502, 503, 504];
 
   /**
    * Main handler logic - implement in subclass
@@ -105,26 +122,28 @@ export abstract class BaseWorker<TInput = any, TOutput = any> {
    * Check if error is retryable (transient failures)
    */
   protected isRetryableError(error: any): boolean {
-    const retryableCodes = [
-      'ECONNREFUSED',
-      'ETIMEDOUT',
-      'ENOTFOUND',
-      'EAI_AGAIN',
-      'ECONNRESET',
-      'EPIPE',
-    ];
-
-    if (retryableCodes.includes(error.code)) {
+    // Check error codes for network/connection issues
+    if (this.retryableErrorCodes.includes(error.code)) {
       return true;
     }
 
-    // HTTP 5xx errors are retryable
-    if (error.status >= 500 && error.status < 600) {
+    // Check HTTP status codes
+    if (this.retryableHttpStatuses.includes(error.status)) {
       return true;
     }
 
-    // Rate limiting
-    if (error.status === 429) {
+    // Prisma connection errors
+    if (error.code === 'P2024' || error.code === 'P1001' || error.code === 'P1002') {
+      return true;
+    }
+
+    // Database deadlock or lock timeout
+    if (error.message?.includes('deadlock') || error.message?.includes('lock timeout')) {
+      return true;
+    }
+
+    // Connection pool exhausted
+    if (error.message?.includes('connection pool') || error.message?.includes('too many connections')) {
       return true;
     }
 

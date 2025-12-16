@@ -56,6 +56,27 @@ class BulkTriggerWorkflowDto {
   orders: TriggerWorkflowDto[];
 }
 
+class OfferResponseDto {
+  @IsString()
+  assignmentId: string;
+
+  @IsOptional()
+  @IsString()
+  scheduledDate?: string;
+
+  @IsOptional()
+  @IsEnum(['MORNING', 'AFTERNOON', 'EVENING'])
+  scheduledSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING';
+
+  @IsOptional()
+  @IsString()
+  rejectionReason?: string;
+
+  @IsOptional()
+  @IsString()
+  respondedBy?: string;
+}
+
 /**
  * Camunda Workflow Controller
  *
@@ -222,7 +243,85 @@ export class CamundaController {
         'reserve-slot',
         'go-check',
         'send-notification',
+        'escalate-offer-timeout',
       ],
     };
+  }
+
+  @Post('offer/accept')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Accept an offer from a provider' })
+  @ApiBody({ type: OfferResponseDto })
+  @ApiResponse({ status: 200, description: 'Offer accepted successfully' })
+  async acceptOffer(@Body() dto: OfferResponseDto): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    if (!this.enabled) {
+      return { success: false, error: 'Camunda is disabled' };
+    }
+
+    try {
+      this.logger.log(`✅ Accepting offer: ${dto.assignmentId}`);
+
+      await this.camundaService.publishMessage(
+        'OfferAccepted',
+        dto.assignmentId,
+        {
+          accepted: true,
+          acceptedAt: new Date().toISOString(),
+          scheduledDate: dto.scheduledDate,
+          scheduledSlot: dto.scheduledSlot || 'MORNING',
+          respondedBy: dto.respondedBy || 'provider',
+        },
+      );
+
+      return {
+        success: true,
+        message: `Offer ${dto.assignmentId} accepted`,
+      };
+    } catch (error) {
+      this.logger.error(`❌ Accept offer failed: ${error.message}`, error.stack);
+      return { success: false, error: error.message };
+    }
+  }
+
+  @Post('offer/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject an offer from a provider' })
+  @ApiBody({ type: OfferResponseDto })
+  @ApiResponse({ status: 200, description: 'Offer rejected successfully' })
+  async rejectOffer(@Body() dto: OfferResponseDto): Promise<{
+    success: boolean;
+    message?: string;
+    error?: string;
+  }> {
+    if (!this.enabled) {
+      return { success: false, error: 'Camunda is disabled' };
+    }
+
+    try {
+      this.logger.log(`❌ Rejecting offer: ${dto.assignmentId}`);
+
+      await this.camundaService.publishMessage(
+        'OfferRejected',
+        dto.assignmentId,
+        {
+          rejected: true,
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: dto.rejectionReason || 'Provider declined',
+          respondedBy: dto.respondedBy || 'provider',
+        },
+      );
+
+      return {
+        success: true,
+        message: `Offer ${dto.assignmentId} rejected`,
+      };
+    } catch (error) {
+      this.logger.error(`❌ Reject offer failed: ${error.message}`, error.stack);
+      return { success: false, error: error.message };
+    }
   }
 }

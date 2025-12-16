@@ -16,6 +16,7 @@ import { CheckAvailabilityWorker } from './workers/booking/check-availability.wo
 import { ReserveSlotWorker } from './workers/booking/reserve-slot.worker';
 import { GoCheckWorker } from './workers/execution/go-check.worker';
 import { SendNotificationWorker } from './workers/notification/send-notification.worker';
+import { EscalateOfferTimeoutWorker } from './workers/escalation/escalate-offer-timeout.worker';
 
 // Common modules (no circular dependency)
 import { PrismaModule } from '../common/prisma/prisma.module';
@@ -38,6 +39,7 @@ import { PrismaModule } from '../common/prisma/prisma.module';
     ReserveSlotWorker,
     GoCheckWorker,
     SendNotificationWorker,
+    EscalateOfferTimeoutWorker,
   ],
   exports: [CamundaService, OperateService],
 })

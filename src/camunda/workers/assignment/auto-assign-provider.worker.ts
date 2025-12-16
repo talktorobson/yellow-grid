@@ -17,6 +17,9 @@ interface AutoAssignInput {
     rank: number;
     finalScore: number;
   }>;
+  // Scheduling preferences from workflow
+  requestedStartDate?: string;
+  requestedEndDate?: string;
 }
 
 /**
@@ -32,6 +35,9 @@ interface AutoAssignOutput {
   autoAssignFailReason?: string;
   nextProviderId?: string;
   nextProviderRank?: number;
+  // Scheduling data for check-availability
+  scheduledDate?: string;
+  scheduledSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING';
 }
 
 /**
@@ -55,9 +61,12 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
   }
 
   async handle(job: ZeebeJob<AutoAssignInput>): Promise<AutoAssignOutput> {
-    const { serviceOrderId, countryCode, rankedProviders, urgency } = job.variables;
+    const { serviceOrderId, countryCode, rankedProviders, urgency, requestedStartDate } = job.variables;
 
     this.logger.log(`Auto-assign attempt for order: ${serviceOrderId}`);
+
+    // Compute scheduling data from requested start date
+    const schedulingData = this.computeSchedulingData(requestedStartDate);
 
     // No providers available
     if (!rankedProviders || rankedProviders.length === 0) {
@@ -65,6 +74,7 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
       return {
         autoAssigned: false,
         autoAssignFailReason: 'No eligible providers found',
+        ...schedulingData,
       };
     }
 
@@ -75,7 +85,7 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
     // Get service order for context
     const serviceOrder = await this.prisma.serviceOrder.findUnique({
       where: { id: serviceOrderId },
-      select: { id: true, serviceId: true, businessUnit: true },
+      select: { id: true, serviceId: true, businessUnit: true, requestedStartDate: true },
     });
 
     if (!serviceOrder) {
@@ -159,6 +169,7 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
           assignedWorkTeamId: provider.workTeamId || undefined,
           assignmentReason: reason,
           assignedAt: new Date().toISOString(),
+          ...schedulingData,
         };
       }
     }
@@ -207,6 +218,7 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
           assignedWorkTeamId: topProvider.workTeamId || undefined,
           assignmentReason: 'Urgent order with high-score provider - auto-assigned',
           assignedAt: new Date().toISOString(),
+          ...schedulingData,
         };
       }
     }
@@ -218,6 +230,42 @@ export class AutoAssignProviderWorker extends BaseWorker<AutoAssignInput, AutoAs
       autoAssignFailReason: 'No auto-assign eligible providers - offer required',
       nextProviderId: rankedProviders[0]?.providerId,
       nextProviderRank: 1,
+      ...schedulingData,
+    };
+  }
+
+  /**
+   * Compute scheduling data from requested start date
+   */
+  private computeSchedulingData(requestedStartDate?: string): {
+    scheduledDate?: string;
+    scheduledSlot?: 'MORNING' | 'AFTERNOON' | 'EVENING';
+  } {
+    if (!requestedStartDate) {
+      // Default to tomorrow morning
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return {
+        scheduledDate: tomorrow.toISOString().split('T')[0],
+        scheduledSlot: 'MORNING',
+      };
+    }
+
+    const date = new Date(requestedStartDate);
+    const hour = date.getHours();
+
+    let slot: 'MORNING' | 'AFTERNOON' | 'EVENING';
+    if (hour < 12) {
+      slot = 'MORNING';
+    } else if (hour < 17) {
+      slot = 'AFTERNOON';
+    } else {
+      slot = 'EVENING';
+    }
+
+    return {
+      scheduledDate: date.toISOString().split('T')[0],
+      scheduledSlot: slot,
     };
   }
 }

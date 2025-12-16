@@ -27,6 +27,7 @@ interface SendOfferInput {
  */
 interface SendOfferOutput {
   assignmentId: string;
+  offerId: string; // For message correlation
   offerSentAt: string;
   offerExpiresAt: string;
 }
@@ -125,6 +126,7 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
       );
       return {
         assignmentId: existingAssignment.id,
+        offerId: existingAssignment.id,
         offerSentAt: existingAssignment.createdAt.toISOString(),
         offerExpiresAt: new Date(
           existingAssignment.createdAt.getTime() + offerExpirationHours * 60 * 60 * 1000,
@@ -176,6 +178,7 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
 
     return {
       assignmentId: assignment.id,
+      offerId: assignment.id, // offerId for message correlation
       offerSentAt: offerSentAt.toISOString(),
       offerExpiresAt: offerExpiresAt.toISOString(),
     };

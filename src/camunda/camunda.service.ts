@@ -14,6 +14,7 @@ import { CheckAvailabilityWorker } from './workers/booking/check-availability.wo
 import { ReserveSlotWorker } from './workers/booking/reserve-slot.worker';
 import { GoCheckWorker } from './workers/execution/go-check.worker';
 import { SendNotificationWorker } from './workers/notification/send-notification.worker';
+import { EscalateOfferTimeoutWorker } from './workers/escalation/escalate-offer-timeout.worker';
 
 @Injectable()
 export class CamundaService {
@@ -33,6 +34,7 @@ export class CamundaService {
     private readonly reserveSlotWorker: ReserveSlotWorker,
     private readonly goCheckWorker: GoCheckWorker,
     private readonly sendNotificationWorker: SendNotificationWorker,
+    private readonly escalateOfferTimeoutWorker: EscalateOfferTimeoutWorker,
   ) {}
 
   async initialize(): Promise<void> {
@@ -102,6 +104,7 @@ export class CamundaService {
       this.reserveSlotWorker,
       this.goCheckWorker,
       this.sendNotificationWorker,
+      this.escalateOfferTimeoutWorker,
     ];
 
     for (const worker of workers) {
