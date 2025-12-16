@@ -2,21 +2,57 @@ import { Controller, Post, Body, Logger, HttpCode, HttpStatus } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { CamundaService } from './camunda.service';
 import { ConfigService } from '@nestjs/config';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 class TriggerWorkflowDto {
+  @IsString()
   serviceOrderId: string;
+
+  @IsOptional()
+  @IsString()
   customerId?: string;
+
+  @IsOptional()
+  @IsString()
   storeId?: string;
+
+  @IsOptional()
+  @IsString()
   serviceId?: string;
+
+  @IsString()
   countryCode: string;
+
+  @IsOptional()
+  @IsString()
   businessUnit?: string;
+
+  @IsString()
   postalCode: string;
+
+  @IsEnum(['URGENT', 'STANDARD', 'LOW'])
   urgency: 'URGENT' | 'STANDARD' | 'LOW';
+
+  @IsOptional()
+  @IsString()
   requestedStartDate?: string;
+
+  @IsOptional()
+  @IsString()
   requestedEndDate?: string;
 }
 
 class BulkTriggerWorkflowDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TriggerWorkflowDto)
   orders: TriggerWorkflowDto[];
 }
 
