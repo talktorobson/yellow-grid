@@ -67,7 +67,6 @@
         <zeebe:taskDefinition type="notify-escalation" />
         <zeebe:ioMapping>
           <zeebe:input source="= taskId" target="taskId" />
-          <zeebe:input source="= \"MANAGER\"" target="role" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_ToNotifyL1</bpmn:incoming>

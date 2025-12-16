@@ -64,7 +64,6 @@
         <zeebe:taskDefinition type="set-go-execution-status" />
         <zeebe:ioMapping>
           <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
-          <zeebe:input source="= \"GO_OK\"" target="goExecutionStatus" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_GoOK</bpmn:incoming>
@@ -92,8 +91,6 @@
         <zeebe:taskDefinition type="create-alert" />
         <zeebe:ioMapping>
           <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
-          <zeebe:input source="= \"GO_EXECUTION_BLOCKED\"" target="alertType" />
-          <zeebe:input source="= \"CRITICAL\"" target="severity" />
           <zeebe:input source="= blockingReasons" target="blockingReasons" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
@@ -107,8 +104,6 @@
         <zeebe:taskDefinition type="create-task" />
         <zeebe:ioMapping>
           <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
-          <zeebe:input source="= \"PRE_FLIGHT_FAILURE\"" target="taskType" />
-          <zeebe:input source="= \"URGENT\"" target="priority" />
           <zeebe:input source="= blockingReasons" target="blockingReasons" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>

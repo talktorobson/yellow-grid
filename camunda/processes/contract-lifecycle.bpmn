@@ -104,8 +104,6 @@
         <zeebe:taskDefinition type="create-task" />
         <zeebe:ioMapping>
           <zeebe:input source="= contractId" target="entityId" />
-          <zeebe:input source="= \"CONTRACT_NOT_SIGNED\"" target="taskType" />
-          <zeebe:input source="= \"HIGH\"" target="priority" />
           <zeebe:input source="= reason" target="context" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>

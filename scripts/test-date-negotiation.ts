@@ -9,7 +9,10 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 async function main() {
     console.log('Initializing Camunda 8 SDK...');
 
-    const c8 = new Camunda8();
+    const c8 = new Camunda8({
+        ZEEBE_ADDRESS: process.env.ZEEBE_ADDRESS || 'zeebe:26500',
+        CAMUNDA_SECURE_CONNECTION: false
+    });
     const zeebe = c8.getZeebeGrpcApiClient();
 
     const processId = 'DateNegotiation';

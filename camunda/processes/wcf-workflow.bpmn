@@ -108,7 +108,6 @@
         <zeebe:taskDefinition type="create-task" />
         <zeebe:ioMapping>
           <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
-          <zeebe:input source="= \"RESOLVE_WCF_RESERVES\"" target="taskType" />
           <zeebe:input source="= wcfId" target="entityId" />
           <zeebe:input source="= reserves" target="context" />
         </zeebe:ioMapping>
@@ -145,9 +144,7 @@
         <zeebe:taskDefinition type="create-task" />
         <zeebe:ioMapping>
           <zeebe:input source="= serviceOrderId" target="serviceOrderId" />
-          <zeebe:input source="= \"WCF_NOT_SIGNED\"" target="taskType" />
           <zeebe:input source="= wcfId" target="entityId" />
-          <zeebe:input source="= \"HIGH\"" target="priority" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_Refused</bpmn:incoming>

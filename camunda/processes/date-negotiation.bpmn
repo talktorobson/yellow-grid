@@ -40,7 +40,6 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="send-notification" />
         <zeebe:ioMapping>
-          <zeebe:input source="= \"DATE_PROPOSAL_FROM_PROVIDER\"" target="notificationType" />
           <zeebe:input source="= customerId" target="recipientUserId" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
@@ -93,7 +92,6 @@
         <zeebe:ioMapping>
           <zeebe:input source="= assignmentId" target="assignmentId" />
           <zeebe:input source="= customerProposedDate" target="proposedDate" />
-          <zeebe:input source="= \"CUSTOMER\"" target="proposedBy" />
           <zeebe:input source="= round + 1" target="round" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
@@ -106,7 +104,6 @@
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="send-notification" />
         <zeebe:ioMapping>
-          <zeebe:input source="= \"DATE_COUNTER_PROPOSAL_FROM_CUSTOMER\"" target="notificationType" />
           <zeebe:input source="= providerId" target="recipientUserId" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
@@ -159,7 +156,6 @@
         <zeebe:ioMapping>
           <zeebe:input source="= assignmentId" target="assignmentId" />
           <zeebe:input source="= providerProposedDate" target="proposedDate" />
-          <zeebe:input source="= \"PROVIDER\"" target="proposedBy" />
           <zeebe:input source="= round + 1" target="round" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
