@@ -8,8 +8,13 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
  */
 interface SendOfferInput {
   serviceOrderId: string;
-  providerId: string;
-  providerName: string;
+  // These come from rank-providers output
+  topProviderId?: string;
+  topProviderName?: string;
+  topWorkTeamId?: string | null;
+  // These are aliases for backwards compatibility
+  providerId?: string;
+  providerName?: string;
   workTeamId?: string | null;
   providerRank?: number;
   providerScore?: number;
@@ -52,6 +57,10 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
   async handle(job: ZeebeJob<SendOfferInput>): Promise<SendOfferOutput> {
     const {
       serviceOrderId,
+      // Use topProviderId from rank-providers, fallback to providerId for backwards compatibility
+      topProviderId,
+      topProviderName,
+      topWorkTeamId,
       providerId,
       providerName,
       workTeamId,
@@ -60,8 +69,17 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
       offerExpirationHours = 4,
     } = job.variables;
 
+    // Resolve the actual provider ID and name
+    const resolvedProviderId = topProviderId || providerId;
+    const resolvedProviderName = topProviderName || providerName;
+    const resolvedWorkTeamId = topWorkTeamId || workTeamId;
+
+    if (!resolvedProviderId) {
+      throw new BpmnError('NO_PROVIDER', 'No provider ID available for sending offer');
+    }
+
     this.logger.log(
-      `Sending offer to provider ${providerName} (${providerId}) for order ${serviceOrderId}`,
+      `Sending offer to provider ${resolvedProviderName} (${resolvedProviderId}) for order ${serviceOrderId}`,
     );
 
     // Verify service order exists and is in valid state
@@ -80,30 +98,30 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
 
     // Verify provider exists and is active
     const provider = await this.prisma.provider.findUnique({
-      where: { id: providerId },
+      where: { id: resolvedProviderId },
       select: { id: true, status: true, email: true, name: true },
     });
 
     if (!provider) {
-      throw new BpmnError('PROVIDER_NOT_FOUND', `Provider not found: ${providerId}`);
+      throw new BpmnError('PROVIDER_NOT_FOUND', `Provider not found: ${resolvedProviderId}`);
     }
 
     if (provider.status !== 'ACTIVE') {
-      throw new BpmnError('PROVIDER_INACTIVE', `Provider is not active: ${providerName}`);
+      throw new BpmnError('PROVIDER_INACTIVE', `Provider is not active: ${resolvedProviderName}`);
     }
 
     // Check for existing pending/offered assignment for this order+provider
     const existingAssignment = await this.prisma.assignment.findFirst({
       where: {
         serviceOrderId,
-        providerId,
+        providerId: resolvedProviderId,
         state: { in: ['PENDING', 'OFFERED'] },
       },
     });
 
     if (existingAssignment) {
       this.logger.warn(
-        `Assignment already exists for order ${serviceOrderId} and provider ${providerId}`,
+        `Assignment already exists for order ${serviceOrderId} and provider ${resolvedProviderId}`,
       );
       return {
         assignmentId: existingAssignment.id,
@@ -122,8 +140,8 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
       const newAssignment = await tx.assignment.create({
         data: {
           serviceOrderId,
-          providerId,
-          workTeamId: workTeamId || null,
+          providerId: resolvedProviderId,
+          workTeamId: resolvedWorkTeamId || null,
           assignmentMode: 'OFFER',
           assignmentMethod: 'OFFER',
           providerRank: providerRank || null,
@@ -144,7 +162,7 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
     this.eventEmitter.emit('offer.sent', {
       assignmentId: assignment.id,
       serviceOrderId,
-      providerId,
+      providerId: resolvedProviderId,
       providerEmail: provider.email,
       providerName: provider.name,
       offerExpiresAt,
@@ -153,7 +171,7 @@ export class SendOfferWorker extends BaseWorker<SendOfferInput, SendOfferOutput>
     });
 
     this.logger.log(
-      `Offer sent to ${providerName}. Assignment ID: ${assignment.id}, expires: ${offerExpiresAt.toISOString()}`,
+      `Offer sent to ${resolvedProviderName}. Assignment ID: ${assignment.id}, expires: ${offerExpiresAt.toISOString()}`,
     );
 
     return {
