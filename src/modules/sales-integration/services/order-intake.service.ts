@@ -6,6 +6,7 @@ import {
   OrderIntakeResponseDto,
   OrderIntakeStatus,
   ValidationErrorDto,
+  UpdateDeliveryDateDto,
 } from '../dto';
 import {
   IntegrationAdapter,
@@ -83,6 +84,47 @@ export class OrderIntakeService
     this.logger.log(`Order intake processed successfully. FSM Order ID: ${orderId}`);
 
     return response;
+  }
+
+  /**
+   * Execute update delivery date processing
+   */
+  async executeUpdate(
+    request: UpdateDeliveryDateDto,
+    context: IntegrationContext,
+  ): Promise<OrderIntakeResponseDto> {
+    this.logger.log(`Processing update for external order: ${request.customerOrderNumber} from ${request.saleSystem}`);
+
+    // Generate FSM order ID (mock or lookup - here we don't look up yet, just pass through)
+    // Ideally we should lookup the internal ID using external ID
+    const orderId = 'UNKNOWN'; // We might not have it yet if we don't query DB
+
+    // Publish update event to Kafka
+    const event = {
+      eventId: this.generateEventId(),
+      correlationId: context.correlationId,
+      timestamp: new Date().toISOString(),
+      orderId, // This might be null or we pass external
+      externalOrderId: request.customerOrderNumber,
+      salesSystem: request.saleSystem,
+      orderData: request,
+    };
+
+    await this.kafkaService.send('sales.order.update', event, request.customerOrderNumber, {
+      'correlation-id': context.correlationId,
+      'tenant-id': context.tenantId,
+      'event-type': 'UpdateDeliveryDate',
+    });
+
+    this.logger.log(`Published update delivery date event to Kafka. External Order ID: ${request.customerOrderNumber}`);
+
+    return {
+      orderId: orderId,
+      externalOrderId: request.customerOrderNumber,
+      status: OrderIntakeStatus.RECEIVED,
+      correlationId: context.correlationId,
+      receivedAt: new Date().toISOString(),
+    };
   }
 
   /**

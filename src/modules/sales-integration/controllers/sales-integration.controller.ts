@@ -66,12 +66,15 @@ export class SalesIntegrationController {
   @ApiResponse({ status: 400, description: 'Invalid request data' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   async orderIntake(
-    @Body() request: OrderIntakeRequestDto,
+    @Body() request: any,
     @Headers('x-correlation-id') correlationId?: string,
     @Headers('x-tenant-id') tenantId?: string,
   ): Promise<OrderIntakeResponseDto> {
+    const isUpdateEvent = request.eventType === 'UpdateDeliveryDate';
+
     this.logger.log(
-      `Received order intake request: ${request.order.id} from ${request.system}`,
+      `Received ${isUpdateEvent ? 'update' : 'order intake'} request: ${isUpdateEvent ? request.customerOrderNumber : request.order?.id || 'unknown'
+      }`,
     );
 
     const context: IntegrationContext = {
@@ -80,10 +83,17 @@ export class SalesIntegrationController {
       timestamp: new Date(),
     };
 
-    const response = await this.orderIntakeService.execute(request, context);
+    let response: OrderIntakeResponseDto;
 
-    // If successful, trigger event mapping
-    if (response.status === 'RECEIVED') {
+    if (isUpdateEvent) {
+      response = await this.orderIntakeService.executeUpdate(request, context);
+    } else {
+      response = await this.orderIntakeService.execute(request, context);
+    }
+
+    // If successful and it is an IOrderIntake, trigger event mapping
+    // We strictly limit mapping to Order Intake for now
+    if (!isUpdateEvent && response.status === 'RECEIVED') {
       await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
         request.order.id,
         request.system,

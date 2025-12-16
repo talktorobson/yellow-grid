@@ -1,0 +1,95 @@
+{
+  "type": "record",
+  "name": "UpdateDeliveryDate",
+  "namespace": "com.adeo.salesintegration.schemas",
+  "fields": [
+    {
+      "name": "eventType",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "businessUnitIdentifier",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "storeIdentifier",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "customerOrderNumber",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "maxDeliveryDate",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "deliveryStatus",
+      "type": [
+        "null",
+        {
+          "type": "string",
+          "avro.java.string": "String"
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "saleSystem",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "itemDeliveryDates",
+      "type": [
+        "null",
+        {
+          "type": "array",
+          "items": {
+            "type": "record",
+            "name": "ItemDeliveryDateDTO",
+            "namespace": "com.adeo.salesintegration.schemas.updatedeliverydate",
+            "fields": [
+              {
+                "name": "lineItemId",
+                "type": {
+                  "type": "string",
+                  "avro.java.string": "String"
+                }
+              },
+              {
+                "name": "itemMaxDeliveryDate",
+                "type": {
+                  "type": "string",
+                  "avro.java.string": "String"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "default": null
+    }
+  ]
+}
