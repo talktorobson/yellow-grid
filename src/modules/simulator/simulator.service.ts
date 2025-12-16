@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
     OrderIntakeRequestDto,
+    UpdateDeliveryDateDto,
 } from '../sales-integration/dto';
 import { SimulatorScenario, SimulatorTriggerRequestDto } from './dto/simulator-trigger-request.dto';
 import {
@@ -44,23 +45,33 @@ export class SimulatorService {
                     timestamp: new Date(),
                 };
 
-                // Call OrderIntakeService
-                const response = await this.orderIntakeService.execute(payload, context);
+                let response;
+
+                // Dispatch based on payload type or scenario
+                if (request.scenario === SimulatorScenario.UPDATE_DELIVERY_DATE) {
+                    response = await this.orderIntakeService.executeUpdate(payload as any as UpdateDeliveryDateDto, context);
+                } else {
+                    response = await this.orderIntakeService.execute(payload as OrderIntakeRequestDto, context);
+                }
 
                 if (response.status === 'RECEIVED') {
                     // Trigger event mapping (simulating Controller logic)
-                    await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
-                        payload.order.id,
-                        payload.system,
-                        payload,
-                        response.orderId,
-                        context.correlationId,
-                    );
+                    // Only for standard Order Intake currently
+                    if (request.scenario !== SimulatorScenario.UPDATE_DELIVERY_DATE) {
+                        const intakePayload = payload as OrderIntakeRequestDto;
+                        await this.eventMappingService.mapOrderIntakeToServiceOrderCreated(
+                            intakePayload.order.id,
+                            intakePayload.system,
+                            intakePayload,
+                            response.orderId,
+                            context.correlationId,
+                        );
 
-                    // Map to internal format
-                    this.orderMappingService.mapToInternalFormat(payload, response.orderId);
+                        // Map to internal format
+                        this.orderMappingService.mapToInternalFormat(intakePayload, response.orderId);
+                    }
 
-                    orderIds.push(response.orderId);
+                    orderIds.push(response.orderId || (payload as any).customerOrderNumber);
                 } else {
                     const errorMsg = response.errors ? JSON.stringify(response.errors) : 'Unknown Error';
                     errors.push(`Failed to intake order: ${errorMsg}`);
@@ -82,10 +93,13 @@ export class SimulatorService {
     private generatePayload(
         scenario: SimulatorScenario,
         overrides: Record<string, any> = {},
-    ): OrderIntakeRequestDto {
-        let payload: OrderIntakeRequestDto;
+    ): OrderIntakeRequestDto | UpdateDeliveryDateDto {
+        let payload: OrderIntakeRequestDto | UpdateDeliveryDateDto;
 
         switch (scenario) {
+            case SimulatorScenario.UPDATE_DELIVERY_DATE:
+                payload = this.createUpdateDeliveryDateScenario();
+                break;
             case SimulatorScenario.EMERGENCY_REPAIR:
                 payload = this.createEmergencyRepairScenario();
                 break;
@@ -103,8 +117,10 @@ export class SimulatorService {
 
         // Apply strict overrides if provided (basic deep merge could be added here if needed)
         // For now, we assume overrides match the structural shape or we manually patch specific fields
-        if (overrides && overrides.customer) {
-            Object.assign(payload.customer, overrides.customer);
+        if (overrides && (payload as any).customer) {
+            Object.assign((payload as any).customer, overrides.customer);
+        } else if (overrides) {
+            Object.assign(payload, overrides);
         }
 
         return payload;
@@ -208,5 +224,23 @@ export class SimulatorService {
         const base = this.createStandardInstallationScenario();
         base.order.sellerNotes = "Part of Project Rollout Alpha";
         return base;
+    }
+
+    private createUpdateDeliveryDateScenario(): UpdateDeliveryDateDto {
+        return {
+            eventType: 'UpdateDeliveryDate',
+            businessUnitIdentifier: '005',
+            storeIdentifier: '007',
+            customerOrderNumber: `25${faker.string.numeric(5)}L${faker.string.numeric(3)}`,
+            maxDeliveryDate: faker.date.future({ years: 1 }).toISOString(),
+            deliveryStatus: null,
+            saleSystem: 'Tempo',
+            itemDeliveryDates: [
+                {
+                    lineItemId: faker.string.uuid(),
+                    itemMaxDeliveryDate: faker.date.future({ years: 1 }).toISOString()
+                }
+            ]
+        };
     }
 }

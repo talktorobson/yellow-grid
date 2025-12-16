@@ -37,7 +37,7 @@ export class UpdateDeliveryDateDto {
     @ApiPropertyOptional({ description: 'Delivery Status' })
     @IsString()
     @IsOptional()
-    deliveryStatus?: string;
+    deliveryStatus?: string | null;
 
     @ApiProperty({ description: 'Sales System' })
     @IsString()

@@ -6,6 +6,7 @@ export enum SimulatorScenario {
     EMERGENCY_REPAIR = 'EMERGENCY_REPAIR',
     VIP_MAINTENANCE = 'VIP_MAINTENANCE',
     PROJECT_ROLLOUT = 'PROJECT_ROLLOUT',
+    UPDATE_DELIVERY_DATE = 'UPDATE_DELIVERY_DATE',
 }
 
 export class SimulatorTriggerRequestDto {
