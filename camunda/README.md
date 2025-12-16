@@ -99,6 +99,21 @@ Workers are implemented in `src/camunda/workers/`. Each worker:
 3. Executes business logic
 4. Completes job with output variables
 
+### Registered Workers (10 Total)
+
+| Worker | Task Type | Category | Status |
+|--------|-----------|----------|--------|
+| ValidateOrderWorker | `validate-order` | Validation | ✅ Production |
+| FindProvidersWorker | `find-providers` | Assignment | ✅ Production |
+| RankProvidersWorker | `rank-providers` | Assignment | ✅ Production |
+| AutoAssignProviderWorker | `auto-assign-provider` | Assignment | ✅ Production |
+| SendOfferWorker | `send-offer` | Assignment | ✅ Production |
+| CheckAvailabilityWorker | `check-availability` | Booking | ✅ Production |
+| ReserveSlotWorker | `reserve-slot` | Booking | ✅ Production |
+| GoCheckWorker | `go-check` | Execution | ✅ Production |
+| SendNotificationWorker | `send-notification` | Notification | ✅ Production |
+| EscalateOfferTimeoutWorker | `escalate-offer-timeout` | Escalation | ✅ Production |
+
 ### Example Worker
 
 ```typescript

@@ -2,15 +2,46 @@
 
 This directory contains BPMN 2.0 process models.
 
-## Files
+## Deployed Processes
 
-| File | Description |
-|------|-------------|
-| `service-order-lifecycle.bpmn` | Main service order orchestration |
-| `provider-assignment.bpmn` | Provider assignment sub-process |
-| `date-negotiation.bpmn` | 3-round date negotiation |
-| `go-execution-check.bpmn` | Pre-execution validation |
-| `wcf-workflow.bpmn` | Work Completion Form flow |
+| File | Process ID | Version | Description |
+|------|-----------|---------|-------------|
+| `service-order-lifecycle.bpmn` | ServiceOrderLifecycle | v2 | Main service order orchestration |
+| `provider-assignment.bpmn` | ProviderAssignment | **v3** | Provider assignment with escalation |
+| `date-negotiation.bpmn` | DateNegotiation | v1 | 3-round date negotiation |
+| `go-execution-check.bpmn` | GoExecutionCheck | v1 | Pre-execution validation |
+| `wcf-workflow.bpmn` | WCFWorkflow | v1 | Work Completion Form flow |
+
+## Recent Updates (v3 - December 2025)
+
+### Provider Assignment v3
+
+**New Features**:
+- ✅ **Escalation Flow**: Automated reassignment on offer timeout (4-hour timer)
+- ✅ **3-Round Escalation**: Attempts reassignment up to 3 times before manual review
+- ✅ **Manual Review Routing**: After max escalation rounds, routes to MANUAL_REVIEW end event
+- ✅ **Message Correlation**: Offer acceptance/rejection via message events
+
+**BPMN Changes**:
+- Added `Task_EscalateTimeout` service task (task type: `escalate-offer-timeout`)
+- Added `Gateway_EscalationResult` exclusive gateway
+- Added `EndEvent_ManualReview` for cases requiring operator intervention
+- Timeout flow now routes through escalation instead of direct to declined
+
+**Flow**:
+```
+Event_OfferTimeout (4h) → Task_EscalateTimeout → Gateway_EscalationResult
+                                                          ↓
+                                                   [Reassigned] → EndEvent_Assigned
+                                                   [ManualReview] → EndEvent_ManualReview
+```
+
+## Message Events
+
+| Message Name | Correlation Key | Purpose |
+|-------------|----------------|----------|
+| OfferAccepted | `offerId` (assignmentId) | Provider accepts service offer |
+| OfferRejected | `offerId` (assignmentId) | Provider rejects service offer |
 
 ## Editing
 

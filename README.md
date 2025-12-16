@@ -21,6 +21,7 @@
 - ✅ **Providers & Technicians Module**
 - ✅ **Service Orders & Assignments** (Core FSM)
 - ✅ **Calendar & Scheduling**
+- ✅ **Camunda 8 Workflow Engine** (10 workers, BPMN v3 with escalation)
 - ✅ **Web Dashboard & UI** (React + Vite)
 - ✅ **Remote Deployment Automation**
 - ✅ **Multi-Experience Platform** (8 user portals):
@@ -328,6 +329,7 @@ Yellow Grid is a comprehensive **Field Service Management (FSM) platform** desig
 ### Infrastructure
 - **Container**: Docker
 - **Orchestration**: Kubernetes (AWS EKS / Azure AKS)
+- **Workflow Engine**: Camunda 8 (Zeebe 8.5.0) - 10 workers, BPMN orchestration
 - **CI/CD**: GitHub Actions
 - **Cloud**: AWS or Azure
 - **Observability**: OpenTelemetry, Prometheus, Grafana

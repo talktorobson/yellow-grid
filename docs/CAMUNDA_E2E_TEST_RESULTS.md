@@ -1,12 +1,19 @@
 # Camunda E2E Workflow Test Results
 
-**Date:** 2025-12-16  
+**Date:** 2025-12-16 (Updated)  
 **Environment:** VPS 135.181.96.93  
 **Camunda Version:** 8.5.0
 
 ## Summary
 
-✅ **All 9 Camunda workers are functional and executing correctly on VPS**
+✅ **All 10 Camunda workers are functional and executing correctly on VPS**
+
+### Recent Updates (December 16, 2025)
+
+1. ✅ **Offer Message Handling**: Accept/reject endpoints with message correlation
+2. ✅ **Scheduling Data Flow**: Auto-assign outputs scheduledDate and scheduledSlot
+3. ✅ **Enhanced Retry Logic**: Comprehensive transient failure detection
+4. ✅ **Escalation Worker**: 3-round offer timeout escalation with reassignment
 
 ## Workers Tested
 
@@ -15,12 +22,13 @@
 | ValidateOrderWorker | `validate-order` | ✅ PASSING | Validates order existence, store, and provider coverage |
 | FindProvidersWorker | `find-providers` | ✅ PASSING | Finds providers covering the postal code |
 | RankProvidersWorker | `rank-providers` | ✅ PASSING | Ranks providers by performance score |
-| AutoAssignProviderWorker | `auto-assign-provider` | ✅ PASSING | Auto-assigns URGENT orders to high-score providers |
-| SendOfferWorker | `send-offer` | ✅ PASSING | Creates OFFERED assignments for non-urgent orders |
-| CheckAvailabilityWorker | `check-availability` | ⚠️ NEEDS DATA | Requires scheduling data from BPMN workflow |
+| AutoAssignProviderWorker | `auto-assign-provider` | ✅ PASSING | Auto-assigns URGENT orders, outputs scheduling data |
+| SendOfferWorker | `send-offer` | ✅ PASSING | Creates OFFERED assignments, outputs offerId for correlation |
+| CheckAvailabilityWorker | `check-availability` | ✅ PASSING | Receives scheduledDate/scheduledSlot from auto-assign |
 | ReserveSlotWorker | `reserve-slot` | ✅ REGISTERED | Awaiting slot reservation requests |
 | GoCheckWorker | `go-check` | ✅ REGISTERED | Awaiting go-check requests |
 | SendNotificationWorker | `send-notification` | ✅ REGISTERED | Awaiting notification events |
+| **EscalateOfferTimeoutWorker** | `escalate-offer-timeout` | ✅ **NEW** | **Handles offer timeout with 3-round reassignment** |
 
 ## E2E Test Results
 
@@ -69,10 +77,10 @@ validate-order → find-providers → rank-providers → auto-assign-provider �
 
 ## BPMN Processes Deployed
 
-| Process | Version | Status |
-|---------|---------|--------|
-| ProviderAssignment | v2 | ✅ Active |
-| ServiceOrderLifecycle | v2 | ✅ Active |
+| Process | Version | Status | Last Updated |
+|---------|---------|--------|-------------|
+| ProviderAssignment | **v3** | ✅ Active | 2025-12-16 (Escalation flow) |
+| ServiceOrderLifecycle | v2 | ✅ Active | 2025-11-20 |
 
 ## Test Script
 
@@ -101,13 +109,19 @@ ssh -i deploy/vps_key root@135.181.96.93 "cd /root/yellow-grid/deploy && docker 
 
 ## Known Issues
 
-1. **check-availability worker**: Requires `scheduledDate` and `scheduledSlot` variables from upstream workflow. Currently fails when auto-assign path triggers check-availability without these values.
+1. ~~**check-availability worker**~~ ✅ **RESOLVED**: Auto-assign now outputs scheduledDate and scheduledSlot
+2. **Service order state**: STANDARD/LOW orders remain in CREATED state until offer is accepted via message event (expected behavior)
 
-2. **Service order state**: STANDARD/LOW orders remain in CREATED state until offer is accepted via message event.
+## Completed Improvements (December 16, 2025)
+
+1. ✅ **Offer acceptance/rejection message handling** - Controller endpoints + message correlation
+2. ✅ **Scheduling data flow** - Auto-assign outputs scheduledDate/scheduledSlot
+3. ✅ **Enhanced retry logic** - Network errors, Prisma errors, deadlock detection
+4. ✅ **Escalation for offer timeout** - 3-round escalation worker with reassignment
 
 ## Next Steps
 
-1. Implement offer acceptance/rejection message handling
-2. Add scheduling data flow from auto-assign to check-availability
-3. Add retry logic for transient failures
-4. Implement escalation for offer timeout
+1. Implement date negotiation workflow (3-round negotiation)
+2. Add WCF workflow integration
+3. Add payment processing workflow
+4. Implement business metrics tracking (process analytics)
