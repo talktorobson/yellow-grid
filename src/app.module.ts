@@ -28,6 +28,7 @@ import { PerformanceModule } from './modules/performance/performance.module';
 import { SalesIntegrationModule } from './modules/sales-integration/sales-integration.module';
 import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { SimulatorModule } from './modules/simulator/simulator.module';
 
 // Workflow orchestration (Camunda 8)
 import { CamundaModule } from './camunda/camunda.module';
@@ -108,7 +109,8 @@ import { AppController } from './app.controller';
 
     // Workflow orchestration (Camunda 8)
     CamundaModule,
+    SimulatorModule,
   ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule { }
