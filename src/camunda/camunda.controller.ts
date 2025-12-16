@@ -27,7 +27,7 @@ class BulkTriggerWorkflowDto {
  * Useful for testing and debugging workflow execution.
  */
 @ApiTags('Camunda Workflows')
-@Controller('api/v1/camunda')
+@Controller('camunda')
 export class CamundaController {
   private readonly logger = new Logger(CamundaController.name);
   private readonly enabled: boolean;
