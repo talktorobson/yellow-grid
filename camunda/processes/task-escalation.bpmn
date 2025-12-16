@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_TaskEscalation" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <bpmn:process id="TaskManagementEscalation" name="Task Management Escalation" isExecutable="true">
+    
+    <!-- START EVENT - Task Created -->
+    <bpmn:startEvent id="StartEvent_TaskCreated" name="Task Created">
+      <bpmn:outgoing>Flow_ToAutoAssign</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- AUTO ASSIGN -->
+    <bpmn:serviceTask id="Task_AutoAssign" name="Auto-Assign Task">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="assign-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= taskId" target="taskId" />
+          <zeebe:input source="= taskType" target="taskType" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToAutoAssign</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSLA</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- SLA TIMER (Dynamic based on priority) -->
+    <bpmn:intermediateCatchEvent id="Event_SLATimer" name="SLA Timer">
+      <bpmn:incoming>Flow_ToSLA</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCheckStatus</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_SLA">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">= slaDuration</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CHECK TASK STATUS (Gateway) -->
+    <bpmn:exclusiveGateway id="Gateway_StatusCheck" name="Task Status?">
+      <bpmn:incoming>Flow_ToCheckStatus</bpmn:incoming>
+      <bpmn:outgoing>Flow_TaskCompleted</bpmn:outgoing>
+      <bpmn:outgoing>Flow_TaskOpen</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- ESCALATE (Level 1) -->
+    <bpmn:serviceTask id="Task_EscalateLevel1" name="Escalate (Level 1)">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="escalate-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= taskId" target="taskId" />
+          <zeebe:input source="= 1" target="escalationLevel" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_TaskOpen</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotifyL1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:serviceTask id="Task_NotifyL1" name="Notify Manager">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-escalation" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= taskId" target="taskId" />
+          <zeebe:input source="= \"MANAGER\"" target="role" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNotifyL1</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndL1</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Simple Version: End after L1 escalation for MVP -->
+    <bpmn:endEvent id="EndEvent_Escalated" name="Escalation Handled">
+      <bpmn:incoming>Flow_ToEndL1</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_Completed" name="Task Completed Within SLA">
+      <bpmn:incoming>Flow_TaskCompleted</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToAutoAssign" sourceRef="StartEvent_TaskCreated" targetRef="Task_AutoAssign" />
+    <bpmn:sequenceFlow id="Flow_ToSLA" sourceRef="Task_AutoAssign" targetRef="Event_SLATimer" />
+    <bpmn:sequenceFlow id="Flow_ToCheckStatus" sourceRef="Event_SLATimer" targetRef="Gateway_StatusCheck" />
+    
+    <!-- Mock condition used here as we can't easily query DB in XOR gateway without variable input -->
+    <!-- In real world, we'd have a 'FetchTaskStatus' worker before the gateway -->
+    <bpmn:sequenceFlow id="Flow_TaskCompleted" name="Completed" sourceRef="Gateway_StatusCheck" targetRef="EndEvent_Completed">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= taskStatus = "COMPLETED"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:sequenceFlow id="Flow_TaskOpen" name="Still Open" sourceRef="Gateway_StatusCheck" targetRef="Task_EscalateLevel1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">= taskStatus != "COMPLETED"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:sequenceFlow id="Flow_ToNotifyL1" sourceRef="Task_EscalateLevel1" targetRef="Task_NotifyL1" />
+    <bpmn:sequenceFlow id="Flow_ToEndL1" sourceRef="Task_NotifyL1" targetRef="EndEvent_Escalated" />
+    
+  </bpmn:process>
+  
+  <bpmndi:BPMNDiagram id="BPMNDiagram_TaskEscalation">
+    <bpmndi:BPMNPlane id="BPMNPlane_TaskEscalation" bpmnElement="TaskManagementEscalation">
+       <!-- Simplified DI for brevity -->
+      <bpmndi:BPMNShape id="StartEvent_TaskCreated_di" bpmnElement="StartEvent_TaskCreated">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+       <!-- ... -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

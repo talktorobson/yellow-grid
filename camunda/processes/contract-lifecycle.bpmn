@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                  id="Definitions_ContractLifecycle" 
+                  targetNamespace="http://bpmn.io/schema/bpmn" 
+                  exporter="Camunda Modeler" 
+                  exporterVersion="5.19.0" 
+                  modeler:executionPlatform="Camunda Cloud" 
+                  modeler:executionPlatformVersion="8.5.0">
+  
+  <bpmn:process id="ContractLifecycle" name="Contract Lifecycle" isExecutable="true">
+    
+    <!-- START EVENT - Contract Created -->
+    <bpmn:startEvent id="StartEvent_ContractCreated" name="Contract Created">
+      <bpmn:outgoing>Flow_ToValidateBundle</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <!-- VALIDATE BUNDLE -->
+    <bpmn:serviceTask id="Task_ValidateBundle" name="Validate Order Bundle">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="validate-contract-bundle" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= contractId" target="contractId" />
+          <zeebe:input source="= serviceOrderIds" target="serviceOrderIds" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToValidateBundle</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAutoSendTimer</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AUTO-SEND TIMER (2 hours) -->
+    <bpmn:intermediateCatchEvent id="Event_AutoSendTimer" name="Wait 2 Hours (Auto-Send)">
+      <bpmn:incoming>Flow_ToAutoSendTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAutoSend</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_AutoSend">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT2H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- SEND CONTRACT TO CUSTOMER -->
+    <bpmn:serviceTask id="Task_SendContract" name="Send Contract to Customer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="send-contract" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= contractId" target="contractId" />
+          <zeebe:input source="= customerId" target="customerId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToAutoSend</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAwaitSignature</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- AWAIT SIGNATURE (Event-based Gateway) -->
+    <bpmn:eventBasedGateway id="Gateway_AwaitSignature" name="Await Signature">
+      <bpmn:incoming>Flow_ToAwaitSignature</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToContractSigned</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToContractRefused</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToContractExpired</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    
+    <!-- CONTRACT SIGNED -->
+    <bpmn:intermediateCatchEvent id="Event_ContractSigned" name="Contract Signed">
+      <bpmn:incoming>Flow_ToContractSigned</bpmn:incoming>
+      <bpmn:outgoing>Flow_ContractSigned</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ContractSigned" messageRef="Message_ContractSigned" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CONTRACT REFUSED -->
+    <bpmn:intermediateCatchEvent id="Event_ContractRefused" name="Contract Refused">
+      <bpmn:incoming>Flow_ToContractRefused</bpmn:incoming>
+      <bpmn:outgoing>Flow_ContractRefused</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_ContractRefused" messageRef="Message_ContractRefused" />
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- CONTRACT EXPIRED (7 Days) -->
+    <bpmn:intermediateCatchEvent id="Event_ContractExpired" name="Contract Expired (7d)">
+      <bpmn:incoming>Flow_ToContractExpired</bpmn:incoming>
+      <bpmn:outgoing>Flow_ContractExpiredTimer</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_ContractExpiry">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P7D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    
+    <!-- ACTIVATE CONTRACT -->
+    <bpmn:serviceTask id="Task_ActivateContract" name="Activate Contract">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="activate-contract" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= contractId" target="contractId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ContractSigned</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToActiveEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- CREATE FOLLOW-UP TASK -->
+    <bpmn:serviceTask id="Task_CreateFollowUpTask" name="Create Follow-up Task">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-task" />
+        <zeebe:ioMapping>
+          <zeebe:input source="= contractId" target="entityId" />
+          <zeebe:input source="= \"CONTRACT_NOT_SIGNED\"" target="taskType" />
+          <zeebe:input source="= \"HIGH\"" target="priority" />
+          <zeebe:input source="= reason" target="context" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ContractRefused</bpmn:incoming>
+      <bpmn:incoming>Flow_ContractExpiredTimer</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFailedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="EndEvent_Active" name="Contract Active">
+      <bpmn:incoming>Flow_ToActiveEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:endEvent id="EndEvent_Failed" name="Contract Failed">
+      <bpmn:incoming>Flow_ToFailedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToValidateBundle" sourceRef="StartEvent_ContractCreated" targetRef="Task_ValidateBundle" />
+    <bpmn:sequenceFlow id="Flow_ToAutoSendTimer" sourceRef="Task_ValidateBundle" targetRef="Event_AutoSendTimer" />
+    <bpmn:sequenceFlow id="Flow_ToAutoSend" sourceRef="Event_AutoSendTimer" targetRef="Task_SendContract" />
+    <bpmn:sequenceFlow id="Flow_ToAwaitSignature" sourceRef="Task_SendContract" targetRef="Gateway_AwaitSignature" />
+    <bpmn:sequenceFlow id="Flow_ToContractSigned" sourceRef="Gateway_AwaitSignature" targetRef="Event_ContractSigned" />
+    <bpmn:sequenceFlow id="Flow_ToContractRefused" sourceRef="Gateway_AwaitSignature" targetRef="Event_ContractRefused" />
+    <bpmn:sequenceFlow id="Flow_ToContractExpired" sourceRef="Gateway_AwaitSignature" targetRef="Event_ContractExpired" />
+    <bpmn:sequenceFlow id="Flow_ContractSigned" sourceRef="Event_ContractSigned" targetRef="Task_ActivateContract" />
+    <bpmn:sequenceFlow id="Flow_ContractRefused" sourceRef="Event_ContractRefused" targetRef="Task_CreateFollowUpTask" />
+    <bpmn:sequenceFlow id="Flow_ContractExpiredTimer" sourceRef="Event_ContractExpired" targetRef="Task_CreateFollowUpTask" />
+    <bpmn:sequenceFlow id="Flow_ToActiveEnd" sourceRef="Task_ActivateContract" targetRef="EndEvent_Active" />
+    <bpmn:sequenceFlow id="Flow_ToFailedEnd" sourceRef="Task_CreateFollowUpTask" targetRef="EndEvent_Failed" />
+    
+  </bpmn:process>
+  
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_ContractSigned" name="ContractSigned">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= contractId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_ContractRefused" name="ContractRefused">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="= contractId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <!-- DIAGRAM SECTION -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ContractLifecycle">
+    <bpmndi:BPMNPlane id="BPMNPlane_ContractLifecycle" bpmnElement="ContractLifecycle">
+      <bpmndi:BPMNShape id="StartEvent_ContractCreated_di" bpmnElement="StartEvent_ContractCreated">
+        <dc:Bounds x="152" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="131" y="243" width="82" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ValidateBundle_di" bpmnElement="Task_ValidateBundle">
+        <dc:Bounds x="240" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_AutoSendTimer_di" bpmnElement="Event_AutoSendTimer">
+        <dc:Bounds x="392" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="376" y="243" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendContract_di" bpmnElement="Task_SendContract">
+        <dc:Bounds x="480" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AwaitSignature_di" bpmnElement="Gateway_AwaitSignature">
+        <dc:Bounds x="635" y="193" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="622" y="163" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_ContractSigned_di" bpmnElement="Event_ContractSigned">
+        <dc:Bounds x="742" y="100" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="726" y="76" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_ContractRefused_di" bpmnElement="Event_ContractRefused">
+        <dc:Bounds x="742" y="200" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="720" y="243" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_ContractExpired_di" bpmnElement="Event_ContractExpired">
+        <dc:Bounds x="742" y="300" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="726" y="343" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToValidateBundle_di" bpmnElement="Flow_ToValidateBundle">
+        <di:waypoint x="188" y="218" />
+        <di:waypoint x="240" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAutoSendTimer_di" bpmnElement="Flow_ToAutoSendTimer">
+        <di:waypoint x="340" y="218" />
+        <di:waypoint x="392" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAutoSend_di" bpmnElement="Flow_ToAutoSend">
+        <di:waypoint x="428" y="218" />
+        <di:waypoint x="480" y="218" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAwaitSignature_di" bpmnElement="Flow_ToAwaitSignature">
+        <di:waypoint x="580" y="218" />
+        <di:waypoint x="635" y="218" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -11,6 +11,8 @@ This directory contains BPMN 2.0 process models.
 | `date-negotiation.bpmn` | DateNegotiation | v1 | 3-round date negotiation |
 | `go-execution-check.bpmn` | GoExecutionCheck | v1 | Pre-execution validation |
 | `wcf-workflow.bpmn` | WCFWorkflow | v1 | Work Completion Form flow |
+| `contract-lifecycle.bpmn` | ContractLifecycle | v1 | Contract bundle sending and signature |
+| `task-escalation.bpmn` | TaskManagementEscalation | v1 | SLA monitoring and escalation |
 
 ## Recent Updates (v3 - December 2025)
 
@@ -51,6 +53,8 @@ Event_OfferTimeout (4h) → Task_EscalateTimeout → Gateway_EscalationResult
 | WCFSignedWithReserves | `wcfId` | Customer signs WCF with quality reserves |
 | WCFRefused | `wcfId` | Customer refuses to sign WCF |
 | ReservesResolved | `wcfId` | Operator resolves WCF reserves |
+| ContractSigned | `contractId` | Customer signs contract bundle |
+| ContractRefused | `contractId` | Customer refuses contract |
 
 ## Editing
 

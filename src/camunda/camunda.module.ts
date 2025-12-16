@@ -29,6 +29,13 @@ import { ApplyGoOverrideWorker } from './workers/execution/apply-go-override.wor
 import { GenerateWCFWorker } from './workers/wcf/generate-wcf.worker';
 import { SendWCFWorker } from './workers/wcf/send-wcf.worker';
 import { TriggerInvoiceWorker } from './workers/wcf/trigger-invoice.worker';
+import { ValidateContractBundleWorker } from './workers/contract/validate-contract-bundle.worker';
+import { SendContractWorker } from './workers/contract/send-contract.worker';
+import { ActivateContractWorker } from './workers/contract/activate-contract.worker';
+import { CreateTaskWorker } from './workers/task/create-task.worker';
+import { AssignTaskWorker } from './workers/task/assign-task.worker';
+import { EscalateTaskWorker } from './workers/task/escalate-task.worker';
+import { NotifyEscalationWorker } from './workers/task/notify-escalation.worker';
 
 // Common modules (no circular dependency)
 import { PrismaModule } from '../common/prisma/prisma.module';
@@ -63,6 +70,13 @@ import { PrismaModule } from '../common/prisma/prisma.module';
     GenerateWCFWorker,
     SendWCFWorker,
     TriggerInvoiceWorker,
+    ValidateContractBundleWorker,
+    SendContractWorker,
+    ActivateContractWorker,
+    CreateTaskWorker,
+    AssignTaskWorker,
+    EscalateTaskWorker,
+    NotifyEscalationWorker,
   ],
   exports: [CamundaService, OperateService],
 })
