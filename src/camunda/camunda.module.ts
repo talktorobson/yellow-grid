@@ -4,6 +4,7 @@ import { CamundaService } from './camunda.service';
 import { CamundaConfig } from './camunda.config';
 import { OperateService } from './operate/operate.service';
 import { CamundaEventListener } from './camunda.event-listener';
+import { CamundaController } from './camunda.controller';
 
 // Workers
 import { ValidateOrderWorker } from './workers/validation/validate-order.worker';
@@ -21,6 +22,7 @@ import { PrismaModule } from '../common/prisma/prisma.module';
 
 @Module({
   imports: [ConfigModule, PrismaModule],
+  controllers: [CamundaController],
   providers: [
     CamundaConfig,
     CamundaService,
