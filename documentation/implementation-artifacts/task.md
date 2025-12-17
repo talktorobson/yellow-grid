@@ -67,3 +67,11 @@
 - [x] Unify Kafka topic to `sales.order` for mixed event types
 - [x] Verify Simulator Coherence
 - [x] Rewrite Documentation (Design & Walkthrough) for final state
+
+## Phase 11: VPS End-to-End Verification
+- [x] Push latest changes to repository
+- [x] Pull and Rebuild on VPS
+- [x] Trigger `STANDARD_INSTALLATION` Simulation
+- [x] Trigger `UPDATE_DELIVERY_DATE` Simulation
+- [x] Monitor Camunda/Zeebe Process Execution
+- [x] Investigate and Resolve any detected issues
