@@ -35,13 +35,13 @@ export class ProjectOwnershipConfigDto {
 }
 
 export class UpdateBusinessUnitConfigDto {
-  @ApiPropertyOptional({ description: 'Business unit code', example: 'LEROY_MERLIN' })
+  @ApiPropertyOptional({ description: 'Business unit code', example: 'DIY_STORE' })
   @IsOptional()
   @IsString()
-  @IsIn(['LEROY_MERLIN', 'BRICO_DEPOT'])
+  @IsIn(['DIY_STORE', 'PRO_STORE'])
   businessUnit?: string;
 
-  @ApiPropertyOptional({ description: 'Business unit display name', example: 'Leroy Merlin' })
+  @ApiPropertyOptional({ description: 'Business unit display name', example: 'DIY Store' })
   @IsOptional()
   @IsString()
   businessUnitName?: string;

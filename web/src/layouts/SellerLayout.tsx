@@ -71,7 +71,7 @@ export default function SellerLayout() {
           <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
             <Store className="w-5 h-5 text-orange-600" />
             <div>
-              <p className="text-sm font-medium text-gray-900">Leroy Merlin</p>
+              <p className="text-sm font-medium text-gray-900">DIY Store</p>
               <p className="text-xs text-gray-500">Store #042 - Paris 15</p>
             </div>
           </div>

@@ -88,7 +88,7 @@ async function main() {
   const buES = await prisma.businessUnit.create({
     data: {
       code: 'LM_ES',
-      name: 'Leroy Merlin España',
+      name: 'DIY Store España',
       countryCode: 'ES',
     },
   });
@@ -96,7 +96,7 @@ async function main() {
   const buFR = await prisma.businessUnit.create({
     data: {
       code: 'LM_FR',
-      name: 'Leroy Merlin France',
+      name: 'DIY Store France',
       countryCode: 'FR',
     },
   });
@@ -105,7 +105,7 @@ async function main() {
     prisma.store.create({
       data: {
         code: 'LM_MAD_001',
-        name: 'Leroy Merlin Madrid Centro',
+        name: 'DIY Store Madrid Centro',
         buCode: buES.code,
         countryCode: 'ES',
         city: 'Madrid',
@@ -114,7 +114,7 @@ async function main() {
     prisma.store.create({
       data: {
         code: 'LM_PAR_001',
-        name: 'Leroy Merlin Paris Nord',
+        name: 'DIY Store Paris Nord',
         buCode: buFR.code,
         countryCode: 'FR',
         city: 'Paris',
@@ -130,7 +130,7 @@ async function main() {
   const operators = await Promise.all([
     prisma.user.create({
       data: {
-        email: 'maria.garcia@leroymerlin.es',
+        email: 'maria.garcia@store.es',
         name: 'Maria García',
         role: 'OPERATOR',
         countryCode: 'ES',
@@ -139,7 +139,7 @@ async function main() {
     }),
     prisma.user.create({
       data: {
-        email: 'pierre.dubois@leroymerlin.fr',
+        email: 'pierre.dubois@store.fr',
         name: 'Pierre Dubois',
         role: 'OPERATOR',
         countryCode: 'FR',
@@ -148,7 +148,7 @@ async function main() {
     }),
     prisma.user.create({
       data: {
-        email: 'sophie.martin@leroymerlin.fr',
+        email: 'sophie.martin@store.fr',
         name: 'Sophie Martin',
         role: 'OPERATOR',
         countryCode: 'FR',
@@ -212,7 +212,7 @@ async function main() {
       siret: 'FR11223344',
       email: 'contact@quickinstall.fr',
       phone: '+33156789012',
-      contactName: 'Marc Leroy',
+      contactName: 'Marc Dubois',
       tier: 3, // Lower tier
       active: true,
       riskStatus: 'ON_WATCH', // Under surveillance

@@ -74,7 +74,7 @@ describe('AuthService', () => {
       firstName: 'Test',
       lastName: 'User',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
     };
 
     const mockUser = {
@@ -148,7 +148,7 @@ describe('AuthService', () => {
       firstName: 'Test',
       lastName: 'User',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       isActive: true,
       roles: [
         {
@@ -224,7 +224,7 @@ describe('AuthService', () => {
         firstName: 'Test',
         lastName: 'User',
         countryCode: 'FR',
-        businessUnit: 'LEROY_MERLIN',
+        businessUnit: 'DIY_STORE',
         password: 'hashed-password',
         isActive: true,
         roles: [
@@ -361,7 +361,7 @@ describe('AuthService', () => {
       firstName: 'Test',
       lastName: 'User',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       isActive: true,
       roles: [
         {

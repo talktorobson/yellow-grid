@@ -13,7 +13,7 @@ import {
 export class CreateUserDto {
   @ApiProperty({
     description: 'User email address',
-    example: 'operator@adeo.com',
+    example: 'operator@store.test',
   })
   @IsEmail()
   email: string;
@@ -60,11 +60,11 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Business unit',
-    example: 'LEROY_MERLIN',
-    enum: ['LEROY_MERLIN', 'BRICO_DEPOT'],
+    example: 'DIY_STORE',
+    enum: ['DIY_STORE', 'PRO_STORE'],
   })
   @IsString()
-  @IsIn(['LEROY_MERLIN', 'BRICO_DEPOT'])
+  @IsIn(['DIY_STORE', 'PRO_STORE'])
   businessUnit: string;
 
   @ApiProperty({

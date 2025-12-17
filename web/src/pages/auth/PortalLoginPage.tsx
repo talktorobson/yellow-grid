@@ -44,7 +44,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-blue-600 to-blue-800',
     accentColor: 'blue',
     defaultRedirect: '/operator/dashboard',
-    defaultEmail: 'operator.fr@adeo.com',
+    defaultEmail: 'operator.fr@store.test',
     features: ['Service Order Management', 'Real-time Calendar', 'Provider Assignments', 'Task Queue'],
   },
   provider: {
@@ -56,7 +56,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-emerald-600 to-emerald-800',
     accentColor: 'emerald',
     defaultRedirect: '/provider/dashboard',
-    defaultEmail: 'provider.fr@adeo.com',
+    defaultEmail: 'provider.fr@store.test',
     features: ['Job Pipeline', 'Team Management', 'Financial Center', 'Performance Metrics'],
   },
   psm: {
@@ -68,7 +68,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-purple-600 to-purple-800',
     accentColor: 'purple',
     defaultRedirect: '/psm/dashboard',
-    defaultEmail: 'psm.fr@adeo.com',
+    defaultEmail: 'psm.fr@store.test',
     features: ['Provider Pipeline', 'Document Verification', 'Coverage Mapping', 'Onboarding'],
   },
   seller: {
@@ -80,7 +80,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-orange-500 to-orange-700',
     accentColor: 'orange',
     defaultRedirect: '/seller/dashboard',
-    defaultEmail: 'seller.fr@adeo.com',
+    defaultEmail: 'seller.fr@store.test',
     features: ['Availability Checker', 'Quotation Builder', 'TV Reports', 'Customer Projects'],
   },
   admin: {
@@ -92,7 +92,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-slate-700 to-slate-900',
     accentColor: 'slate',
     defaultRedirect: '/admin/dashboard',
-    defaultEmail: 'admin.fr@adeo.com',
+    defaultEmail: 'admin.fr@store.test',
     features: ['User Management', 'Role Configuration', 'System Settings', 'Audit Logs'],
   },
   catalog: {
@@ -104,7 +104,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-cyan-600 to-cyan-800',
     accentColor: 'cyan',
     defaultRedirect: '/catalog/services',
-    defaultEmail: 'catalog.fr@adeo.com',
+    defaultEmail: 'catalog.fr@store.test',
     features: ['Service Definitions', 'Pricing Rules', 'Checklist Builder', 'Skill Requirements'],
   },
   workteam: {
@@ -116,7 +116,7 @@ const portalConfigs: Record<string, PortalConfig> = {
     gradient: 'from-amber-600 to-amber-800',
     accentColor: 'amber',
     defaultRedirect: '/mobile/', // Redirect to mobile app
-    defaultEmail: 'workteam.fr@adeo.com',
+    defaultEmail: 'workteam.fr@store.test',
     features: ['Daily Agenda', 'Job Execution', 'Photo Capture', 'WCF Submission'],
   },
 };
@@ -145,7 +145,7 @@ export default function PortalLoginPage() {
   // Update email when country changes
   useEffect(() => {
     const role = config.id;
-    setEmail(`${role}.${selectedCountry.toLowerCase()}@adeo.com`);
+    setEmail(`${role}.${selectedCountry.toLowerCase()}@store.test`);
     setPassword('Admin123!');
   }, [selectedCountry, config.id]);
 
@@ -177,7 +177,7 @@ export default function PortalLoginPage() {
 
   const handleQuickLogin = async (countryCode: string) => {
     const role = config.id;
-    const quickEmail = `${role}.${countryCode.toLowerCase()}@adeo.com`;
+    const quickEmail = `${role}.${countryCode.toLowerCase()}@store.test`;
     
     try {
       await login(quickEmail, 'Admin123!');
@@ -237,7 +237,7 @@ export default function PortalLoginPage() {
         {/* Footer */}
         <div className="text-white/50 text-sm">
           <p>Yellow Grid Field Service Management Platform</p>
-          <p>© 2025 Adeo Home Services</p>
+          <p>© 2025 GlobalCorp Home Services</p>
         </div>
       </div>
 
@@ -302,7 +302,7 @@ export default function PortalLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="user@adeo.com"
+                placeholder="user@store.test"
               />
             </div>
 

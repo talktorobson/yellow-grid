@@ -15,8 +15,8 @@ export enum CountryCode {
 }
 
 export enum BusinessUnit {
-  LEROY_MERLIN = 'LEROY_MERLIN',
-  BRICO_DEPOT = 'BRICO_DEPOT',
+  DIY_STORE = 'DIY_STORE',
+  PRO_STORE = 'PRO_STORE',
 }
 
 // ============================================================================

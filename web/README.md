@@ -408,7 +408,7 @@ Can be deployed to:
 
 ## License
 
-PROPRIETARY - © 2025 Adeo Home Services
+PROPRIETARY - © 2025 GlobalCorp Home Services
 
 ---
 

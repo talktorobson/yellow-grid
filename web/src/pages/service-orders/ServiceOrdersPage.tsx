@@ -330,8 +330,8 @@ export default function ServiceOrdersPage() {
                   }
                 >
                   <option value="">All Business Units</option>
-                  <option value="LEROY_MERLIN">Leroy Merlin</option>
-                  <option value="BRICO_DEPOT">Brico Depot</option>
+                  <option value="DIY_STORE">DIY Store</option>
+                  <option value="PRO_STORE">Pro Store</option>
                 </select>
               </div>
 

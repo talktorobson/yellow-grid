@@ -70,7 +70,7 @@ const initialFormData: FormData = {
   requestedEndDate: '',
   requestedTimeSlot: 'AM',
   countryCode: 'ES',
-  businessUnit: 'LEROY_MERLIN',
+  businessUnit: 'DIY_STORE',
   salesmanNotes: '',
   externalServiceOrderId: '',
 };
@@ -444,7 +444,7 @@ export function CreateServiceOrderModal({ isOpen, onClose, onSuccess }: CreateSe
                       value={formData.businessUnit}
                       onChange={(e) => handleInputChange('businessUnit', e.target.value)}
                     >
-                      <option value="LEROY_MERLIN">Leroy Merlin</option>
+                      <option value="DIY_STORE">DIY Store</option>
                       <option value="AKI">AKI</option>
                       <option value="WELDOM">Weldom</option>
                       <option value="BRICOMAN">Bricoman</option>

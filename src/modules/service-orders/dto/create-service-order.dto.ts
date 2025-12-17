@@ -102,7 +102,7 @@ export class CreateServiceOrderDto {
 
   @ApiProperty({
     description: 'Business unit code',
-    example: 'LEROY_MERLIN',
+    example: 'DIY_STORE',
   })
   @IsString()
   @IsNotEmpty()

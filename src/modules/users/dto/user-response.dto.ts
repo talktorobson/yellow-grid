@@ -9,7 +9,7 @@ export class UserResponseDto {
 
   @ApiProperty({
     description: 'User email',
-    example: 'operator@adeo.com',
+    example: 'operator@store.test',
   })
   email: string;
 
@@ -33,7 +33,7 @@ export class UserResponseDto {
 
   @ApiProperty({
     description: 'Business unit',
-    example: 'LEROY_MERLIN',
+    example: 'DIY_STORE',
   })
   businessUnit: string;
 

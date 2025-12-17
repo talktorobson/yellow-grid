@@ -122,7 +122,7 @@ export class CamundaController {
           storeId: dto.storeId || `${dto.countryCode}-STORE`,
           serviceId: dto.serviceId || 'default-service',
           countryCode: dto.countryCode,
-          businessUnit: dto.businessUnit || `ADEO_${dto.countryCode}`,
+          businessUnit: dto.businessUnit || `GlobalCorp_${dto.countryCode}`,
           postalCode: dto.postalCode,
           urgency: dto.urgency,
           requestedStartDate:
@@ -191,7 +191,7 @@ export class CamundaController {
             storeId: order.storeId || `${order.countryCode}-STORE`,
             serviceId: order.serviceId || 'default-service',
             countryCode: order.countryCode,
-            businessUnit: order.businessUnit || `ADEO_${order.countryCode}`,
+            businessUnit: order.businessUnit || `GlobalCorp_${order.countryCode}`,
             postalCode: order.postalCode,
             urgency: order.urgency,
             requestedStartDate:

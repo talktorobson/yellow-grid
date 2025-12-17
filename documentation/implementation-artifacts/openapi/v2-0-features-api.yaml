@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: FSM Platform v2.0 Features API
+  title: Yellow Grid Platform v2.0 Features API
   version: 2.0.0
   description: |
     API endpoints for v2.0 features:
@@ -10,17 +10,17 @@ info:
     - AI-powered risk assessment
   contact:
     name: Platform Architecture Team
-    email: platform@ahs.com
+    email: platform@yellow-grid.com
   license:
     name: Proprietary
     identifier: Proprietary
 
 servers:
-  - url: https://api.fsm.ahs.com/v1
+  - url: https://api.yellow-grid.com/api/v1
     description: Production
-  - url: https://api-staging.fsm.ahs.com/v1
+  - url: https://api-staging.yellow-grid.com/api/v1
     description: Staging
-  - url: http://localhost:3000/v1
+  - url: http://localhost:3000/api/v1
     description: Local development
 
 tags:

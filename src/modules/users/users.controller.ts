@@ -75,7 +75,7 @@ export class UsersController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'countryCode', required: false, enum: ['FR', 'ES', 'IT', 'PL'] })
-  @ApiQuery({ name: 'businessUnit', required: false, enum: ['LEROY_MERLIN', 'BRICO_DEPOT'] })
+  @ApiQuery({ name: 'businessUnit', required: false, enum: ['DIY_STORE', 'PRO_STORE'] })
   @ApiQuery({ name: 'role', required: false, type: String })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({

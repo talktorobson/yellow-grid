@@ -23,7 +23,7 @@ enum CountryCode {
 }
 
 enum BusinessUnit {
-  LEROY_MERLIN
+  DIY_STORE
   BRICO_DEPOT
 }
 

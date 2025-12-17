@@ -25,7 +25,7 @@ const mockUser = {
   role: 'OPERATOR', // Singular for backward compatibility
   roles: ['OPERATOR'], // Array for API compatibility
   countryCode: 'FR',
-  businessUnit: 'LEROY_MERLIN',
+  businessUnit: 'DIY_STORE',
   userType: 'INTERNAL',
   permissions: ['service-orders:read', 'service-orders:write', 'assignments:read'],
   providerId: null,
@@ -152,7 +152,7 @@ export const handlers = [
       ...order,
       // Add additional detail fields
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       storeId: 'store-1',
       projectId: 'project-1',
       // Customer information

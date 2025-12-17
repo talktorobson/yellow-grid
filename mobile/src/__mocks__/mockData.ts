@@ -10,7 +10,7 @@ export const mockUser: User = {
   lastName: 'Doe',
   role: UserRole.WORK_TEAM,
   countryCode: 'FR',
-  businessUnit: 'LEROY_MERLIN',
+  businessUnit: 'DIY_STORE',
   workTeamId: 'team-456',
   providerId: 'provider-789',
   permissions: ['service_orders:read', 'service_orders:update', 'check_ins:create', 'check_outs:create'],

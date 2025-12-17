@@ -136,7 +136,7 @@ export class ConfigController {
    * Retrieves configuration for a specific business unit within a country.
    *
    * @param countryCode - The ISO country code.
-   * @param businessUnit - The business unit identifier (e.g., LEROY_MERLIN).
+   * @param businessUnit - The business unit identifier (e.g., DIY_STORE).
    * @returns The business unit configuration object.
    */
   @Get('business-unit/:countryCode/:businessUnit')

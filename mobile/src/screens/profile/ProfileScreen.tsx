@@ -293,7 +293,7 @@ const ProfileScreen: React.FC = () => {
         {/* Version */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Yellow Grid Mobile v2.0.0</Text>
-          <Text style={styles.copyrightText}>© 2025 ADEO. All rights reserved.</Text>
+          <Text style={styles.copyrightText}>© 2025 GlobalCorp. All rights reserved.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -455,14 +455,14 @@ export class ConfigService {
    */
   private getBusinessUnitDefaults(businessUnit: string) {
     const defaults: Record<string, any> = {
-      LEROY_MERLIN: {
-        businessUnitName: 'Leroy Merlin',
+      DIY_STORE: {
+        businessUnitName: 'DIY Store',
       },
-      BRICO_DEPOT: {
-        businessUnitName: 'Brico Depot',
+      PRO_STORE: {
+        businessUnitName: 'Pro Store',
       },
     };
 
-    return defaults[businessUnit] || defaults.LEROY_MERLIN;
+    return defaults[businessUnit] || defaults.DIY_STORE;
   }
 }

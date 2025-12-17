@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
   console.log('Login form loaded');
   
   // Fill form
-  await page.locator('input').first().fill('operator.fr@adeo.com');
+  await page.locator('input').first().fill('operator.fr@store.test');
   await page.locator('input[type="password"]').fill('Admin123!');
   
   // Screenshot before submit

@@ -26,7 +26,7 @@ describe('AuthController', () => {
       firstName: 'Test',
       lastName: 'User',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       userType: 'INTERNAL',
       roles: ['OPERATOR'],
       mfaEnabled: false,
@@ -62,7 +62,7 @@ describe('AuthController', () => {
       firstName: 'Test',
       lastName: 'User',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
     };
 
     it('should register a new user', async () => {
@@ -147,7 +147,7 @@ describe('AuthController', () => {
       userId: 'user-123',
       email: 'test@example.com',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       roles: ['OPERATOR'],
     };
 
@@ -176,7 +176,7 @@ describe('AuthController', () => {
       userId: 'user-123',
       email: 'test@example.com',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       roles: ['OPERATOR'],
     };
 

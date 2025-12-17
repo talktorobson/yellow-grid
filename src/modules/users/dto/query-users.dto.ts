@@ -16,13 +16,13 @@ export class QueryUsersDto {
 
   @ApiProperty({
     description: 'Filter by business unit',
-    example: 'LEROY_MERLIN',
+    example: 'DIY_STORE',
     required: false,
-    enum: ['LEROY_MERLIN', 'BRICO_DEPOT'],
+    enum: ['DIY_STORE', 'PRO_STORE'],
   })
   @IsOptional()
   @IsString()
-  @IsIn(['LEROY_MERLIN', 'BRICO_DEPOT'])
+  @IsIn(['DIY_STORE', 'PRO_STORE'])
   businessUnit?: string;
 
   @ApiProperty({

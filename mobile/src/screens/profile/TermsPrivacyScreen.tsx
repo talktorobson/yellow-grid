@@ -103,7 +103,7 @@ const TermsPrivacyScreen: React.FC = () => {
         We share your information with:{'\n'}
         • Customers (name and general location for service orders){'\n'}
         • Your service provider company{'\n'}
-        • ADEO Group entities as needed{'\n'}
+        • GlobalCorp Group entities as needed{'\n'}
         • Law enforcement when legally required
       </Text>
 
@@ -215,7 +215,7 @@ const TermsPrivacyScreen: React.FC = () => {
         {/* Version Info */}
         <View style={styles.versionInfo}>
           <Text style={styles.versionText}>Yellow Grid v1.0.0</Text>
-          <Text style={styles.versionText}>© 2025 ADEO Services. All rights reserved.</Text>
+          <Text style={styles.versionText}>© 2025 GlobalCorp Services. All rights reserved.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

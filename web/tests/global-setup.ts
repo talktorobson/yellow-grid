@@ -45,7 +45,7 @@ async function globalSetup(config: FullConfig) {
     await page.screenshot({ path: 'auth-step-2-form-visible.png' });
 
     // Fill in credentials
-    await page.fill('input[type="email"]', 'operator.fr@adeo.com');
+    await page.fill('input[type="email"]', 'operator.fr@store.test');
     await page.fill('input[type="password"]', 'Admin123!');
 
     // Take debug screenshot

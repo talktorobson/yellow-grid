@@ -106,28 +106,27 @@ Admin123!
 ├─────────────────────────────────────────────────────────────────────┤
 │  Password (all users): Admin123!                                    │
 │                                                                     │
-│  Email format: {role}.{country}@adeo.com                           │
+│  Email format: {role}.{country}@store.test                           │
 │                                                                     │
 │  Roles: admin, operator, psm, seller, catalog, provider, workteam  │
 │  Countries: fr, es, it, pt                                          │
 ├─────────────────────────────────────────────────────────────────────┤
 │  Examples:                                                          │
-│    operator.fr@adeo.com  - French operator                         │
-│    seller.es@adeo.com    - Spanish seller                          │
-│    admin.it@adeo.com     - Italian admin                           │
-│    provider.pt@adeo.com  - Portuguese provider                     │
+│    operator.fr@store.test  - French operator                         │
+│    seller.es@store.test    - Spanish seller                          │
+│    admin.it@store.test     - Italian admin                           │
+│    provider.pt@store.test  - Portuguese provider                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Legacy Users (Backward Compatibility)
+### User Accounts Reference
 
 | Email | Password | Role |
 |-------|----------|------|
-| operator@adeo.com | Admin123! | OPERATOR |
-| admin-fr@adeo.com | Admin123! | ADMIN |
-| admin-es@adeo.com | Admin123! | ADMIN |
-| admin-it@adeo.com | Admin123! | ADMIN |
-| admin-pt@adeo.com | Admin123! | ADMIN |
+| operator@store.test | Admin123! | OPERATOR |
+| admin.fr@store.test | Admin123! | ADMIN |
+| seller.es@store.test | Admin123! | SELLER |
+| provider.it@store.test | Admin123! | PROVIDER |
 
 ---
 

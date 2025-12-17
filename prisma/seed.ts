@@ -128,7 +128,7 @@ async function main() {
 
   const standardPassword = await bcrypt.hash('Admin123!', 10);
   const countryCodes = ['FR', 'ES', 'IT', 'PT'];
-  
+
   // Role to email prefix and first name mapping
   const roleUserConfigs = [
     { role: 'ADMIN', emailPrefix: 'admin', firstName: 'Admin', lastName: 'User' },
@@ -149,12 +149,12 @@ async function main() {
   };
 
   let userCount = 0;
-  
+
   for (const country of countryCodes) {
     for (const config of roleUserConfigs) {
-      const email = `${config.emailPrefix}.${country.toLowerCase()}@adeo.com`;
+      const email = `${config.emailPrefix}.${country.toLowerCase()}@store.test`;
       const preferredLanguage = countryLanguageMap[country] || 'en';
-      
+
       const user = await prisma.user.upsert({
         where: { email },
         update: {
@@ -173,7 +173,7 @@ async function main() {
           firstName: config.firstName,
           lastName: `${config.lastName} (${country})`,
           countryCode: country,
-          businessUnit: 'LEROY_MERLIN',
+          businessUnit: 'DIY_STORE',
           isActive: true,
           isVerified: true,
           preferredLanguage: preferredLanguage,
@@ -194,19 +194,19 @@ async function main() {
           roleId: roles[config.role].id,
         },
       });
-      
+
       userCount++;
     }
   }
 
   console.log(`✅ Created ${userCount} role-based users (${roleUserConfigs.length} roles × ${countryCodes.length} countries)`);
   console.log('   All users have password: Admin123!');
-  console.log('   Email format: {role}.{country}@adeo.com');
-  console.log('   Examples: operator.fr@adeo.com, seller.es@adeo.com, admin.it@adeo.com');
+  console.log('   Email format: {role}.{country}@store.test');
+  console.log('   Examples: operator.fr@store.test, seller.es@store.test, admin.it@store.test');
 
   // Keep legacy users for backward compatibility
   const legacyOperatorUser = await prisma.user.upsert({
-    where: { email: 'operator@adeo.com' },
+    where: { email: 'operator@store.test' },
     update: {
       password: standardPassword,
       firstName: 'Legacy',
@@ -216,12 +216,12 @@ async function main() {
       preferredLanguage: 'fr',
     },
     create: {
-      email: 'operator@adeo.com',
+      email: 'operator@store.test',
       password: standardPassword,
       firstName: 'Legacy',
       lastName: 'Operator',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       isActive: true,
       isVerified: true,
       preferredLanguage: 'fr',
@@ -244,10 +244,10 @@ async function main() {
 
   // Legacy admin users for backward compatibility
   const legacyAdmins = [
-    { email: 'admin-fr@adeo.com', country: 'FR' },
-    { email: 'admin-es@adeo.com', country: 'ES' },
-    { email: 'admin-it@adeo.com', country: 'IT' },
-    { email: 'admin-pt@adeo.com', country: 'PT' },
+    { email: 'admin.fr@store.test', country: 'FR' },
+    { email: 'admin.es@store.test', country: 'ES' },
+    { email: 'admin.it@store.test', country: 'IT' },
+    { email: 'admin.pt@store.test', country: 'PT' },
   ];
 
   for (const admin of legacyAdmins) {
@@ -265,7 +265,7 @@ async function main() {
         firstName: 'Admin',
         lastName: `(${admin.country})`,
         countryCode: admin.country,
-        businessUnit: 'LEROY_MERLIN',
+        businessUnit: 'DIY_STORE',
         isActive: true,
         isVerified: true,
         preferredLanguage: preferredLang,
@@ -296,7 +296,7 @@ async function main() {
 
   // Countries
   const countries = [
-        { code: 'ES', name: 'Spain', timezone: 'Europe/Madrid', currency: 'EUR', locale: 'es-ES' },
+    { code: 'ES', name: 'Spain', timezone: 'Europe/Madrid', currency: 'EUR', locale: 'es-ES' },
     { code: 'FR', name: 'France', timezone: 'Europe/Paris', currency: 'EUR', locale: 'fr-FR' },
     { code: 'IT', name: 'Italy', timezone: 'Europe/Rome', currency: 'EUR', locale: 'it-IT' },
     { code: 'PL', name: 'Poland', timezone: 'Europe/Warsaw', currency: 'PLN', locale: 'pl-PL' },
@@ -447,7 +447,7 @@ async function main() {
 
   // Sales Systems - these are the source systems that create service orders
   const salesSystems = [
-    { code: 'PYXIS', name: 'Pyxis Sales System', description: 'Primary point-of-sale system for Leroy Merlin stores', isActive: true },
+    { code: 'PYXIS', name: 'POS Sales System', description: 'Primary point-of-sale system for stores', isActive: true },
     { code: 'TEMPO', name: 'Tempo Order System', description: 'Online order management system', isActive: true },
     { code: 'SAP', name: 'SAP ERP', description: 'Enterprise resource planning system', isActive: true },
     { code: 'MANUAL', name: 'Manual Entry', description: 'Manually created service orders', isActive: true },
@@ -468,19 +468,19 @@ async function main() {
   // Stores - physical retail locations
   const storesData = [
     // Spain stores
-    { externalStoreId: 'LM_ES_001', name: 'Leroy Merlin Madrid Centro', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_001', address: { street: 'Calle Gran Via 45', city: 'Madrid', postalCode: '28013', country: 'ES', lat: 40.4200, lng: -3.7050 }, phone: '+34 91 123 4567', email: 'madrid.centro@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
-    { externalStoreId: 'LM_ES_002', name: 'Leroy Merlin Getafe', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_002', address: { street: 'Av. de los Ángeles 12', city: 'Getafe', postalCode: '28901', country: 'ES', lat: 40.3050, lng: -3.7320 }, phone: '+34 91 234 5678', email: 'getafe@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
-    { externalStoreId: 'LM_ES_003', name: 'Leroy Merlin Barcelona Sant Cugat', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_003', address: { street: 'Carrer de la Indústria 10', city: 'Sant Cugat', postalCode: '08172', country: 'ES', lat: 41.4700, lng: 2.0750 }, phone: '+34 93 123 4567', email: 'santcugat@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
-    { externalStoreId: 'LM_ES_004', name: 'Leroy Merlin Valencia', countryCode: 'ES', businessUnit: 'LEROY_MERLIN', buCode: 'LM_ES_004', address: { street: 'Av. de Francia 15', city: 'Valencia', postalCode: '46023', country: 'ES', lat: 39.4560, lng: -0.3560 }, phone: '+34 96 123 4567', email: 'valencia@leroymerlin.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'STORE_ES_001', name: 'Store Madrid Centro', countryCode: 'ES', businessUnit: 'DIY_STORE', buCode: 'STORE_ES_001', address: { street: 'Calle Gran Via 45', city: 'Madrid', postalCode: '28013', country: 'ES', lat: 40.4200, lng: -3.7050 }, phone: '+34 91 123 4567', email: 'madrid.centro@store.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'STORE_ES_002', name: 'Store Getafe', countryCode: 'ES', businessUnit: 'DIY_STORE', buCode: 'STORE_ES_002', address: { street: 'Av. de los Ángeles 12', city: 'Getafe', postalCode: '28901', country: 'ES', lat: 40.3050, lng: -3.7320 }, phone: '+34 91 234 5678', email: 'getafe@store.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'STORE_ES_003', name: 'Store Barcelona Sant Cugat', countryCode: 'ES', businessUnit: 'DIY_STORE', buCode: 'STORE_ES_003', address: { street: 'Carrer de la Indústria 10', city: 'Sant Cugat', postalCode: '08172', country: 'ES', lat: 41.4700, lng: 2.0750 }, phone: '+34 93 123 4567', email: 'santcugat@store.es', timezone: 'Europe/Madrid', isActive: true },
+    { externalStoreId: 'STORE_ES_004', name: 'Store Valencia', countryCode: 'ES', businessUnit: 'DIY_STORE', buCode: 'STORE_ES_004', address: { street: 'Av. de Francia 15', city: 'Valencia', postalCode: '46023', country: 'ES', lat: 39.4560, lng: -0.3560 }, phone: '+34 96 123 4567', email: 'valencia@store.es', timezone: 'Europe/Madrid', isActive: true },
     // France stores
-    { externalStoreId: 'LM_FR_001', name: 'Leroy Merlin Paris Ivry', countryCode: 'FR', businessUnit: 'LEROY_MERLIN', buCode: 'LM_FR_001', address: { street: '92 Quai de la Gare', city: 'Paris', postalCode: '75013', country: 'FR', lat: 48.8300, lng: 2.3700 }, phone: '+33 1 40 12 34 56', email: 'paris.ivry@leroymerlin.fr', timezone: 'Europe/Paris', isActive: true },
-    { externalStoreId: 'LM_FR_002', name: 'Leroy Merlin Paris Madeleine', countryCode: 'FR', businessUnit: 'LEROY_MERLIN', buCode: 'LM_FR_002', address: { street: '14 Rue de la Madeleine', city: 'Paris', postalCode: '75008', country: 'FR', lat: 48.8700, lng: 2.3250 }, phone: '+33 1 42 12 34 56', email: 'paris.madeleine@leroymerlin.fr', timezone: 'Europe/Paris', isActive: true },
+    { externalStoreId: 'STORE_FR_001', name: 'Store Paris Ivry', countryCode: 'FR', businessUnit: 'DIY_STORE', buCode: 'STORE_FR_001', address: { street: '92 Quai de la Gare', city: 'Paris', postalCode: '75013', country: 'FR', lat: 48.8300, lng: 2.3700 }, phone: '+33 1 40 12 34 56', email: 'paris.ivry@store.fr', timezone: 'Europe/Paris', isActive: true },
+    { externalStoreId: 'STORE_FR_002', name: 'Store Paris Madeleine', countryCode: 'FR', businessUnit: 'DIY_STORE', buCode: 'STORE_FR_002', address: { street: '14 Rue de la Madeleine', city: 'Paris', postalCode: '75008', country: 'FR', lat: 48.8700, lng: 2.3250 }, phone: '+33 1 42 12 34 56', email: 'paris.madeleine@store.fr', timezone: 'Europe/Paris', isActive: true },
     // Italy stores
-    { externalStoreId: 'LM_IT_001', name: 'Leroy Merlin Milano Carugate', countryCode: 'IT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_IT_001', address: { street: 'Via Milanofiori 5', city: 'Carugate', postalCode: '20061', country: 'IT', lat: 45.5500, lng: 9.3400 }, phone: '+39 02 123 4567', email: 'carugate@leroymerlin.it', timezone: 'Europe/Rome', isActive: true },
-    { externalStoreId: 'LM_IT_002', name: 'Leroy Merlin Roma Est', countryCode: 'IT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_IT_002', address: { street: 'Via Prenestina 156', city: 'Roma', postalCode: '00176', country: 'IT', lat: 41.8900, lng: 12.5200 }, phone: '+39 06 123 4567', email: 'roma.est@leroymerlin.it', timezone: 'Europe/Rome', isActive: true },
+    { externalStoreId: 'STORE_IT_001', name: 'Store Milano Carugate', countryCode: 'IT', businessUnit: 'DIY_STORE', buCode: 'STORE_IT_001', address: { street: 'Via Milanofiori 5', city: 'Carugate', postalCode: '20061', country: 'IT', lat: 45.5500, lng: 9.3400 }, phone: '+39 02 123 4567', email: 'carugate@store.it', timezone: 'Europe/Rome', isActive: true },
+    { externalStoreId: 'STORE_IT_002', name: 'Store Roma Est', countryCode: 'IT', businessUnit: 'DIY_STORE', buCode: 'STORE_IT_002', address: { street: 'Via Prenestina 156', city: 'Roma', postalCode: '00176', country: 'IT', lat: 41.8900, lng: 12.5200 }, phone: '+39 06 123 4567', email: 'roma.est@store.it', timezone: 'Europe/Rome', isActive: true },
     // Portugal stores
-    { externalStoreId: 'LM_PT_001', name: 'Leroy Merlin Lisboa Alfragide', countryCode: 'PT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_PT_001', address: { street: 'Estrada de Alfragide', city: 'Lisboa', postalCode: '2610-001', country: 'PT', lat: 38.7300, lng: -9.2200 }, phone: '+351 21 123 4567', email: 'alfragide@leroymerlin.pt', timezone: 'Europe/Lisbon', isActive: true },
-    { externalStoreId: 'LM_PT_002', name: 'Leroy Merlin Porto Maia', countryCode: 'PT', businessUnit: 'LEROY_MERLIN', buCode: 'LM_PT_002', address: { street: 'Av. Eng. Duarte Pacheco 190', city: 'Maia', postalCode: '4470-158', country: 'PT', lat: 41.2400, lng: -8.6200 }, phone: '+351 22 123 4567', email: 'maia@leroymerlin.pt', timezone: 'Europe/Lisbon', isActive: true },
+    { externalStoreId: 'STORE_PT_001', name: 'Store Lisboa Alfragide', countryCode: 'PT', businessUnit: 'DIY_STORE', buCode: 'STORE_PT_001', address: { street: 'Estrada de Alfragide', city: 'Lisboa', postalCode: '2610-001', country: 'PT', lat: 38.7300, lng: -9.2200 }, phone: '+351 21 123 4567', email: 'alfragide@store.pt', timezone: 'Europe/Lisbon', isActive: true },
+    { externalStoreId: 'STORE_PT_002', name: 'Store Porto Maia', countryCode: 'PT', businessUnit: 'DIY_STORE', buCode: 'STORE_PT_002', address: { street: 'Av. Eng. Duarte Pacheco 190', city: 'Maia', postalCode: '4470-158', country: 'PT', lat: 41.2400, lng: -8.6200 }, phone: '+351 22 123 4567', email: 'maia@store.pt', timezone: 'Europe/Lisbon', isActive: true },
   ];
 
   const createdStores: Record<string, any> = {};
@@ -625,7 +625,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Air Conditioning Installation - Standard',
@@ -648,7 +648,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Water Heater Installation',
@@ -671,7 +671,7 @@ async function main() {
       fsmServiceCode: 'SVC_ES_KITCHEN_001',
       externalSource: 'PYXIS',
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.KITCHEN,
       name: 'Full Kitchen Installation',
@@ -695,7 +695,7 @@ async function main() {
       fsmServiceCode: 'SVC_IT_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Installazione Aria Condizionata - Standard',
@@ -718,7 +718,7 @@ async function main() {
       fsmServiceCode: 'SVC_IT_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Installazione Scaldabagno',
@@ -742,7 +742,7 @@ async function main() {
       fsmServiceCode: 'SVC_PT_HVAC_001',
       externalSource: 'PYXIS',
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.HVAC,
       name: 'Instalação Ar Condicionado - Standard',
@@ -765,7 +765,7 @@ async function main() {
       fsmServiceCode: 'SVC_PT_PLUMB_001',
       externalSource: 'PYXIS',
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       serviceType: ServiceType.INSTALLATION,
       serviceCategory: ServiceCategory.PLUMBING,
       name: 'Instalação Termoacumulador',
@@ -835,7 +835,7 @@ async function main() {
     {
       serviceId: hvacService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null, // Country default
       baseRate: 150.00,
       currency: 'EUR',
@@ -848,7 +848,7 @@ async function main() {
     {
       serviceId: hvacService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: madridPostalCode?.id!,
       baseRate: 175.00, // 16% higher in Madrid
       currency: 'EUR',
@@ -861,7 +861,7 @@ async function main() {
     {
       serviceId: plumbingService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 200.00,
       currency: 'EUR',
@@ -874,7 +874,7 @@ async function main() {
     {
       serviceId: kitchenService?.id!,
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 1200.00,
       currency: 'EUR',
@@ -887,7 +887,7 @@ async function main() {
     {
       serviceId: itHvacService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 160.00,
       currency: 'EUR',
@@ -899,7 +899,7 @@ async function main() {
     {
       serviceId: itHvacService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: milanPostalCode?.id!,
       baseRate: 190.00,
       currency: 'EUR',
@@ -911,7 +911,7 @@ async function main() {
     {
       serviceId: itPlumbingService?.id!,
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 210.00,
       currency: 'EUR',
@@ -924,7 +924,7 @@ async function main() {
     {
       serviceId: ptHvacService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 130.00,
       currency: 'EUR',
@@ -936,7 +936,7 @@ async function main() {
     {
       serviceId: ptHvacService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: lisbonPostalCode?.id!,
       baseRate: 150.00,
       currency: 'EUR',
@@ -948,7 +948,7 @@ async function main() {
     {
       serviceId: ptPlumbingService?.id!,
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       postalCodeId: null,
       baseRate: 180.00,
       currency: 'EUR',
@@ -1084,7 +1084,7 @@ async function main() {
     {
       externalId: 'PROV_FR_001',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'ProHabitat Bordeaux',
       legalName: 'ProHabitat Bordeaux SARL',
       taxId: 'FR12345678901',
@@ -1111,7 +1111,7 @@ async function main() {
     {
       externalId: 'PROV_FR_002',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'TechniService Marseille',
       legalName: 'TechniService Marseille SAS',
       taxId: 'FR98765432109',
@@ -1138,7 +1138,7 @@ async function main() {
     {
       externalId: 'PROV_FR_003',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'InstallPlus Lyon',
       legalName: 'InstallPlus Lyon SARL',
       taxId: 'FR45678901234',
@@ -1165,7 +1165,7 @@ async function main() {
     {
       externalId: 'PROV_FR_004',
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Services Pro Paris',
       legalName: 'Services Pro Paris SAS',
       taxId: 'FR78901234567',
@@ -1193,7 +1193,7 @@ async function main() {
     {
       externalId: 'PROV_ES_001',
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Instalaciones Madrid Centro',
       legalName: 'Instalaciones Madrid Centro SL',
       taxId: 'ESB12345678',
@@ -1221,7 +1221,7 @@ async function main() {
     {
       externalId: 'PROV_ES_002',
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Barcelona Installs SL',
       legalName: 'Barcelona Installs SL',
       taxId: 'ESB87654321',
@@ -1234,7 +1234,7 @@ async function main() {
     {
       externalId: 'PROV_IT_001',
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Milano Servizi SRL',
       legalName: 'Milano Servizi SRL',
       taxId: 'IT12345678901',
@@ -1246,7 +1246,7 @@ async function main() {
     {
       externalId: 'PROV_IT_002',
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Roma Fix SRL',
       legalName: 'Roma Fix SRL',
       taxId: 'IT98765432109',
@@ -1259,7 +1259,7 @@ async function main() {
     {
       externalId: 'PROV_PT_001',
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       name: 'Lisboa Montagens Lda',
       legalName: 'Lisboa Montagens Lda',
       taxId: 'PT123456789',
@@ -1287,16 +1287,16 @@ async function main() {
 
   const allProviders = await prisma.provider.findMany();
   const esCalendarConfig = await prisma.calendarConfig.findFirst({
-    where: { countryCode: 'ES', businessUnit: 'LEROY_MERLIN' }
+    where: { countryCode: 'ES', businessUnit: 'DIY_STORE' }
   });
   const frCalendarConfig = await prisma.calendarConfig.findFirst({
-    where: { countryCode: 'FR', businessUnit: 'LEROY_MERLIN' }
+    where: { countryCode: 'FR', businessUnit: 'DIY_STORE' }
   });
 
   for (const provider of allProviders) {
-    const calendarConfigId = provider.countryCode === 'ES' ? esCalendarConfig?.id 
-      : provider.countryCode === 'FR' ? frCalendarConfig?.id 
-      : null;
+    const calendarConfigId = provider.countryCode === 'ES' ? esCalendarConfig?.id
+      : provider.countryCode === 'FR' ? frCalendarConfig?.id
+        : null;
 
     // Create working schedule for provider
     await prisma.providerWorkingSchedule.upsert({
@@ -1459,7 +1459,7 @@ async function main() {
   console.log('\n🏪 Seeding provider store assignments...');
 
   const stores = await prisma.store.findMany({ take: 3 });
-  
+
   if (madridProvider && stores.length > 0) {
     for (const store of stores.filter(s => s.countryCode === 'ES')) {
       await prisma.providerStoreAssignment.upsert({
@@ -1486,7 +1486,7 @@ async function main() {
     // Spain - Leroy Merlin
     {
       countryCode: 'ES',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       workingDays: [1, 2, 3, 4, 5], // Monday-Friday
       timezone: 'Europe/Madrid',
       morningShiftStart: '08:00',
@@ -1524,7 +1524,7 @@ async function main() {
     // France - Leroy Merlin
     {
       countryCode: 'FR',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Paris',
       morningShiftStart: '08:00',
@@ -1562,7 +1562,7 @@ async function main() {
     // Italy - Leroy Merlin
     {
       countryCode: 'IT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Rome',
       morningShiftStart: '08:00',
@@ -1581,7 +1581,7 @@ async function main() {
     // Poland - Leroy Merlin
     {
       countryCode: 'PL',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Warsaw',
       morningShiftStart: '08:00',
@@ -1600,7 +1600,7 @@ async function main() {
     // Portugal - Leroy Merlin
     {
       countryCode: 'PT',
-      businessUnit: 'LEROY_MERLIN',
+      businessUnit: 'DIY_STORE',
       workingDays: [1, 2, 3, 4, 5],
       timezone: 'Europe/Lisbon',
       morningShiftStart: '09:00',
@@ -1638,12 +1638,12 @@ async function main() {
 
   // Fetch providers to link
   const allProvidersForTeams = await prisma.provider.findMany();
-  
+
   // Create Work Teams for each provider
   const workTeams = [];
   for (const provider of allProvidersForTeams) {
     let team = await prisma.workTeam.findFirst({
-      where: { 
+      where: {
         providerId: provider.id,
         name: `${provider.name} - Team A`
       }
@@ -1663,7 +1663,7 @@ async function main() {
           serviceTypes: ["P1", "P2"],
           postalCodes: ["28001", "08001", "20121", "00118", "1000-001"],
           workingDays: ["MON", "TUE", "WED", "THU", "FRI"],
-          shifts: [{code:"M", startLocal:"08:00", endLocal:"18:00"}]
+          shifts: [{ code: "M", startLocal: "08:00", endLocal: "18:00" }]
         }
       });
     }
@@ -1710,7 +1710,7 @@ async function main() {
       if (calendar) {
         const christmasStart = new Date('2025-12-24');
         const christmasEnd = new Date('2025-12-26');
-        
+
         await prisma.plannedAbsence.create({
           data: {
             workTeamCalendarId: calendar.id,
@@ -1778,12 +1778,12 @@ async function main() {
   // LINK WORK TEAM USERS TO THEIR RESPECTIVE WORK TEAMS
   // ============================================================================
   console.log('\n🔗 Linking workteam users to work teams...');
-  
+
   const workTeamUserLinks: { country: string; email: string }[] = [
-    { country: 'FR', email: 'workteam.fr@adeo.com' },
-    { country: 'ES', email: 'workteam.es@adeo.com' },
-    { country: 'IT', email: 'workteam.it@adeo.com' },
-    { country: 'PT', email: 'workteam.pt@adeo.com' },
+    { country: 'FR', email: 'workteam.fr@store.test' },
+    { country: 'ES', email: 'workteam.es@store.test' },
+    { country: 'IT', email: 'workteam.it@store.test' },
+    { country: 'PT', email: 'workteam.pt@store.test' },
   ];
 
   for (const link of workTeamUserLinks) {
@@ -1792,7 +1792,7 @@ async function main() {
       const provider = allProvidersForTeams.find(p => p.id === t.providerId);
       return provider?.countryCode === link.country;
     });
-    
+
     if (countryTeam) {
       await prisma.user.updateMany({
         where: { email: link.email },
@@ -1843,7 +1843,7 @@ async function main() {
     let bookingCount = 0;
 
     const today = new Date();
-    
+
     // =========================================================================
     // RICH PRODUCT AND SERVICE CATALOG FOR DEMO
     // =========================================================================
@@ -1857,7 +1857,7 @@ async function main() {
       { sku: 'PROD-FLOOR-001', name: 'Parquet Chêne Massif 20m²', brand: 'Quick-Step', model: 'Palazzo', unitPrice: 1599.99, providerUnitCost: 1280.00, taxRate: 20 },
       { sku: 'PROD-TV-001', name: 'Support TV Mural Articulé 55-85"', brand: 'Vogels', model: 'THIN 550', unitPrice: 349.99, providerUnitCost: 280.00, taxRate: 20 },
     ];
-    
+
     const sampleServices = [
       { sku: 'SVC-INSTALL-AC', name: 'Installation Climatisation Complète', unitPrice: 350.00, providerUnitCost: 210.00, taxRate: 20, durationMinutes: 180 },
       { sku: 'SVC-INSTALL-HVAC', name: 'Installation Pompe à Chaleur', unitPrice: 890.00, providerUnitCost: 534.00, taxRate: 20, durationMinutes: 480 },
@@ -1868,7 +1868,7 @@ async function main() {
       { sku: 'SVC-MAINT-AC', name: 'Maintenance Climatisation Annuelle', unitPrice: 129.00, providerUnitCost: 77.00, taxRate: 20, durationMinutes: 60 },
       { sku: 'SVC-TV-CONFIRM', name: 'Visite Technique Préalable', unitPrice: 79.00, providerUnitCost: 47.00, taxRate: 20, durationMinutes: 45 },
     ];
-    
+
     // =========================================================================
     // RICH CUSTOMER DATA BY COUNTRY (with full address details)
     // =========================================================================
@@ -1915,7 +1915,7 @@ async function main() {
         { firstName: 'Catarina', lastName: 'Ferreira', email: 'c.ferreira@gmail.com', phone: '+351 956 789 012', streetNumber: '5', apartment: '4º Esq.', floor: '4º andar', accessCode: '9012' },
       ],
     };
-    
+
     // Get stores per country
     const storesByCountry: Record<string, any[]> = {};
     const allStores = await prisma.store.findMany();
@@ -1925,26 +1925,26 @@ async function main() {
       }
       storesByCountry[store.countryCode].push(store);
     }
-    
+
     // Get sales systems
     const pyxisSystem = await prisma.salesSystem.findFirst({ where: { code: 'PYXIS' } });
     const tempoSystem = await prisma.salesSystem.findFirst({ where: { code: 'TEMPO' } });
-    
+
     // =========================================================================
     // CREATE RICH SERVICE ORDERS FOR WORK TEAM DEMO EXPERIENCE
     // Key principle: ALL orders assigned to work teams MUST have scheduling data
     // =========================================================================
     console.log('📦 Creating rich service orders for work team demo...');
-    
+
     for (const loc of locations) {
       // Find a provider and work team for this country
       const localProvider = allProvidersForTeams.find(p => p.countryCode === loc.country);
       const localTeam = workTeams.find(t => t.providerId === localProvider?.id);
-      
+
       // Get a store for this country
       const countryStores = storesByCountry[loc.country] || [];
       const store = countryStores[Math.floor(Math.random() * countryStores.length)];
-      
+
       // Get customer data for this country
       const customers = customerData[loc.country] || customerData['FR'];
 
@@ -1953,34 +1953,34 @@ async function main() {
         // Slight location jitter for map visualization
         const lat = loc.lat + (Math.random() - 0.5) * 0.05;
         const lon = loc.lon + (Math.random() - 0.5) * 0.05;
-        
+
         // Customer for this order
         const customer = customers[i % customers.length];
         const customerName = `${customer.firstName} ${customer.lastName}`;
-        
+
         // Select product + service combination
         const productIndex = i % sampleProducts.length;
         const serviceIndex = i % sampleServices.length;
         const product = sampleProducts[productIndex];
         const svcItem = sampleServices[serviceIndex];
-        
+
         // Determine urgency (first 2 are urgent for demo visibility)
         const urgency = i < 2 ? ServiceUrgency.URGENT : ServiceUrgency.STANDARD;
-        
+
         // Service type based on service
-        const serviceType = svcItem.sku.includes('TV') ? ServiceType.CONFIRMATION_TV : 
-                           svcItem.sku.includes('MAINT') ? ServiceType.MAINTENANCE : 
-                           ServiceType.INSTALLATION;
-        
+        const serviceType = svcItem.sku.includes('TV') ? ServiceType.CONFIRMATION_TV :
+          svcItem.sku.includes('MAINT') ? ServiceType.MAINTENANCE :
+            ServiceType.INSTALLATION;
+
         // Risk & sales potential (varied for demo)
         const riskLevels = [RiskLevel.LOW, RiskLevel.LOW, RiskLevel.MEDIUM, RiskLevel.LOW, RiskLevel.HIGH];
         const salesPotentials = [SalesPotential.MEDIUM, SalesPotential.HIGH, SalesPotential.LOW, SalesPotential.HIGH, SalesPotential.MEDIUM];
-        
+
         // Sales channel
         const isOnline = i % 3 === 0;
         const salesChannel = isOnline ? SalesChannel.ONLINE : SalesChannel.IN_STORE;
         const salesSystem = isOnline ? tempoSystem : pyxisSystem;
-        
+
         // Calculate pricing
         const productQuantity = 1;
         const productSubtotal = product.unitPrice * productQuantity;
@@ -1993,17 +1993,17 @@ async function main() {
         const providerProductCost = product.providerUnitCost * productQuantity;
         const providerServiceCost = svcItem.providerUnitCost;
         const providerTotalCost = providerProductCost + providerServiceCost;
-        
+
         // Estimated duration from service
         const estimatedDuration = svcItem.durationMinutes || 120;
-        
+
         // =====================================================================
         // CRITICAL: Schedule ALL orders for work team demo
         // Orders are distributed across today and the next 6 days
         // =====================================================================
         const scheduledDate = new Date(today);
         scheduledDate.setDate(today.getDate() + (i % 7)); // Today + 0 to 6 days
-        
+
         // Time slots: 08:00, 09:30, 11:00, 14:00, 15:30 (based on location index for variety)
         const timeSlots = [
           { hour: 8, minute: 0 },
@@ -2013,44 +2013,44 @@ async function main() {
           { hour: 15, minute: 30 },
         ];
         const timeSlot = timeSlots[(locations.indexOf(loc) + i) % timeSlots.length];
-        
+
         const scheduledStartTime = new Date(scheduledDate);
         scheduledStartTime.setHours(timeSlot.hour, timeSlot.minute, 0, 0);
-        
+
         const scheduledEndTime = new Date(scheduledStartTime);
         scheduledEndTime.setMinutes(scheduledEndTime.getMinutes() + estimatedDuration);
-        
+
         // Full street address
         const fullStreet = `${customer.streetNumber} ${loc.street}`;
-        
+
         const order = await prisma.serviceOrder.create({
           data: {
-            externalServiceOrderId: `ORD-${loc.country}-${loc.city.substring(0,3).toUpperCase()}-${Date.now()}-${i}`,
+            externalServiceOrderId: `ORD-${loc.country}-${loc.city.substring(0, 3).toUpperCase()}-${Date.now()}-${i}`,
             serviceId: service.id,
-            
+
             // CRITICAL: State is ASSIGNED (assigned to work team with schedule)
             state: ServiceOrderState.ASSIGNED,
             serviceType: serviceType,
             urgency: urgency,
             estimatedDurationMinutes: estimatedDuration,
-            
+
             // CRITICAL: Scheduling data
             scheduledDate: scheduledDate,
             scheduledStartTime: scheduledStartTime,
             scheduledEndTime: scheduledEndTime,
-            
+
             // CRITICAL: Assignment to provider AND work team (for filtering)
             assignedProviderId: localProvider?.id,
             assignedWorkTeamId: localTeam?.id,
-            
+
             // Geography
             countryCode: loc.country,
-            businessUnit: 'LEROY_MERLIN',
-            
+            businessUnit: 'DIY_STORE',
+
             // Risk & Sales
             riskLevel: riskLevels[i],
             salesPotential: salesPotentials[i],
-            
+
             // Sales context
             salesSystemId: salesSystem?.id,
             storeId: store?.id,
@@ -2058,7 +2058,7 @@ async function main() {
             salesOrderNumber: `SO-${loc.country}-${Date.now()}-${i}`,
             salesChannel: salesChannel,
             orderDate: new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000), // Order placed 3 days ago
-            
+
             // Financials
             currency: 'EUR',
             totalAmountCustomer: totalAmount,
@@ -2070,13 +2070,13 @@ async function main() {
             totalMargin: totalAmount - providerTotalCost,
             marginPercent: ((totalAmount - providerTotalCost) / totalAmount),
             paymentStatus: PaymentStatus.PAID,
-            
+
             // Delivery (products are delivered for installation)
             productDeliveryStatus: DeliveryStatus.DELIVERED,
             earliestDeliveryDate: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000),
             latestDeliveryDate: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000),
             allProductsDelivered: true,
-            
+
             // RICH Customer info for mobile app display
             customerInfo: {
               name: customerName,
@@ -2092,7 +2092,7 @@ async function main() {
                 country: loc.country
               }
             },
-            
+
             // RICH Service address with Google Maps coordinates
             serviceAddress: {
               street: fullStreet,
@@ -2108,13 +2108,13 @@ async function main() {
               parkingInfo: customer.parkingInfo,
               accessInstructions: customer.floor ? `${customer.floor}${customer.accessCode ? ` - Code: ${customer.accessCode}` : ''}` : undefined,
             },
-            
+
             // Requested dates
             requestedStartDate: scheduledDate,
             requestedEndDate: new Date(scheduledDate.getTime() + 7 * 24 * 60 * 60 * 1000),
           }
         });
-        
+
         // Create line items (product + service)
         await prisma.serviceOrderLineItem.createMany({
           data: [
@@ -2167,7 +2167,7 @@ async function main() {
             },
           ],
         });
-        
+
         // Create contacts
         await prisma.serviceOrderContact.createMany({
           data: [
@@ -2193,7 +2193,7 @@ async function main() {
             },
           ],
         });
-        
+
         orderCount++;
 
         // Create Assignment to work team
@@ -2214,7 +2214,7 @@ async function main() {
           try {
             const startSlot = Math.floor((scheduledStartTime.getHours() * 60 + scheduledStartTime.getMinutes()) / 15);
             const endSlot = Math.floor((scheduledEndTime.getHours() * 60 + scheduledEndTime.getMinutes()) / 15);
-            
+
             await prisma.booking.create({
               data: {
                 serviceOrderId: order.id,
@@ -2237,24 +2237,24 @@ async function main() {
         }
       }
     }
-    
+
     console.log(`✅ Created ${orderCount} service orders and ${bookingCount} bookings for work team demo`);
-    
+
     // ============================================================================
     // SEED TASKS FOR DEMO - Critical Actions & Priority Tasks
     // ============================================================================
     console.log('\n📋 Seeding tasks for demo...');
-    
+
     // Delete existing tasks
     await prisma.taskAuditLog.deleteMany({});
     await prisma.task.deleteMany({});
-    
+
     // Get all created orders to add tasks
     const allOrders = await prisma.serviceOrder.findMany({
       take: 30, // Add tasks to first 30 orders
       orderBy: { createdAt: 'desc' }
     });
-    
+
     const taskTypes = [
       { type: TaskType.UNASSIGNED_JOB, priority: TaskPriority.URGENT, slaDays: 0.5 },
       { type: TaskType.CONTRACT_NOT_SIGNED, priority: TaskPriority.HIGH, slaDays: 1 },
@@ -2265,27 +2265,27 @@ async function main() {
       { type: TaskType.QUALITY_ALERT, priority: TaskPriority.HIGH, slaDays: 1 },
       { type: TaskType.SERVICE_ORDER_RISK_REVIEW, priority: TaskPriority.MEDIUM, slaDays: 2 },
     ];
-    
+
     let taskCount = 0;
     const now = new Date();
-    
+
     for (let i = 0; i < Math.min(allOrders.length, 20); i++) {
       const order = allOrders[i];
       const taskConfig = taskTypes[i % taskTypes.length];
-      
+
       // Create SLA deadline based on task priority
       const slaDeadline = new Date(now);
       slaDeadline.setHours(slaDeadline.getHours() + Math.floor(taskConfig.slaDays * 24));
-      
+
       // Make some tasks overdue for demo
       const isOverdue = i < 5;
       if (isOverdue) {
         slaDeadline.setHours(slaDeadline.getHours() - 48); // 2 days overdue
       }
-      
+
       // Make some tasks assigned
       const isAssigned = i >= 5 && i < 10;
-      
+
       await prisma.task.create({
         data: {
           taskType: taskConfig.type,
@@ -2298,7 +2298,7 @@ async function main() {
             city: (order.serviceAddress as any)?.city || 'Unknown',
             reason: `Demo task for ${taskConfig.type.replace(/_/g, ' ').toLowerCase()}`,
           },
-          assignedTo: isAssigned ? 'operator.fr@adeo.com' : null,
+          assignedTo: isAssigned ? 'operator.fr@store.test' : null,
           assignedAt: isAssigned ? new Date() : null,
           slaDeadline: slaDeadline,
           countryCode: order.countryCode,
@@ -2307,30 +2307,30 @@ async function main() {
       });
       taskCount++;
     }
-    
+
     console.log(`✅ Created ${taskCount} demo tasks (5 overdue, 5 assigned, 10 open)`);
-    
+
     // ============================================================================
     // SEED NOTIFICATIONS FOR DEMO - Notification Center
     // ============================================================================
     console.log('\n🔔 Seeding notifications for demo...');
-    
+
     // Delete existing notifications
     await prisma.notification.deleteMany({});
-    
+
     // Get demo users to assign notifications
     const demoUsers = await prisma.user.findMany({
       where: {
         email: {
           in: [
-            'operator.fr@adeo.com', 'operator.es@adeo.com',
-            'admin-fr@adeo.com', 'psm.fr@adeo.com',
-            'provider.fr@adeo.com', 'workteam.fr@adeo.com'
+            'operator.fr@store.test', 'operator.es@store.test',
+            'admin-fr@store.test', 'psm.fr@store.test',
+            'provider.fr@store.test', 'workteam.fr@store.test'
           ]
         }
       }
     });
-    
+
     const notificationEvents = [
       { event: 'ORDER_ASSIGNED', subject: 'Nouveau job assigné', body: 'Un nouveau job d\'installation a été assigné à votre équipe.', priority: NotificationPriority.HIGH },
       { event: 'ORDER_COMPLETED', subject: 'Intervention terminée', body: 'L\'intervention chez M. Dupont a été terminée avec succès.', priority: NotificationPriority.NORMAL },
@@ -2343,26 +2343,26 @@ async function main() {
       { event: 'QUALITY_ALERT', subject: '⚠️ Alerte Qualité', body: 'Un client a signalé un problème suite à l\'intervention du 10/01.', priority: NotificationPriority.HIGH },
       { event: 'NEW_MESSAGE', subject: 'Nouveau message', body: 'Vous avez reçu un message de TechniService Paris concernant l\'intervention #ORD-FR-7890.', priority: NotificationPriority.NORMAL },
     ];
-    
+
     let notificationCount = 0;
     const notifNow = new Date();
-    
+
     for (const user of demoUsers) {
       // Give each user 3-5 notifications
       const numNotifs = Math.floor(Math.random() * 3) + 3;
-      
+
       for (let i = 0; i < numNotifs; i++) {
         const notifEvent = notificationEvents[Math.floor(Math.random() * notificationEvents.length)];
         const createdAt = new Date(notifNow);
         createdAt.setHours(createdAt.getHours() - Math.floor(Math.random() * 72)); // Last 3 days
-        
+
         // Some are read, some are not
         const isRead = Math.random() > 0.6;
-        
+
         // Determine language from country code
         const langMap: Record<string, string> = { 'FR': 'fr', 'ES': 'es', 'IT': 'it', 'PT': 'pt' };
         const userLanguage = langMap[user.countryCode] || 'en';
-        
+
         await prisma.notification.create({
           data: {
             recipientId: user.id,
@@ -2388,17 +2388,17 @@ async function main() {
         notificationCount++;
       }
     }
-    
+
     console.log(`✅ Created ${notificationCount} demo notifications`);
-    
+
     // ============================================================================
     // SEED ADDITIONAL BOOKINGS FOR CALENDAR VIEW
     // ============================================================================
     console.log('\n📅 Seeding additional calendar bookings...');
-    
+
     // Get existing bookings to count
     const existingBookings = await prisma.booking.count();
-    
+
     // Find scheduled orders without bookings and create bookings for them
     const ordersNeedingBookings = await prisma.serviceOrder.findMany({
       where: {
@@ -2410,23 +2410,23 @@ async function main() {
       },
       take: 15,
     });
-    
+
     let additionalBookings = 0;
     for (const order of ordersNeedingBookings) {
       const latestAssignment = order.assignments[0];
       if (!latestAssignment || !latestAssignment.workTeamId) continue;
-      
+
       // Check if booking already exists
       const existingBooking = await prisma.booking.findFirst({
         where: { serviceOrderId: order.id }
       });
       if (existingBooking) continue;
-      
+
       const bookingDate = order.scheduledDate || new Date();
-      
+
       // Create varied time slots for realistic calendar
       const baseSlot = 32 + Math.floor(Math.random() * 32); // Between 08:00 and 16:00
-      
+
       try {
         await prisma.booking.create({
           data: {
@@ -2449,18 +2449,18 @@ async function main() {
         }
       }
     }
-    
+
     // Also add some external blocks (vacations, maintenance) for calendar variety
     const allTeams = await prisma.workTeam.findMany({ take: 5 });
     const blockTypes = ['Maintenance planifiée', 'Formation équipe', 'Réunion régionale'];
-    
+
     for (let i = 0; i < 3; i++) {
       const team = allTeams[i % allTeams.length];
       if (!team) continue;
-      
+
       const blockDate = new Date();
       blockDate.setDate(blockDate.getDate() + i + 3); // 3-5 days from now
-      
+
       try {
         await prisma.booking.create({
           data: {
@@ -2481,7 +2481,7 @@ async function main() {
         // Ignore duplicates
       }
     }
-    
+
     console.log(`✅ Created ${additionalBookings} additional calendar bookings (total: ${existingBookings + additionalBookings})`);
   }
 
@@ -2489,11 +2489,11 @@ async function main() {
 
   console.log('\n✨ Database seeding completed!');
   console.log('\n📝 Test Credentials:');
-  console.log('   Admin (FR): admin-fr@adeo.com / Admin123!');
-  console.log('   Admin (ES): admin-es@adeo.com / Admin123!');
-  console.log('   Admin (IT): admin-it@adeo.com / Admin123!');
-  console.log('   Admin (PT): admin-pt@adeo.com / Admin123!');
-  console.log('   Operator: operator@adeo.com / Operator123!');
+  console.log('   Admin (FR): admin-fr@store.test / Admin123!');
+  console.log('   Admin (ES): admin-es@store.test / Admin123!');
+  console.log('   Admin (IT): admin-it@store.test / Admin123!');
+  console.log('   Admin (PT): admin-pt@store.test / Admin123!');
+  console.log('   Operator: operator@store.test / Operator123!');
   console.log('\n📊 Service Referential Data:');
   console.log(`   Countries: 4 (ES, FR, IT, PL)`);
   console.log(`   Provinces: 2 sample (Madrid, Paris)`);

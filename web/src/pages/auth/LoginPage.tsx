@@ -138,7 +138,7 @@ export default function LoginPage() {
         <p className="text-center text-sm text-gray-600 mt-6">
           Yellow Grid Field Service Management Platform
           <br />
-          © 2025 Adeo Home Services
+          © 2025 GlobalCorp Home Services
         </p>
       </div>
     </div>

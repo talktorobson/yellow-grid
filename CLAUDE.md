@@ -521,7 +521,7 @@ This repository has:
 
 ## 📖 Glossary
 
-**AHS**: Adeo Home Services
+**AHS**: Home Services Platform
 **BU**: Business Unit (e.g., Leroy Merlin, Brico Depot)
 **FSM**: Field Service Management
 **TV**: Technical Visit (pre-installation assessment)

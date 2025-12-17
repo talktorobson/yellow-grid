@@ -7,7 +7,7 @@ test('calendar should fit viewport without scrolling', async ({ page }) => {
   // Get auth token directly via API
   const loginResponse = await page.request.post('https://135.181.96.93/api/v1/auth/login', {
     data: {
-      email: 'operator.fr@adeo.com',
+      email: 'operator.fr@store.test',
       password: 'Admin123!'
     },
     ignoreHTTPSErrors: true

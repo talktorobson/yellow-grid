@@ -75,11 +75,11 @@ export class CreateProviderDto {
 
   @ApiProperty({
     description: 'Business unit',
-    example: 'LEROY_MERLIN',
-    enum: ['LEROY_MERLIN', 'BRICO_DEPOT'],
+    example: 'DIY_STORE',
+    enum: ['DIY_STORE', 'PRO_STORE'],
   })
   @IsString()
-  @IsIn(['LEROY_MERLIN', 'BRICO_DEPOT'])
+  @IsIn(['DIY_STORE', 'PRO_STORE'])
   businessUnit: string;
 
   @ApiProperty({

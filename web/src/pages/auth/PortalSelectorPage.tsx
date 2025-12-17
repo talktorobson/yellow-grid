@@ -121,7 +121,7 @@ export default function PortalSelectorPage() {
             </div>
             <div className="flex items-center gap-4">
               <a href="https://github.com/talktorobson/yellow-grid#readme" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Documentation</a>
-              <a href="mailto:support@adeo.com" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Support</a>
+              <a href="mailto:support@store.test" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Support</a>
             </div>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default function PortalSelectorPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
               <div className="bg-black/30 rounded-lg p-3 border border-white/10 flex-1">
                 <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">Email Pattern</p>
-                <code className="text-[#FFD700] font-mono text-sm">{'{role}.{country}@adeo.com'}</code>
+                <code className="text-[#FFD700] font-mono text-sm">{'{role}.{country}@store.test'}</code>
               </div>
               <div className="bg-black/30 rounded-lg p-3 border border-white/10 flex-1">
                 <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider">Password</p>
@@ -251,7 +251,7 @@ export default function PortalSelectorPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © 2025 Adeo Home Services. All rights reserved.
+              © 2025 GlobalCorp Home Services. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a href="/legal/privacy" className="text-gray-500 hover:text-white text-sm transition-colors">Privacy Policy</a>

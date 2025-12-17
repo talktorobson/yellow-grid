@@ -17,8 +17,8 @@ export enum CountryCode {
 }
 
 export enum BusinessUnit {
-  LEROY_MERLIN = 'LEROY_MERLIN',
-  BRICO_DEPOT = 'BRICO_DEPOT',
+  DIY_STORE = 'DIY_STORE',
+  PRO_STORE = 'PRO_STORE',
 }
 
 export class LoginDto {
@@ -58,7 +58,7 @@ export class RegisterDto {
   @IsEnum(CountryCode)
   countryCode: CountryCode;
 
-  @ApiProperty({ enum: BusinessUnit, example: BusinessUnit.LEROY_MERLIN })
+  @ApiProperty({ enum: BusinessUnit, example: BusinessUnit.DIY_STORE })
   @IsEnum(BusinessUnit)
   buCode: BusinessUnit;
 }

@@ -95,7 +95,7 @@ describe('TasksService', () => {
 
     const serviceOrder = {
       countryCode: 'FR',
-      businessUnit: 'Leroy Merlin',
+      businessUnit: 'DIY Store',
     };
 
     const slaDeadline = new Date(Date.now() + 4 * 60 * 60 * 1000);
@@ -119,7 +119,7 @@ describe('TasksService', () => {
         assignedAt: expect.any(Date),
         slaDeadline,
         countryCode: 'FR',
-        businessUnit: 'Leroy Merlin',
+        businessUnit: 'DIY Store',
         slaPaused: false,
         totalPausedMinutes: 0,
         escalationLevel: 0,
@@ -173,7 +173,7 @@ describe('TasksService', () => {
         status: TaskStatus.ASSIGNED,
         slaDeadline: slaDeadline,
         countryCode: 'FR',
-        businessUnit: 'Leroy Merlin',
+        businessUnit: 'DIY Store',
       });
 
       await service.create(dtoWithAssignment, 'admin_user');

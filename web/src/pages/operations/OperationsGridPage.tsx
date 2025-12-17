@@ -76,7 +76,7 @@ const mockGridRows: GridRow[] = [
           id: 'slot-5',
           serviceOrderRef: 'SO-2024-005',
           serviceType: 'Water Heater',
-          customerName: 'Isabelle Leroy',
+          customerName: 'Isabelle Dubois',
           timeSlot: 'afternoon',
           status: 'scheduled',
           estimatedDuration: 3,

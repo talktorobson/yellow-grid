@@ -159,9 +159,9 @@ const initialStages: Stage[] = [
       {
         id: '6',
         companyName: 'Chauffage Plus',
-        contactName: 'Marc Leroy',
+        contactName: 'Marc Dubois',
         phone: '+33 6 67 89 01 23',
-        email: 'm.leroy@chauffage-plus.fr',
+        email: 'm.dubois@chauffage-plus.fr',
         department: '44 - Loire-Atlantique',
         services: ['Chauffage', 'Pompe à chaleur'],
         lastContact: '1 day ago',

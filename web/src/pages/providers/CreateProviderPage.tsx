@@ -166,10 +166,10 @@ export default function CreateProviderPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Business Unit</label>
               <select {...register('businessUnit')} className="input w-full">
-                <option value="LM_FR">Leroy Merlin France</option>
-                <option value="LM_ES">Leroy Merlin Spain</option>
-                <option value="LM_IT">Leroy Merlin Italy</option>
-                <option value="LM_PL">Leroy Merlin Poland</option>
+                <option value="LM_FR">DIY Store France</option>
+                <option value="LM_ES">DIY Store Spain</option>
+                <option value="LM_IT">DIY Store Italy</option>
+                <option value="LM_PL">DIY Store Poland</option>
               </select>
               {errors.businessUnit && (
                 <p className="text-red-500 text-xs mt-1">{errors.businessUnit.message}</p>
