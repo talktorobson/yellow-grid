@@ -9,6 +9,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
 import { KafkaModule } from './common/kafka/kafka.module';
+import { PdfModule } from './common/pdf/pdf.module';
 
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -75,6 +76,7 @@ import { AppController } from './app.controller';
     PrismaModule,
     RedisModule,
     KafkaModule,
+    PdfModule,
 
     // Feature modules (Phase 1)
     AuthModule,
