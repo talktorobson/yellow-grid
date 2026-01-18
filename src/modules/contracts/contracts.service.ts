@@ -17,6 +17,7 @@ import { ContractListResponseDto, ContractResponseDto } from './dto/contract-res
 import { nanoid } from 'nanoid';
 import { ESignatureService } from './esignature/esignature.service';
 import { SignerRole, TabType } from './esignature/interfaces/esignature-provider.interface';
+import { PdfService } from '../../common/pdf/pdf.service';
 
 const CONTRACT_RELATIONS = {
   signatures: true,
@@ -90,6 +91,7 @@ export class ContractsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eSignatureService: ESignatureService,
+    private readonly pdfService: PdfService,
   ) {}
 
   async generate(dto: GenerateContractDto): Promise<ContractResponseDto> {
@@ -392,73 +394,98 @@ export class ContractsService {
    * Converts contract HTML body to PDF (base64 encoded)
    */
   private async prepareDocumentForSignature(contract: ContractWithRelations): Promise<string> {
-    // TODO: Implement HTML to PDF conversion
-    // For now, return a placeholder base64-encoded PDF
-    // In production, use a library like puppeteer or pdfkit to convert HTML to PDF
+    // Use PDF service to generate proper PDF from contract content
+    const contractData = {
+      contractNumber: contract.contractNumber,
+      generatedAt: contract.createdAt,
+      customer: {
+        name:
+          (contract.serviceOrder?.project?.customerName as string) ||
+          ((contract.payload as any)?.customer?.name as string) ||
+          'Customer',
+        email: contract.customerEmail || undefined,
+        phone: contract.customerPhone || undefined,
+        address: contract.serviceOrder?.serviceAddress as any,
+      },
+      service: {
+        name: contract.serviceOrder?.service?.name || 'Service',
+        type: contract.serviceOrder?.service?.serviceType || 'INSTALLATION',
+        requestedStartDate: contract.serviceOrder?.requestedStartDate,
+        requestedEndDate: contract.serviceOrder?.requestedEndDate,
+      },
+      provider: contract.serviceOrder?.assignedProvider
+        ? {
+            name: contract.serviceOrder.assignedProvider.name,
+            id: contract.serviceOrder.assignedProvider.id,
+          }
+        : undefined,
+    };
 
-    const placeholderPdf = Buffer.from(
-      `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/Resources <<
-/Font <<
-/F1 <<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
->>
->>
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-4 0 obj
-<<
-/Length 55
->>
-stream
-BT
-/F1 12 Tf
-100 700 Td
-(Contract ${contract.contractNumber}) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-0000000115 00000 n
-0000000317 00000 n
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-422
-%%EOF`,
-      'utf-8',
-    );
+    // If contract has a document body (HTML template), use it
+    if (contract.documentBody) {
+      return this.pdfService.generatePdfFromHtml(contract.documentBody, {
+        title: `Contract_${contract.contractNumber}`,
+      });
+    }
 
-    return placeholderPdf.toString('base64');
+    // Otherwise generate from contract data
+    const defaultTemplate = this.getDefaultContractTemplate();
+    return this.pdfService.generateContractPdf(defaultTemplate, contractData, {
+      title: `Contract_${contract.contractNumber}`,
+    });
+  }
+
+  /**
+   * Get default contract template for PDF generation
+   */
+  private getDefaultContractTemplate(): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Service Contract - {{contractNumber}}</title>
+</head>
+<body>
+  <h1>Service Contract</h1>
+  <p><strong>Contract Number:</strong> {{contractNumber}}</p>
+  <p><strong>Date:</strong> {{formatDate generatedAt}}</p>
+
+  <h2>Customer Information</h2>
+  <p><strong>Name:</strong> {{customer.name}}</p>
+  {{#if customer.email}}<p><strong>Email:</strong> {{customer.email}}</p>{{/if}}
+  {{#if customer.phone}}<p><strong>Phone:</strong> {{customer.phone}}</p>{{/if}}
+  {{#if customer.address}}
+  <p><strong>Address:</strong> {{customer.address.street}}, {{customer.address.city}} {{customer.address.postalCode}}</p>
+  {{/if}}
+
+  <h2>Service Details</h2>
+  <p><strong>Service:</strong> {{service.name}}</p>
+  <p><strong>Type:</strong> {{service.type}}</p>
+  {{#if service.requestedStartDate}}
+  <p><strong>Requested Period:</strong> {{formatDate service.requestedStartDate}} - {{formatDate service.requestedEndDate}}</p>
+  {{/if}}
+
+  {{#if provider}}
+  <h2>Service Provider</h2>
+  <p><strong>Provider:</strong> {{provider.name}}</p>
+  {{/if}}
+
+  <h2>Terms and Conditions</h2>
+  <p>By signing this contract, the customer agrees to the terms and conditions of the service as described above.</p>
+  <p>The service provider agrees to perform the service in accordance with industry standards and applicable regulations.</p>
+
+  <h2>Signatures</h2>
+  <div style="margin-top: 50px;">
+    <p>Customer Signature: _______________________</p>
+    <p>Date: _______________________</p>
+  </div>
+  <div style="margin-top: 30px;">
+    <p>Provider Representative: _______________________</p>
+    <p>Date: _______________________</p>
+  </div>
+</body>
+</html>
+    `.trim();
   }
 
   async sign(contractId: string, dto: SignContractDto): Promise<ContractResponseDto> {
